@@ -1,0 +1,51 @@
+
+ALTER TABLE public.field_capture_observations
+  ADD COLUMN IF NOT EXISTS focus_area text,
+  ADD COLUMN IF NOT EXISTS operational_impact text,
+  ADD COLUMN IF NOT EXISTS constrained_capability text,
+  ADD COLUMN IF NOT EXISTS severity text,
+  ADD COLUMN IF NOT EXISTS ironclad_support text,
+  ADD COLUMN IF NOT EXISTS requires_validation boolean NOT NULL DEFAULT false;
+
+ALTER TABLE public.field_gaps
+  ADD COLUMN IF NOT EXISTS focus_area text,
+  ADD COLUMN IF NOT EXISTS operational_impact_text text,
+  ADD COLUMN IF NOT EXISTS preliminary_constraint text,
+  ADD COLUMN IF NOT EXISTS validation_needed text,
+  ADD COLUMN IF NOT EXISTS ironclad_support text,
+  ADD COLUMN IF NOT EXISTS validation_questions text[] NOT NULL DEFAULT '{}',
+  ADD COLUMN IF NOT EXISTS data_requirements text[] NOT NULL DEFAULT '{}',
+  ADD COLUMN IF NOT EXISTS client_status text,
+  ADD COLUMN IF NOT EXISTS client_comments text,
+  ADD COLUMN IF NOT EXISTS finding_rank integer,
+  ADD COLUMN IF NOT EXISTS opp_service text,
+  ADD COLUMN IF NOT EXISTS opp_scope text,
+  ADD COLUMN IF NOT EXISTS opp_complexity text,
+  ADD COLUMN IF NOT EXISTS opp_revenue text,
+  ADD COLUMN IF NOT EXISTS opp_resources text,
+  ADD COLUMN IF NOT EXISTS opp_partner text,
+  ADD COLUMN IF NOT EXISTS opp_confidence text,
+  ADD COLUMN IF NOT EXISTS opp_stage text,
+  ADD COLUMN IF NOT EXISTS opp_next_action text;
+
+ALTER TABLE public.field_assessments
+  ADD COLUMN IF NOT EXISTS baseline_statuses jsonb NOT NULL DEFAULT '{}'::jsonb,
+  ADD COLUMN IF NOT EXISTS client_summary text,
+  ADD COLUMN IF NOT EXISTS rec_significant_constraints boolean,
+  ADD COLUMN IF NOT EXISTS rec_measurable_impact boolean,
+  ADD COLUMN IF NOT EXISTS rec_unvalidated boolean,
+  ADD COLUMN IF NOT EXISTS rec_deeper_helps boolean,
+  ADD COLUMN IF NOT EXISTS rec_in_scope boolean,
+  ADD COLUMN IF NOT EXISTS recommended_path text,
+  ADD COLUMN IF NOT EXISTS review_meeting_date date,
+  ADD COLUMN IF NOT EXISTS review_attendees text,
+  ADD COLUMN IF NOT EXISTS review_notes text,
+  ADD COLUMN IF NOT EXISTS meeting_new_info text,
+  ADD COLUMN IF NOT EXISTS meeting_new_gaps text,
+  ADD COLUMN IF NOT EXISTS meeting_data_promised text,
+  ADD COLUMN IF NOT EXISTS meeting_scope text,
+  ADD COLUMN IF NOT EXISTS meeting_projects text,
+  ADD COLUMN IF NOT EXISTS meeting_decision text,
+  ADD COLUMN IF NOT EXISTS meeting_next_action text,
+  ADD COLUMN IF NOT EXISTS meeting_owner text,
+  ADD COLUMN IF NOT EXISTS meeting_target_date date;
