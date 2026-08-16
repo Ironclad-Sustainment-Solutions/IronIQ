@@ -51,6 +51,15 @@ async function withRole<T>(
 }
 
 /**
+ * Run queries as the current authenticated user, with RLS enforced exactly
+ * like Supabase's `authenticated` role + `auth.uid()` did.
+ * Use inside server functions that already have `userId` from requireAuth.
+ */
+export function withUser<T>(userId: string, fn: (client: PoolClient) => Promise<T>): Promise<T> {
+  return withRole("app_user", userId, fn);
+}
+
+/**
  * Run queries with full access, bypassing RLS — equivalent to Supabase's
  * service_role / supabaseAdmin. Only use for trusted server-side operations
  * (signup, session management, admin tooling), never based on user input.
