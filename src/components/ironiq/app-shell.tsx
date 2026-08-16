@@ -45,24 +45,68 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 
-const NAV = [
-  { to: "/dashboard", label: "Executive Dashboard", icon: LayoutDashboard },
-  { to: "/organizations", label: "Organizations", icon: Building2 },
-  { to: "/facilities", label: "Facilities", icon: Factory },
-  { to: "/assessments", label: "Assessments", icon: ClipboardCheck },
-  { to: "/capability", label: "Capability Assessment", icon: Gauge },
-  { to: "/field", label: "Field Assessment", icon: ClipboardList },
-  { to: "/intake", label: "Bulk Intake", icon: UploadCloud },
-  { to: "/templates", label: "Assessment Templates", icon: FileStack },
-
-  { to: "/findings", label: "Findings", icon: AlertTriangle },
-  { to: "/projects", label: "Improvement Projects", icon: TrendingUp },
-  { to: "/estimates", label: "Estimating", icon: Calculator },
-  { to: "/production", label: "Production Flow", icon: Cpu },
-  { to: "/production/libraries", label: "Machine & Tooling", icon: Wrench },
-  { to: "/reports", label: "Reports", icon: FileBarChart },
-  { to: "/administration", label: "Administration", icon: Settings },
-] as const;
+const NAV: {
+  section: string;
+  items: { to: string; label: string; icon: typeof LayoutDashboard }[];
+}[] = [
+  {
+    section: "Overview",
+    items: [
+      { to: "/dashboard", label: "Executive Dashboard", icon: LayoutDashboard },
+    ],
+  },
+  {
+    // Prerequisite for everything below: an assessment can't be scoped
+    // without an organization and (for most systems) a facility. See
+    // PrerequisiteGate in layout-primitives.tsx, which points back here.
+    section: "Setup",
+    items: [
+      { to: "/organizations", label: "Organizations", icon: Building2 },
+      { to: "/facilities", label: "Facilities", icon: Factory },
+    ],
+  },
+  {
+    // Ordered to match how an assessment actually happens: gather
+    // documentation first (Bulk Intake), then pick which assessment type
+    // to run. Assessment Templates lives here too, not under
+    // Administration, since it's the thing Assessments directly consumes.
+    section: "Assessment Workflow",
+    items: [
+      { to: "/intake", label: "Bulk Intake", icon: UploadCloud },
+      { to: "/assessments", label: "Assessments", icon: ClipboardCheck },
+      { to: "/capability", label: "Capability Assessment", icon: Gauge },
+      { to: "/field", label: "Field Assessment", icon: ClipboardList },
+      { to: "/templates", label: "Assessment Templates", icon: FileStack },
+    ],
+  },
+  {
+    section: "Findings & Improvement",
+    items: [
+      { to: "/findings", label: "Findings", icon: AlertTriangle },
+      { to: "/projects", label: "Improvement Projects", icon: TrendingUp },
+    ],
+  },
+  {
+    section: "Reporting",
+    items: [{ to: "/reports", label: "Reports", icon: FileBarChart }],
+  },
+  {
+    // A genuinely separate capability from the facility-assessment
+    // workflow above (RFQ/manufacturing-job estimating) — previously
+    // interleaved into one flat list with no visual distinction from the
+    // assessment tools, which was a real part of the "jumbled" feeling.
+    section: "Manufacturing Estimating",
+    items: [
+      { to: "/estimates", label: "Estimating", icon: Calculator },
+      { to: "/production", label: "Production Flow", icon: Cpu },
+      { to: "/production/libraries", label: "Machine & Tooling", icon: Wrench },
+    ],
+  },
+  {
+    section: "Administration",
+    items: [{ to: "/administration", label: "Administration", icon: Settings }],
+  },
+];
 
 export function AppShell({ children }: { children: ReactNode }) {
   const [collapsed, setCollapsed] = useState(false);
@@ -132,27 +176,43 @@ function NavLinks({
 }) {
   return (
     <>
-      {NAV.map((item) => {
-        const active =
-          pathname === item.to || pathname.startsWith(`${item.to}/`);
-        return (
-          <Link
-            key={item.to}
-            to={item.to}
-            title={item.label}
-            onClick={onNavigate}
-            className={cn(
-              "flex items-center gap-3 rounded-sm px-3 py-2.5 text-sm transition-colors",
-              active
-                ? "bg-sidebar-accent font-medium text-sidebar-accent-foreground shadow-[inset_3px_0_0_0_var(--sidebar-primary)]"
-                : "text-sidebar-foreground/70 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground",
-            )}
-          >
-            <item.icon className="size-4 shrink-0" aria-hidden />
-            {!collapsed && <span className="truncate">{item.label}</span>}
-          </Link>
-        );
-      })}
+      {NAV.map((group, groupIndex) => (
+        <div
+          key={group.section}
+          className={
+            groupIndex > 0
+              ? "mt-4 border-t border-sidebar-border pt-4"
+              : undefined
+          }
+        >
+          {!collapsed && (
+            <p className="mb-1.5 px-3 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/70">
+              {group.section}
+            </p>
+          )}
+          {group.items.map((item) => {
+            const active =
+              pathname === item.to || pathname.startsWith(`${item.to}/`);
+            return (
+              <Link
+                key={item.to}
+                to={item.to}
+                title={item.label}
+                onClick={onNavigate}
+                className={cn(
+                  "flex items-center gap-3 rounded-sm px-3 py-2.5 text-sm transition-colors",
+                  active
+                    ? "bg-sidebar-accent font-medium text-sidebar-accent-foreground shadow-[inset_3px_0_0_0_var(--sidebar-primary)]"
+                    : "text-sidebar-foreground/70 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground",
+                )}
+              >
+                <item.icon className="size-4 shrink-0" aria-hidden />
+                {!collapsed && <span className="truncate">{item.label}</span>}
+              </Link>
+            );
+          })}
+        </div>
+      ))}
     </>
   );
 }
