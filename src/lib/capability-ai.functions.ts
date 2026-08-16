@@ -10,6 +10,15 @@ import { createServerFn } from "@tanstack/react-start";
 import { generateText, Output } from "ai";
 import { z } from "zod";
 import { createAnthropicProvider } from "./ai-gateway.server";
+import { requireAuth } from "@/lib/auth/auth-middleware";
+import { ALLOWED_FIELD_PATHS } from "@/lib/intake-mapping";
+import {
+  BULK_INTAKE_EXTENSION,
+  IntakeSourceSchema,
+  RawSuggestionSchema,
+  insertValidatedSuggestions,
+  buildSourceContext,
+} from "@/lib/intake-ai.functions";
 
 const MODEL = process.env["AI_MODEL"] ?? "claude-sonnet-5";
 
@@ -20,6 +29,10 @@ performance-based manufacturing capability assessment. Rules you must obey:
 - Distinguish customer-stated information from validated findings.
 - Judge whether capability PERFORMS well enough to support the required manufacturing outcome, not whether a document or system merely exists.
 - Output is a suggestion for human review, never a decision.`;
+
+// Exported for the same reason as field-ai.functions.ts's GUARDRAILS — Bulk
+// Intake's capability-system mapping adapter extends this exact string.
+export { GUARDRAILS };
 
 const DOMAIN_CODES = [
   "technical_data",
@@ -183,4 +196,54 @@ compliance. Use only the supplied material.
 ${data.context}`,
     });
     return await result.output;
+  });
+
+// ---------------------------------------------------------------------
+// Bulk Intake: map uploaded-document summaries onto Capability Assessment
+// intake fields (cap_problems, cap_performance_impacts). Extends this
+// file's own GUARDRAILS with the two Bulk-Intake-specific rules, same as
+// the field-assessment adapter in field-ai.functions.ts.
+// cap_actions.recommended_action is excluded by the allowlist and, as a
+// final backstop, by the database CHECK constraint.
+// ---------------------------------------------------------------------
+
+const MapCapInput = z.object({
+  organizationId: z.string().uuid(),
+  facilityId: z.string().uuid(),
+  capAssessmentId: z.string().uuid().nullable().optional(),
+  sources: z.array(IntakeSourceSchema).min(1),
+});
+
+export const mapIntakeToCapabilityAssessment = createServerFn({
+  method: "POST",
+})
+  .middleware([requireAuth])
+  .inputValidator((input: unknown) => MapCapInput.parse(input))
+  .handler(async ({ data, context }) => {
+    const result = await generateText({
+      model: gateway()(MODEL),
+      system: GUARDRAILS + BULK_INTAKE_EXTENSION,
+      output: Output.object({
+        schema: z.object({ suggestions: z.array(RawSuggestionSchema) }),
+      }),
+      prompt: `Propose Capability Assessment intake field values from the uploaded-document
+summaries below. Only use target_field_path values from this exact list:
+${ALLOWED_FIELD_PATHS.cap_assessment.join(", ")}.
+Every suggestion must cite the document ID(s) (in square brackets in the source headers below)
+it came from in source_document_ids. Do not draft cap_actions.recommended_action or anything
+describing what Ironclad would do about a gap — that is the assessor's own analysis, never yours.
+
+${buildSourceContext(data.sources)}`,
+    });
+
+    const output = await result.output;
+    return insertValidatedSuggestions({
+      userId: context.userId,
+      organizationId: data.organizationId,
+      facilityId: data.facilityId,
+      system: "cap_assessment",
+      targetAssessmentId: data.capAssessmentId ?? null,
+      sources: data.sources,
+      rawSuggestions: output.suggestions,
+    });
   });
