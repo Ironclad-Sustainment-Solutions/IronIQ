@@ -1,5 +1,5 @@
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
-import { getCurrentUser } from "@/lib/auth/auth.functions";
+import { getCurrentUser, logout } from "@/lib/auth/auth.functions";
 import { AppProvider } from "@/context/app-context";
 import { AppShell } from "@/components/ironiq/app-shell";
 
@@ -8,6 +8,14 @@ export const Route = createFileRoute("/_authenticated")({
   beforeLoad: async () => {
     const user = await getCurrentUser();
     if (!user) throw redirect({ to: "/auth" });
+    // Defense in depth: login() already blocks unapproved accounts from
+    // ever getting a session, but if an admin revokes approval on someone
+    // who's already signed in, this catches that on their next navigation
+    // rather than leaving a stale session with access.
+    if (user.profile?.approved === false) {
+      await logout();
+      throw redirect({ to: "/auth" });
+    }
     return { user };
   },
   component: AuthenticatedLayout,

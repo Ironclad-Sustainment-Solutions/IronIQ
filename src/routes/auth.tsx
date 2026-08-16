@@ -20,7 +20,8 @@ export const Route = createFileRoute("/auth")({
       { property: "og:title", content: "Sign in — IronIQ" },
       {
         property: "og:description",
-        content: "Secure access to manufacturing readiness assessments, findings, and improvement programs.",
+        content:
+          "Secure access to manufacturing readiness assessments, findings, and improvement programs.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -50,11 +51,15 @@ function AuthPage() {
     try {
       if (mode === "signup") {
         await signup({ data: { email, password, fullName } });
-        toast.success("Account created. Signing you in…");
+        toast.success(
+          "Account created — an admin will review and approve access before you can sign in.",
+        );
+        setMode("signin");
+        setPassword("");
       } else {
         await login({ data: { email, password } });
+        navigate({ to: "/dashboard", replace: true });
       }
-      navigate({ to: "/dashboard", replace: true });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Authentication failed");
     } finally {
@@ -66,7 +71,10 @@ function AuthPage() {
     <div className="grid min-h-screen lg:grid-cols-[1.1fr_1fr]">
       <div className="relative hidden flex-col justify-between border-r border-border bg-sidebar p-12 lg:flex">
         <div className="flex items-center gap-3">
-          <Hexagon className="size-8 fill-primary/20 text-primary" aria-hidden />
+          <Hexagon
+            className="size-8 fill-primary/20 text-primary"
+            aria-hidden
+          />
           <div>
             <p className="font-display text-2xl font-bold uppercase leading-none tracking-[0.2em]">
               Iron<span className="text-primary">IQ</span>
@@ -83,9 +91,9 @@ function AuthPage() {
             Prove a plant can build it right — repeatably, compliantly, at rate.
           </h1>
           <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
-            Seven weighted readiness categories. Evidence-graded confidence scoring. Critical-control
-            gating that will not let a plant be called production ready when a fundamental control has
-            failed.
+            Seven weighted readiness categories. Evidence-graded confidence
+            scoring. Critical-control gating that will not let a plant be called
+            production ready when a fundamental control has failed.
           </p>
           <dl className="mt-10 grid grid-cols-3 gap-6 border-t border-border pt-8">
             {[
@@ -94,22 +102,30 @@ function AuthPage() {
               ["100%", "Evidence graded"],
             ].map(([v, l]) => (
               <div key={l}>
-                <dt className="metric text-3xl font-semibold text-primary">{v}</dt>
-                <dd className="mt-1 text-xs uppercase tracking-wider text-muted-foreground">{l}</dd>
+                <dt className="metric text-3xl font-semibold text-primary">
+                  {v}
+                </dt>
+                <dd className="mt-1 text-xs uppercase tracking-wider text-muted-foreground">
+                  {l}
+                </dd>
               </div>
             ))}
           </dl>
         </div>
 
         <p className="text-xs text-muted-foreground">
-          Authorized use only. All access and score changes are recorded in the audit log.
+          Authorized use only. All access and score changes are recorded in the
+          audit log.
         </p>
       </div>
 
       <div className="flex items-center justify-center p-6 md:p-12">
         <div className="w-full max-w-sm">
           <div className="mb-8 flex items-center gap-3 lg:hidden">
-            <Hexagon className="size-7 fill-primary/20 text-primary" aria-hidden />
+            <Hexagon
+              className="size-7 fill-primary/20 text-primary"
+              aria-hidden
+            />
             <p className="font-display text-xl font-bold uppercase tracking-[0.2em]">
               Iron<span className="text-primary">IQ</span>
             </p>
@@ -121,7 +137,7 @@ function AuthPage() {
           <p className="mt-1.5 text-sm text-muted-foreground">
             {mode === "signin"
               ? "Access your organization's readiness workspace."
-              : "Request access to the IronIQ demonstration workspace."}
+              : "Request access — an admin will review and approve your account before you can sign in."}
           </p>
 
           <form onSubmit={submit} className="mt-8 space-y-4">
@@ -154,7 +170,9 @@ function AuthPage() {
               <Input
                 id="password"
                 type="password"
-                autoComplete={mode === "signin" ? "current-password" : "new-password"}
+                autoComplete={
+                  mode === "signin" ? "current-password" : "new-password"
+                }
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 minLength={6}
@@ -163,39 +181,18 @@ function AuthPage() {
             </div>
 
             <Button type="submit" className="w-full" disabled={busy}>
-              {busy ? <Loader2 className="size-4 animate-spin" aria-hidden /> : null}
+              {busy ? (
+                <Loader2 className="size-4 animate-spin" aria-hidden />
+              ) : null}
               {mode === "signin" ? "Sign in" : "Create account"}
             </Button>
           </form>
 
-          {mode === "signin" ? (
-            <div className="mt-4 rounded-md border border-border bg-muted/30 p-3">
-              <p className="text-[10px] uppercase tracking-widest text-muted-foreground">
-                Demo access
-              </p>
-              <p className="mt-1 text-sm text-muted-foreground">
-                demo@ironiq.app / IronIQ2026!
-              </p>
-              <Button
-                type="button"
-                variant="secondary"
-                size="sm"
-                className="mt-3 w-full"
-                disabled={busy}
-                onClick={() => {
-                  setEmail("demo@ironiq.app");
-                  setPassword("IronIQ2026!");
-                }}
-              >
-                Fill demo credentials
-              </Button>
-            </div>
-          ) : null}
-
-
           <div className="my-6 flex items-center gap-3">
             <span className="h-px flex-1 bg-border" />
-            <span className="text-[10px] uppercase tracking-widest text-muted-foreground">or</span>
+            <span className="text-[10px] uppercase tracking-widest text-muted-foreground">
+              or
+            </span>
             <span className="h-px flex-1 bg-border" />
           </div>
 
