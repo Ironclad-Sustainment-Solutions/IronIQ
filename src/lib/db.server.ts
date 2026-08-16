@@ -51,12 +51,30 @@ async function withRole<T>(
 }
 
 /**
- * Run queries as the current authenticated user, with RLS enforced exactly
- * like Supabase's `authenticated` role + `auth.uid()` did.
- * Use inside server functions that already have `userId` from requireAuth.
+ * Run queries with full access, bypassing RLS — equivalent to Supabase's
+ * service_role / supabaseAdmin. Only use for trusted server-side operations
+ * (signup, session management, admin tooling), never based on user input.
+ *
+ * Implementation note: Render's managed Postgres doesn't allow granting the
+ * BYPASSRLS attribute to a non-superuser role, so instead of switching into a
+ * special app_admin role, this simply avoids switching roles at all — the
+ * connecting login role owns every table (it's the one that ran schema.sql),
+ * and Postgres automatically exempts table owners from RLS.
  */
-export function withUser<T>(userId: string, fn: (client: PoolClient) => Promise<T>): Promise<T> {
-  return withRole("app_user", userId, fn);
+export async function withAdmin<T>(fn: (client: PoolClient) => Promise<T>): Promise<T> {
+  const pool = getPool();
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const result = await fn(client);
+    await client.query("COMMIT");
+    return result;
+  } catch (error) {
+    await client.query("ROLLBACK").catch(() => {});
+    throw error;
+  } finally {
+    client.release();
+  }
 }
 
 /**
