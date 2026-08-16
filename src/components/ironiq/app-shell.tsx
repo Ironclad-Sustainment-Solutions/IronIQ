@@ -21,8 +21,7 @@ import {
   Gauge,
   Menu,
   ClipboardList,
-
-
+  UploadCloud,
 } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { logout } from "@/lib/auth/auth.functions";
@@ -46,7 +45,6 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 
-
 const NAV = [
   { to: "/dashboard", label: "Executive Dashboard", icon: LayoutDashboard },
   { to: "/organizations", label: "Organizations", icon: Building2 },
@@ -54,6 +52,7 @@ const NAV = [
   { to: "/assessments", label: "Assessments", icon: ClipboardCheck },
   { to: "/capability", label: "Capability Assessment", icon: Gauge },
   { to: "/field", label: "Field Assessment", icon: ClipboardList },
+  { to: "/intake", label: "Bulk Intake", icon: UploadCloud },
   { to: "/templates", label: "Assessment Templates", icon: FileStack },
 
   { to: "/findings", label: "Findings", icon: AlertTriangle },
@@ -78,7 +77,10 @@ export function AppShell({ children }: { children: ReactNode }) {
         )}
       >
         <div className="flex h-16 items-center gap-2.5 border-b border-sidebar-border px-4">
-          <Hexagon className="size-6 shrink-0 fill-primary/20 text-primary" aria-hidden />
+          <Hexagon
+            className="size-6 shrink-0 fill-primary/20 text-primary"
+            aria-hidden
+          />
           {!collapsed && (
             <div className="min-w-0">
               <p className="font-display text-lg font-bold uppercase leading-none tracking-[0.18em] text-sidebar-foreground">
@@ -94,7 +96,6 @@ export function AppShell({ children }: { children: ReactNode }) {
         <nav className="flex-1 space-y-0.5 overflow-y-auto p-2">
           <NavLinks collapsed={collapsed} pathname={pathname} />
         </nav>
-
 
         <div className="border-t border-sidebar-border p-2">
           <button
@@ -132,7 +133,8 @@ function NavLinks({
   return (
     <>
       {NAV.map((item) => {
-        const active = pathname === item.to || pathname.startsWith(`${item.to}/`);
+        const active =
+          pathname === item.to || pathname.startsWith(`${item.to}/`);
         return (
           <Link
             key={item.to}
@@ -167,9 +169,15 @@ function MobileNav() {
       >
         <Menu className="size-5" aria-hidden />
       </SheetTrigger>
-      <SheetContent side="left" className="w-72 border-sidebar-border bg-sidebar p-0">
+      <SheetContent
+        side="left"
+        className="w-72 border-sidebar-border bg-sidebar p-0"
+      >
         <SheetHeader className="flex h-16 flex-row items-center gap-2.5 border-b border-sidebar-border px-4">
-          <Hexagon className="size-6 shrink-0 fill-primary/20 text-primary" aria-hidden />
+          <Hexagon
+            className="size-6 shrink-0 fill-primary/20 text-primary"
+            aria-hidden
+          />
           <SheetTitle className="font-display text-lg font-bold uppercase tracking-[0.18em] text-sidebar-foreground">
             Iron<span className="text-primary">IQ</span>
           </SheetTitle>
@@ -182,10 +190,17 @@ function MobileNav() {
   );
 }
 
-
 function TopBar() {
-  const { organization, organizations, facility, facilities, setOrganizationId, setFacilityId, profile, primaryRole } =
-    useApp();
+  const {
+    organization,
+    organizations,
+    facility,
+    facilities,
+    setOrganizationId,
+    setFacilityId,
+    profile,
+    primaryRole,
+  } = useApp();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
@@ -208,7 +223,6 @@ function TopBar() {
     <header className="no-print sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-border bg-surface/95 px-4 backdrop-blur md:px-8">
       <MobileNav />
       <Link to="/dashboard" className="mr-1 flex items-center gap-2 md:hidden">
-
         <Hexagon className="size-5 fill-primary/20 text-primary" aria-hidden />
         <span className="font-display text-base font-bold uppercase tracking-widest">
           Iron<span className="text-primary">IQ</span>
@@ -240,9 +254,12 @@ function TopBar() {
             <DropdownMenuLabel>Notifications</DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem className="flex-col items-start gap-0.5 whitespace-normal">
-              <span className="text-sm text-critical">2 critical findings remain open</span>
+              <span className="text-sm text-critical">
+                2 critical findings remain open
+              </span>
               <span className="text-xs text-muted-foreground">
-                CNC program control and machine connectivity are gating production readiness.
+                CNC program control and machine connectivity are gating
+                production readiness.
               </span>
             </DropdownMenuItem>
             <DropdownMenuItem className="flex-col items-start gap-0.5 whitespace-normal">
@@ -273,19 +290,27 @@ function TopBar() {
                 {ROLE_LABELS[primaryRole]}
               </span>
             </span>
-            <ChevronDown className="size-3.5 text-muted-foreground" aria-hidden />
+            <ChevronDown
+              className="size-3.5 text-muted-foreground"
+              aria-hidden
+            />
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-60">
             <DropdownMenuLabel className="flex flex-col gap-0.5">
               <span>{profile?.full_name ?? "Account"}</span>
-              <span className="text-xs font-normal text-muted-foreground">{profile?.email}</span>
+              <span className="text-xs font-normal text-muted-foreground">
+                {profile?.email}
+              </span>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
               <Link to="/administration">Profile &amp; administration</Link>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onSelect={() => void signOut()} className="text-critical">
+            <DropdownMenuItem
+              onSelect={() => void signOut()}
+              className="text-critical"
+            >
               <LogOut className="size-4" aria-hidden />
               Log out
             </DropdownMenuItem>
@@ -314,9 +339,14 @@ function Selector({
           <span className="block text-[10px] uppercase tracking-widest text-muted-foreground">
             {label}
           </span>
-          <span className="block truncate text-xs font-medium text-foreground">{value}</span>
+          <span className="block truncate text-xs font-medium text-foreground">
+            {value}
+          </span>
         </span>
-        <ChevronDown className="ml-auto size-3.5 shrink-0 text-muted-foreground" aria-hidden />
+        <ChevronDown
+          className="ml-auto size-3.5 shrink-0 text-muted-foreground"
+          aria-hidden
+        />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="w-72">
         <DropdownMenuLabel>{label}</DropdownMenuLabel>

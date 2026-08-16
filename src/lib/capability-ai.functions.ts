@@ -18,7 +18,7 @@ import {
   RawSuggestionSchema,
   insertValidatedSuggestions,
   buildSourceContext,
-} from "@/lib/intake-ai.functions";
+} from "@/lib/intake-shared.server";
 
 const MODEL = process.env["AI_MODEL"] ?? "claude-sonnet-5";
 
