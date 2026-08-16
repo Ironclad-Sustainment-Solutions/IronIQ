@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { Link } from "@tanstack/react-router";
 import { cn } from "@/lib/utils";
 
 export function PageHeader({
@@ -20,10 +21,14 @@ export function PageHeader({
           {title}
         </h1>
         {description ? (
-          <p className="mt-2 max-w-3xl text-sm text-muted-foreground">{description}</p>
+          <p className="mt-2 max-w-3xl text-sm text-muted-foreground">
+            {description}
+          </p>
         ) : null}
       </div>
-      {actions ? <div className="flex flex-wrap items-center gap-2">{actions}</div> : null}
+      {actions ? (
+        <div className="flex flex-wrap items-center gap-2">{actions}</div>
+      ) : null}
     </header>
   );
 }
@@ -51,7 +56,9 @@ export function Panel({
                 {title}
               </h2>
             ) : null}
-            {subtitle ? <p className="mt-1 text-xs text-muted-foreground">{subtitle}</p> : null}
+            {subtitle ? (
+              <p className="mt-1 text-xs text-muted-foreground">{subtitle}</p>
+            ) : null}
           </div>
           {actions}
         </div>
@@ -69,7 +76,11 @@ export function EmptyState({ message }: { message: string }) {
   );
 }
 
-export function DefinitionList({ items }: { items: { label: string; value: ReactNode }[] }) {
+export function DefinitionList({
+  items,
+}: {
+  items: { label: string; value: ReactNode }[];
+}) {
   return (
     <dl className="grid gap-x-8 gap-y-4 sm:grid-cols-2">
       {items.map((item) => (
@@ -79,5 +90,43 @@ export function DefinitionList({ items }: { items: { label: string; value: React
         </div>
       ))}
     </dl>
+  );
+}
+
+/**
+ * A single, consistent way to say "you need to do something else first" —
+ * before this existed, three different pages that all have the same real
+ * prerequisite (an organization, then a facility) each handled it
+ * differently: assessments/new.tsx had no check at all (silently failed at
+ * submit), capability/index.tsx had an ad-hoc inline sentence, field/index.tsx
+ * just disabled a button with no explanation. Requirements are checked in
+ * order and only the first unmet one is shown — the chain is meant to be
+ * walked one step at a time (create an org, then a facility, then a
+ * template, etc.), not all thrown at the user simultaneously.
+ */
+export function PrerequisiteGate({
+  requirements,
+  children,
+}: {
+  requirements: {
+    label: string;
+    met: boolean;
+    ctaLabel: string;
+    ctaTo: string;
+  }[];
+  children: ReactNode;
+}) {
+  const unmet = requirements.find((r) => !r.met);
+  if (!unmet) return <>{children}</>;
+  return (
+    <div className="flex min-h-40 flex-col items-center justify-center gap-3 rounded-md border border-dashed border-border bg-muted/20 p-8 text-center">
+      <p className="max-w-sm text-sm text-muted-foreground">{unmet.label}</p>
+      <Link
+        to={unmet.ctaTo}
+        className="inline-flex items-center rounded-sm border border-primary/40 bg-primary/10 px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-primary transition-colors hover:bg-primary/20"
+      >
+        {unmet.ctaLabel}
+      </Link>
+    </div>
   );
 }

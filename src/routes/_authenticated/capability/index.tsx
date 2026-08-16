@@ -1,13 +1,24 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
-import { PageHeader, Panel, EmptyState } from "@/components/ironiq/layout-primitives";
+import {
+  PageHeader,
+  Panel,
+  EmptyState,
+  PrerequisiteGate,
+} from "@/components/ironiq/layout-primitives";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Tag } from "@/components/ironiq/badges";
 import { useApp } from "@/context/app-context";
-import { useCapAssessments, useCreateCapAssessment } from "@/lib/capability-api";
-import { CAP_STATUS_LABELS, type CapAssessmentStatus } from "@/lib/capability-domain";
+import {
+  useCapAssessments,
+  useCreateCapAssessment,
+} from "@/lib/capability-api";
+import {
+  CAP_STATUS_LABELS,
+  type CapAssessmentStatus,
+} from "@/lib/capability-domain";
 import { ScoreChip } from "@/components/ironiq/capability/shared";
 import {
   Select,
@@ -30,7 +41,8 @@ export const Route = createFileRoute("/_authenticated/capability/")({
       { property: "og:title", content: "Capability Assessments — IronIQ" },
       {
         property: "og:description",
-        content: "Performance-based manufacturing capability assessment by Ironclad Sustainment Solutions.",
+        content:
+          "Performance-based manufacturing capability assessment by Ironclad Sustainment Solutions.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -39,7 +51,10 @@ export const Route = createFileRoute("/_authenticated/capability/")({
   component: CapabilityIndex,
 });
 
-const statusToken: Record<CapAssessmentStatus, "steel" | "primary" | "medium" | "success" | "high"> = {
+const statusToken: Record<
+  CapAssessmentStatus,
+  "steel" | "primary" | "medium" | "success" | "high"
+> = {
   draft: "steel",
   intake: "medium",
   in_progress: "primary",
@@ -54,7 +69,12 @@ function CapabilityIndex() {
   const create = useCreateCapAssessment();
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({ name: "", facility_id: "", lead_assessor: "", scope: "" });
+  const [form, setForm] = useState({
+    name: "",
+    facility_id: "",
+    lead_assessor: "",
+    scope: "",
+  });
 
   const editable = can("conduct_assessment");
 
@@ -74,84 +94,115 @@ function CapabilityIndex() {
       />
 
       {open ? (
-        <Panel title="New Capability Assessment">
-          <div className="grid gap-3 md:grid-cols-2">
-            <div>
-              <span className="eyebrow">Assessment name</span>
-              <Input
-                className="mt-1.5"
-                value={form.name}
-                onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-                placeholder="Q3 Capability Review — Machining Cell 2"
-              />
+        <PrerequisiteGate
+          requirements={[
+            {
+              label:
+                "You need at least one organization before starting a capability assessment.",
+              met: organizations.length > 0,
+              ctaLabel: "Create an organization",
+              ctaTo: "/organizations",
+            },
+          ]}
+        >
+          <Panel title="New Capability Assessment">
+            <div className="grid gap-3 md:grid-cols-2">
+              <div>
+                <span className="eyebrow">Assessment name</span>
+                <Input
+                  className="mt-1.5"
+                  value={form.name}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, name: e.target.value }))
+                  }
+                  placeholder="Q3 Capability Review — Machining Cell 2"
+                />
+              </div>
+              <div>
+                <span className="eyebrow">Facility</span>
+                <Select
+                  value={form.facility_id}
+                  onValueChange={(v) =>
+                    setForm((f) => ({ ...f, facility_id: v }))
+                  }
+                >
+                  <SelectTrigger className="mt-1.5">
+                    <SelectValue placeholder="Select facility" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {facilities.map((f) => (
+                      <SelectItem key={f.id} value={f.id}>
+                        {f.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <span className="eyebrow">Lead assessor</span>
+                <Input
+                  className="mt-1.5"
+                  value={form.lead_assessor}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, lead_assessor: e.target.value }))
+                  }
+                />
+              </div>
+              <div>
+                <span className="eyebrow">Scope</span>
+                <Textarea
+                  className="mt-1.5 min-h-16"
+                  value={form.scope}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, scope: e.target.value }))
+                  }
+                />
+              </div>
             </div>
-            <div>
-              <span className="eyebrow">Facility</span>
-              <Select value={form.facility_id} onValueChange={(v) => setForm((f) => ({ ...f, facility_id: v }))}>
-                <SelectTrigger className="mt-1.5">
-                  <SelectValue placeholder="Select facility" />
-                </SelectTrigger>
-                <SelectContent>
-                  {facilities.map((f) => (
-                    <SelectItem key={f.id} value={f.id}>
-                      {f.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <span className="eyebrow">Lead assessor</span>
-              <Input
-                className="mt-1.5"
-                value={form.lead_assessor}
-                onChange={(e) => setForm((f) => ({ ...f, lead_assessor: e.target.value }))}
-              />
-            </div>
-            <div>
-              <span className="eyebrow">Scope</span>
-              <Textarea
-                className="mt-1.5 min-h-16"
-                value={form.scope}
-                onChange={(e) => setForm((f) => ({ ...f, scope: e.target.value }))}
-              />
-            </div>
-          </div>
-          <div className="mt-4 flex gap-2">
-            <Button
-              disabled={create.isPending || !organization}
-              onClick={() =>
-                create.mutate(
-                  {
-                    organization_id: organization?.id ?? "",
-                    facility_id: form.facility_id || null,
-                    name: form.name,
-                    lead_assessor: form.lead_assessor || null,
-                    scope: form.scope || null,
-                  },
-                  {
-                    onSuccess: (id) => {
-                      setOpen(false);
-                      setForm({ name: "", facility_id: "", lead_assessor: "", scope: "" });
-                      void navigate({ to: "/capability/$assessmentId", params: { assessmentId: id } });
+            <div className="mt-4 flex gap-2">
+              <Button
+                disabled={create.isPending || !organization}
+                onClick={() =>
+                  create.mutate(
+                    {
+                      organization_id: organization?.id ?? "",
+                      facility_id: form.facility_id || null,
+                      name: form.name,
+                      lead_assessor: form.lead_assessor || null,
+                      scope: form.scope || null,
                     },
-                  },
-                )
-              }
-            >
-              Create
-            </Button>
-            <Button variant="ghost" onClick={() => setOpen(false)}>
-              Cancel
-            </Button>
-          </div>
-          {organizations.length === 0 ? (
-            <p className="mt-3 text-sm text-muted-foreground">Create an organization first.</p>
-          ) : null}
-        </Panel>
+                    {
+                      onSuccess: (id) => {
+                        setOpen(false);
+                        setForm({
+                          name: "",
+                          facility_id: "",
+                          lead_assessor: "",
+                          scope: "",
+                        });
+                        void navigate({
+                          to: "/capability/$assessmentId",
+                          params: { assessmentId: id },
+                        });
+                      },
+                    },
+                  )
+                }
+              >
+                Create
+              </Button>
+              <Button variant="ghost" onClick={() => setOpen(false)}>
+                Cancel
+              </Button>
+            </div>
+          </Panel>
+        </PrerequisiteGate>
       ) : null}
 
-      <Panel title="Assessments" subtitle={organization ? organization.name : "Select an organization"}>
+      <Panel
+        title="Assessments"
+        subtitle={organization ? organization.name : "Select an organization"}
+      >
         {assessments.isLoading ? (
           <EmptyState message="Loading…" />
         ) : (assessments.data ?? []).length === 0 ? (
@@ -165,10 +216,21 @@ function CapabilityIndex() {
                   params={{ assessmentId: a.id }}
                   className="flex flex-wrap items-center gap-3 py-3 hover:bg-muted/40"
                 >
-                  <span className="min-w-48 flex-1 text-sm font-medium text-foreground">{a.name}</span>
-                  <span className="text-xs text-muted-foreground">{a.assessment_date}</span>
-                  <Tag token={statusToken[a.status]}>{CAP_STATUS_LABELS[a.status]}</Tag>
-                  <ScoreChip score={a.overall_score === null ? null : Number(a.overall_score)} size="sm" />
+                  <span className="min-w-48 flex-1 text-sm font-medium text-foreground">
+                    {a.name}
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    {a.assessment_date}
+                  </span>
+                  <Tag token={statusToken[a.status]}>
+                    {CAP_STATUS_LABELS[a.status]}
+                  </Tag>
+                  <ScoreChip
+                    score={
+                      a.overall_score === null ? null : Number(a.overall_score)
+                    }
+                    size="sm"
+                  />
                 </Link>
               </li>
             ))}

@@ -1,7 +1,12 @@
 import { useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { ClipboardList, Plus, Trash2 } from "lucide-react";
-import { PageHeader, Panel, EmptyState } from "@/components/ironiq/layout-primitives";
+import {
+  PageHeader,
+  Panel,
+  EmptyState,
+  PrerequisiteGate,
+} from "@/components/ironiq/layout-primitives";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -26,7 +31,8 @@ export const Route = createFileRoute("/_authenticated/field/")({
       { property: "og:title", content: "Field Assessment — IronIQ" },
       {
         property: "og:description",
-        content: "Mobile-first shop-floor capability capture with an instant score.",
+        content:
+          "Mobile-first shop-floor capability capture with an instant score.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -36,7 +42,7 @@ export const Route = createFileRoute("/_authenticated/field/")({
 });
 
 function FieldIndex() {
-  const { organization, facility, profile } = useApp();
+  const { organization, organizations, facility, profile } = useApp();
   const navigate = useNavigate();
   const list = useFieldAssessments(organization?.id, facility?.id).data ?? [];
   const create = useCreateFieldAssessment();
@@ -58,7 +64,8 @@ function FieldIndex() {
         observer_name: profile?.full_name ?? null,
       },
       {
-        onSuccess: (id) => navigate({ to: "/field/$fieldId", params: { fieldId: id } }),
+        onSuccess: (id) =>
+          navigate({ to: "/field/$fieldId", params: { fieldId: id } }),
       },
     );
   };
@@ -71,62 +78,77 @@ function FieldIndex() {
         description="Walk the floor, record what you see across 12 capability areas, and leave with a preliminary field baseline."
       />
 
-      <Panel title="Start a walk" subtitle="Two taps to begin — everything else saves as you go">
-        <div className="grid gap-4">
-          <div className="grid gap-1.5">
-            <Label htmlFor="fa-area">Area / cell</Label>
-            <Input
-              id="fa-area"
-              value={area}
-              maxLength={120}
-              onChange={(e) => setArea(e.target.value)}
-              placeholder="e.g. Cell 4 — Horizontal Mills"
-              className="h-12 text-base"
-            />
-          </div>
-          <div className="grid gap-4 sm:grid-cols-2">
+      <PrerequisiteGate
+        requirements={[
+          {
+            label:
+              "You need at least one organization before starting a field assessment.",
+            met: organizations.length > 0,
+            ctaLabel: "Create an organization",
+            ctaTo: "/organizations",
+          },
+        ]}
+      >
+        <Panel
+          title="Start a walk"
+          subtitle="Two taps to begin — everything else saves as you go"
+        >
+          <div className="grid gap-4">
             <div className="grid gap-1.5">
-              <Label htmlFor="fa-wc">Work center (optional)</Label>
+              <Label htmlFor="fa-area">Area / cell</Label>
               <Input
-                id="fa-wc"
-                value={workCenter}
+                id="fa-area"
+                value={area}
                 maxLength={120}
-                onChange={(e) => setWorkCenter(e.target.value)}
-                placeholder="HMC-02"
+                onChange={(e) => setArea(e.target.value)}
+                placeholder="e.g. Cell 4 — Horizontal Mills"
                 className="h-12 text-base"
               />
             </div>
-            <div className="grid gap-1.5">
-              <Label>Shift</Label>
-              <div className="grid grid-cols-4 gap-1.5">
-                {SHIFTS.map((s) => (
-                  <button
-                    key={s}
-                    type="button"
-                    onClick={() => setShift(s)}
-                    className={cn(
-                      "h-12 rounded-sm border font-display text-xs font-semibold uppercase tracking-widest transition-colors",
-                      shift === s
-                        ? "border-primary bg-primary text-primary-foreground"
-                        : "border-border text-muted-foreground hover:border-primary/60 hover:text-foreground",
-                    )}
-                  >
-                    {s}
-                  </button>
-                ))}
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="grid gap-1.5">
+                <Label htmlFor="fa-wc">Work center (optional)</Label>
+                <Input
+                  id="fa-wc"
+                  value={workCenter}
+                  maxLength={120}
+                  onChange={(e) => setWorkCenter(e.target.value)}
+                  placeholder="HMC-02"
+                  className="h-12 text-base"
+                />
+              </div>
+              <div className="grid gap-1.5">
+                <Label>Shift</Label>
+                <div className="grid grid-cols-4 gap-1.5">
+                  {SHIFTS.map((s) => (
+                    <button
+                      key={s}
+                      type="button"
+                      onClick={() => setShift(s)}
+                      className={cn(
+                        "h-12 rounded-sm border font-display text-xs font-semibold uppercase tracking-widest transition-colors",
+                        shift === s
+                          ? "border-primary bg-primary text-primary-foreground"
+                          : "border-border text-muted-foreground hover:border-primary/60 hover:text-foreground",
+                      )}
+                    >
+                      {s}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
+            <Button
+              size="lg"
+              className="h-12 w-full sm:w-auto"
+              disabled={!organization?.id || create.isPending}
+              onClick={start}
+            >
+              <Plus className="size-4" aria-hidden /> Start field assessment
+            </Button>
           </div>
-          <Button
-            size="lg"
-            className="h-12 w-full sm:w-auto"
-            disabled={!organization?.id || create.isPending}
-            onClick={start}
-          >
-            <Plus className="size-4" aria-hidden /> Start field assessment
-          </Button>
-        </div>
-      </Panel>
+        </Panel>
+      </PrerequisiteGate>
 
       <Panel title="Recent walks" subtitle={`${list.length} recorded`}>
         {list.length === 0 ? (
@@ -134,7 +156,10 @@ function FieldIndex() {
         ) : (
           <ul className="divide-y divide-border">
             {list.map((f) => (
-              <li key={f.id} className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 py-3">
+              <li
+                key={f.id}
+                className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 py-3"
+              >
                 <Link
                   to="/field/$fieldId"
                   params={{ fieldId: f.id }}
@@ -142,16 +167,24 @@ function FieldIndex() {
                 >
                   <p className="truncate text-sm font-medium text-foreground">
                     {f.area || "Untitled area"}
-                    {f.work_center ? <span className="text-muted-foreground"> · {f.work_center}</span> : null}
+                    {f.work_center ? (
+                      <span className="text-muted-foreground">
+                        {" "}
+                        · {f.work_center}
+                      </span>
+                    ) : null}
                   </p>
                   <p className="mt-0.5 truncate text-xs text-muted-foreground">
-                    {new Date(f.observed_at).toLocaleString()} · {f.shift ?? "—"} shift ·{" "}
+                    {new Date(f.observed_at).toLocaleString()} ·{" "}
+                    {f.shift ?? "—"} shift ·{" "}
                     {f.status === "submitted" ? "Submitted" : "Open"}
                   </p>
                 </Link>
                 <div className="flex shrink-0 items-center gap-2">
                   <span className="metric text-lg font-semibold text-foreground">
-                    {f.capability_score === null ? "—" : `${Math.round(Number(f.capability_score))}%`}
+                    {f.capability_score === null
+                      ? "—"
+                      : `${Math.round(Number(f.capability_score))}%`}
                   </span>
                   <Button
                     variant="ghost"
@@ -169,10 +202,10 @@ function FieldIndex() {
       </Panel>
 
       <p className="flex items-center gap-2 text-xs text-muted-foreground">
-        <ClipboardList className="size-3.5 shrink-0" aria-hidden />
-        A field walk records qualitative status across 12 capability areas, so it can be escalated
-        into a formal capability assessment later — it never produces a score.
-
+        <ClipboardList className="size-3.5 shrink-0" aria-hidden />A field walk
+        records qualitative status across 12 capability areas, so it can be
+        escalated into a formal capability assessment later — it never produces
+        a score.
       </p>
     </div>
   );

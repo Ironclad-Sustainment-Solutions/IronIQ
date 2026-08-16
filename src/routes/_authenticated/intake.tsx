@@ -4,6 +4,7 @@ import {
   PageHeader,
   Panel,
   EmptyState,
+  PrerequisiteGate,
 } from "@/components/ironiq/layout-primitives";
 import { Tag } from "@/components/ironiq/badges";
 import { Button } from "@/components/ui/button";
@@ -77,7 +78,7 @@ function formatBytes(n: number): string {
 }
 
 function BulkIntakePage() {
-  const { organization, facility } = useApp();
+  const { organization, organizations, facility, facilities } = useApp();
   const [category, setCategory] = useState<IntakeCategory>(
     "company_documentation",
   );
@@ -93,6 +94,7 @@ function BulkIntakePage() {
   const updateStatus = useUpdateIntakeSuggestionStatus(facility?.id);
 
   const docRows = documents.data ?? [];
+  const parsedCount = docRows.filter((d) => d.status === "parsed").length;
 
   const handleFiles = (files: FileList | null) => {
     if (!files) return;
@@ -108,9 +110,27 @@ function BulkIntakePage() {
         <PageHeader
           eyebrow={organization?.name ?? "Portfolio"}
           title="Bulk Intake"
-          description="Select a facility from the top navigation first — uploaded documents and generated suggestions are scoped per facility."
+          description="Upload evaluator notes and company documentation. AI drafts suggested field values from what's actually in them — every suggestion is reviewed here before it's used, and nothing writes to an assessment until you accept it."
         />
-        <EmptyState message="No facility selected." />
+        <PrerequisiteGate
+          requirements={[
+            {
+              label:
+                "You need at least one organization before using Bulk Intake.",
+              met: organizations.length > 0,
+              ctaLabel: "Create an organization",
+              ctaTo: "/organizations",
+            },
+            {
+              label: `${organization?.name ?? "This organization"} has no facilities yet — Bulk Intake is scoped per facility.`,
+              met: facilities.length > 0,
+              ctaLabel: "Add a facility",
+              ctaTo: "/facilities",
+            },
+          ]}
+        >
+          <EmptyState message="No facility selected." />
+        </PrerequisiteGate>
       </div>
     );
   }
@@ -124,7 +144,7 @@ function BulkIntakePage() {
       />
 
       <Panel
-        title="Upload"
+        title="1. Upload"
         subtitle="Evaluator/company notes, current-process documentation, or anything else relevant to this visit."
         actions={
           <Select
@@ -203,7 +223,7 @@ function BulkIntakePage() {
       </Panel>
 
       <Panel
-        title="Generate suggestions"
+        title="2. Generate suggestions"
         subtitle="Runs AI summarization over every parsed document, then proposes values for the chosen assessment system. Nothing is written to an assessment yet — review below first."
         actions={
           <div className="flex items-center gap-2">
@@ -226,7 +246,12 @@ function BulkIntakePage() {
               onClick={() =>
                 generate.mutate({ targetSystem, documents: docRows })
               }
-              disabled={generate.isPending}
+              disabled={generate.isPending || parsedCount === 0}
+              title={
+                parsedCount === 0
+                  ? "Upload and wait for at least one document to finish parsing first."
+                  : undefined
+              }
             >
               {generate.isPending ? "Generating…" : "Generate"}
             </Button>
@@ -234,14 +259,22 @@ function BulkIntakePage() {
         }
       >
         <p className="text-xs text-muted-foreground">
-          {docRows.filter((d) => d.status === "parsed").length} of{" "}
-          {docRows.length} uploaded document(s) are parsed and available to draw
-          from.
+          {parsedCount === 0 ? (
+            <span className="text-primary">
+              No parsed documents yet — upload at least one above before
+              generating suggestions.
+            </span>
+          ) : (
+            <>
+              {parsedCount} of {docRows.length} uploaded document(s) are parsed
+              and available to draw from.
+            </>
+          )}
         </p>
       </Panel>
 
       <Panel
-        title="Suggestions"
+        title="3. Review & accept"
         subtitle={`For ${SYSTEM_LABELS[targetSystem]}`}
       >
         {(suggestions.data ?? []).length === 0 ? (
