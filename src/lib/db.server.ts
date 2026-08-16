@@ -76,12 +76,3 @@ export async function withAdmin<T>(fn: (client: PoolClient) => Promise<T>): Prom
     client.release();
   }
 }
-
-/**
- * Run queries with full access, bypassing RLS — equivalent to Supabase's
- * service_role / supabaseAdmin. Only use for trusted server-side operations
- * (signup, session management, admin tooling), never based on user input.
- */
-export function withAdmin<T>(fn: (client: PoolClient) => Promise<T>): Promise<T> {
-  return withRole("app_admin", null, fn);
-}
