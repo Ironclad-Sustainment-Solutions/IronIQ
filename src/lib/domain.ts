@@ -22,8 +22,10 @@ export const ROLE_LABELS: Record<AppRole, string> = {
 };
 
 export type EntityStatus = "active" | "inactive" | "archived" | "prospect";
-export type AssessmentStatus = "draft" | "in_progress" | "review" | "finalized" | "reopened";
-export type FindingSeverity = "critical" | "high" | "medium" | "low" | "opportunity";
+export type AssessmentStatus =
+  "draft" | "in_progress" | "review" | "finalized" | "reopened";
+export type FindingSeverity =
+  "critical" | "high" | "medium" | "low" | "opportunity";
 export type FindingStatus =
   | "open"
   | "assigned"
@@ -40,12 +42,7 @@ export type EvidenceType =
   | "system_data";
 export type TemplateStatus = "draft" | "published" | "archived";
 export type ProjectStatus =
-  | "proposed"
-  | "planned"
-  | "in_progress"
-  | "on_hold"
-  | "complete"
-  | "cancelled";
+  "proposed" | "planned" | "in_progress" | "on_hold" | "complete" | "cancelled";
 
 export const SEVERITY_LABELS: Record<FindingSeverity, string> = {
   critical: "Critical",
@@ -90,13 +87,41 @@ export const PROJECT_STATUS_LABELS: Record<ProjectStatus, string> = {
 };
 
 /** Score anchor definitions — 0 through 5. */
-export const SCORE_ANCHORS: { value: number; label: string; description: string }[] = [
-  { value: 0, label: "Not present", description: "No process, control, or evidence exists." },
-  { value: 1, label: "Ad hoc", description: "Performed inconsistently and dependent on individuals." },
-  { value: 2, label: "Partially defined", description: "Partially documented; application is uneven." },
-  { value: 3, label: "Defined and generally followed", description: "Documented and followed in normal conditions." },
-  { value: 4, label: "Measured and controlled", description: "Performance is measured and deviations are acted on." },
-  { value: 5, label: "Optimized and continuously improved", description: "Data-driven, stable, and continuously improved." },
+export const SCORE_ANCHORS: {
+  value: number;
+  label: string;
+  description: string;
+}[] = [
+  {
+    value: 0,
+    label: "Not present",
+    description: "No process, control, or evidence exists.",
+  },
+  {
+    value: 1,
+    label: "Ad hoc",
+    description: "Performed inconsistently and dependent on individuals.",
+  },
+  {
+    value: 2,
+    label: "Partially defined",
+    description: "Partially documented; application is uneven.",
+  },
+  {
+    value: 3,
+    label: "Defined and generally followed",
+    description: "Documented and followed in normal conditions.",
+  },
+  {
+    value: 4,
+    label: "Measured and controlled",
+    description: "Performance is measured and deviations are acted on.",
+  },
+  {
+    value: 5,
+    label: "Optimized and continuously improved",
+    description: "Data-driven, stable, and continuously improved.",
+  },
 ];
 
 /** Evidence strength values used by the Confidence Score. */
@@ -125,6 +150,7 @@ export interface Profile {
   job_title: string | null;
   phone: string | null;
   status: EntityStatus;
+  approved: boolean;
 }
 
 export interface Organization {
@@ -186,7 +212,6 @@ export interface AssessmentQuestion {
   default_severity: FindingSeverity;
   archived: boolean;
 }
-
 
 export interface AssessmentResponse {
   id: string;
@@ -325,4 +350,3 @@ export interface AssessmentTemplateVersion {
   created_at: string;
   updated_at: string;
 }
-
