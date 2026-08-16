@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
-import { Hexagon } from "lucide-react";
+import { IronIQMark } from "@/components/ironiq/ironiq-mark";
 import { getCurrentUser } from "@/lib/auth/auth.functions";
 
 export const Route = createFileRoute("/")({
@@ -13,7 +13,10 @@ export const Route = createFileRoute("/")({
         content:
           "IronIQ by Ironclad Sustainment Solutions assesses, scores and improves a manufacturing facility's readiness to produce repeatable, compliant, high-quality product at scale.",
       },
-      { property: "og:title", content: "IronIQ — Manufacturing Readiness Intelligence" },
+      {
+        property: "og:title",
+        content: "IronIQ — Manufacturing Readiness Intelligence",
+      },
       {
         property: "og:description",
         content:
@@ -38,7 +41,7 @@ function IndexRedirect() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background">
       <div className="flex flex-col items-center gap-4">
-        <Hexagon className="size-10 animate-pulse fill-primary/20 text-primary" aria-hidden />
+        <IronIQMark className="size-10 animate-pulse" />
         <h1 className="font-display text-2xl font-bold uppercase tracking-[0.2em]">
           Iron<span className="text-primary">IQ</span>
         </h1>

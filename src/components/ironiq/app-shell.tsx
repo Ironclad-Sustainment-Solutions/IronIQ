@@ -14,7 +14,6 @@ import {
   LogOut,
   PanelLeftClose,
   PanelLeft,
-  Hexagon,
   Calculator,
   Cpu,
   Wrench,
@@ -24,6 +23,7 @@ import {
   UploadCloud,
 } from "lucide-react";
 import { useState, type ReactNode } from "react";
+import { IronIQMark } from "@/components/ironiq/ironiq-mark";
 import { logout } from "@/lib/auth/auth.functions";
 import { useQueryClient } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
@@ -121,10 +121,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         )}
       >
         <div className="flex h-16 items-center gap-2.5 border-b border-sidebar-border px-4">
-          <Hexagon
-            className="size-6 shrink-0 fill-primary/20 text-primary"
-            aria-hidden
-          />
+          <IronIQMark className="size-6 shrink-0" />
           {!collapsed && (
             <div className="min-w-0">
               <p className="font-display text-lg font-bold uppercase leading-none tracking-[0.18em] text-sidebar-foreground">
@@ -234,10 +231,7 @@ function MobileNav() {
         className="w-72 border-sidebar-border bg-sidebar p-0"
       >
         <SheetHeader className="flex h-16 flex-row items-center gap-2.5 border-b border-sidebar-border px-4">
-          <Hexagon
-            className="size-6 shrink-0 fill-primary/20 text-primary"
-            aria-hidden
-          />
+          <IronIQMark className="size-6 shrink-0" />
           <SheetTitle className="font-display text-lg font-bold uppercase tracking-[0.18em] text-sidebar-foreground">
             Iron<span className="text-primary">IQ</span>
           </SheetTitle>
@@ -283,7 +277,7 @@ function TopBar() {
     <header className="no-print sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-border bg-surface/95 px-4 backdrop-blur md:px-8">
       <MobileNav />
       <Link to="/dashboard" className="mr-1 flex items-center gap-2 md:hidden">
-        <Hexagon className="size-5 fill-primary/20 text-primary" aria-hidden />
+        <IronIQMark className="size-5" />
         <span className="font-display text-base font-bold uppercase tracking-widest">
           Iron<span className="text-primary">IQ</span>
         </span>
