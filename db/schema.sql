@@ -13,7 +13,7 @@ BEGIN
     CREATE ROLE app_user NOLOGIN;
   END IF;
   IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'app_admin') THEN
-    CREATE ROLE app_admin NOLOGIN BYPASSRLS;
+    CREATE ROLE app_admin NOLOGIN;
   END IF;
   IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'app_anon') THEN
     CREATE ROLE app_anon NOLOGIN;
