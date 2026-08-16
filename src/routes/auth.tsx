@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Hexagon, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
+import { IronIQMark } from "@/components/ironiq/ironiq-mark";
 import { signup, login, getCurrentUser } from "@/lib/auth/auth.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -71,10 +72,7 @@ function AuthPage() {
     <div className="grid min-h-screen lg:grid-cols-[1.1fr_1fr]">
       <div className="relative hidden flex-col justify-between border-r border-border bg-sidebar p-12 lg:flex">
         <div className="flex items-center gap-3">
-          <Hexagon
-            className="size-8 fill-primary/20 text-primary"
-            aria-hidden
-          />
+          <IronIQMark className="size-8" />
           <div>
             <p className="font-display text-2xl font-bold uppercase leading-none tracking-[0.2em]">
               Iron<span className="text-primary">IQ</span>
@@ -122,10 +120,7 @@ function AuthPage() {
       <div className="flex items-center justify-center p-6 md:p-12">
         <div className="w-full max-w-sm">
           <div className="mb-8 flex items-center gap-3 lg:hidden">
-            <Hexagon
-              className="size-7 fill-primary/20 text-primary"
-              aria-hidden
-            />
+            <IronIQMark className="size-7" />
             <p className="font-display text-xl font-bold uppercase tracking-[0.2em]">
               Iron<span className="text-primary">IQ</span>
             </p>
