@@ -10,6 +10,15 @@ import { createServerFn } from "@tanstack/react-start";
 import { generateText, Output } from "ai";
 import { z } from "zod";
 import { createAnthropicProvider } from "./ai-gateway.server";
+import { requireAuth } from "@/lib/auth/auth-middleware";
+import { ALLOWED_FIELD_PATHS } from "@/lib/intake-mapping";
+import {
+  BULK_INTAKE_EXTENSION,
+  IntakeSourceSchema,
+  RawSuggestionSchema,
+  insertValidatedSuggestions,
+  buildSourceContext,
+} from "@/lib/intake-ai.functions";
 
 const MODEL = process.env["AI_MODEL"] ?? "claude-sonnet-5";
 
@@ -21,6 +30,13 @@ Field Capability Assessment based on a short facility walkthrough. Rules you mus
 - Preserve the assessor's evidence classifications (Observed, Reported, Inferred, Requires Validation).
 - Never claim the walkthrough constitutes a complete capability assessment.
 - Output is a draft for assessor review, never a decision.`;
+
+// Exported so intake-ai.functions.ts (Bulk Intake) can extend this exact
+// string rather than duplicating it — the two extra rules for document-
+// derived suggestions (cite sources, never propose Ironclad's own
+// methodology) live there, not here, so this file's own AI helpers are
+// unaffected.
+export { GUARDRAILS };
 
 function gateway() {
   const key = process.env["ANTHROPIC_API_KEY"];
@@ -75,7 +91,12 @@ export const cleanFieldNote = createServerFn({ method: "POST" })
           suggested_domain: z.string(),
           suggested_category: z.string(),
           suggested_gap_statement: z.string(),
-          evidence_class: z.enum(["Observed", "Reported", "Inferred", "Requires Validation"]),
+          evidence_class: z.enum([
+            "Observed",
+            "Reported",
+            "Inferred",
+            "Requires Validation",
+          ]),
           questions_for_full_assessment: z.array(z.string()),
         }),
       }),
@@ -114,7 +135,6 @@ ${data.finding}`,
 
 const BridgeInput = z.object({ gap: z.string().min(1).max(6000) });
 
-
 export const draftIroncladBridge = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => BridgeInput.parse(input))
   .handler(async ({ data }) => {
@@ -136,4 +156,53 @@ result qualitative — never promise a percentage or dollar figure.
 ${data.gap}`,
     });
     return await result.output;
+  });
+
+// ---------------------------------------------------------------------
+// Bulk Intake: map uploaded-document summaries onto Field Assessment
+// fields. Extends this file's own GUARDRAILS with the two Bulk-Intake-
+// specific rules (cite sources, never draft ironclad_action/response —
+// see BULK_INTAKE_EXTENSION) rather than writing a fourth guardrail
+// variant. field_gaps.ironclad_action and field_constraints.ironclad_response
+// are excluded both by the allowlist in intake-mapping.ts and, as a final
+// backstop, by the database CHECK constraint itself.
+// ---------------------------------------------------------------------
+
+const MapFieldInput = z.object({
+  organizationId: z.string().uuid(),
+  facilityId: z.string().uuid(),
+  fieldAssessmentId: z.string().uuid().nullable().optional(),
+  sources: z.array(IntakeSourceSchema).min(1),
+});
+
+export const mapIntakeToFieldAssessment = createServerFn({ method: "POST" })
+  .middleware([requireAuth])
+  .inputValidator((input: unknown) => MapFieldInput.parse(input))
+  .handler(async ({ data, context }) => {
+    const result = await generateText({
+      model: gateway()(MODEL),
+      system: GUARDRAILS + BULK_INTAKE_EXTENSION,
+      output: Output.object({
+        schema: z.object({ suggestions: z.array(RawSuggestionSchema) }),
+      }),
+      prompt: `Propose Field Assessment field values from the uploaded-document summaries below.
+Only use target_field_path values from this exact list: ${ALLOWED_FIELD_PATHS.field_assessment.join(", ")}.
+Every suggestion must cite the document ID(s) (in square brackets in the source headers below)
+it came from in source_document_ids. Do not draft field_gaps.ironclad_action,
+field_constraints.ironclad_response, or anything describing what Ironclad would do about a
+gap — that is the assessor's own analysis, never yours.
+
+${buildSourceContext(data.sources)}`,
+    });
+
+    const output = await result.output;
+    return insertValidatedSuggestions({
+      userId: context.userId,
+      organizationId: data.organizationId,
+      facilityId: data.facilityId,
+      system: "field_assessment",
+      targetAssessmentId: data.fieldAssessmentId ?? null,
+      sources: data.sources,
+      rawSuggestions: output.suggestions,
+    });
   });
