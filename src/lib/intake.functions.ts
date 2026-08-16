@@ -101,7 +101,8 @@ export const listIntakeDocuments = createServerFn({ method: "GET" })
   .handler(async ({ data, context }) =>
     withUser(context.userId, async (client) => {
       const { rows } = await client.query(
-        `SELECT id, original_filename, mime_type, byte_size, category, status, failure_reason, created_at
+        `SELECT id, original_filename, mime_type, byte_size, category, status, failure_reason,
+                storage_path, created_at
            FROM public.intake_documents
           WHERE facility_id = $1
           ORDER BY created_at DESC`,
@@ -275,8 +276,65 @@ export const parseIntakeDocument = createServerFn({ method: "POST" })
   });
 
 // ---------------------------------------------------------------------
-// Delete
+// Suggestion review — list and accept/edit/reject. Applying an accepted
+// suggestion's value into its real downstream table (assessment_responses,
+// cap_problems, field_gaps, etc.) is intentionally NOT done here — that's
+// a separate, per-system write path with its own upsert semantics, not
+// yet built. Accepting here only marks intake_field_suggestions.status;
+// see the Phase 4 PR description for why that line was drawn here.
 // ---------------------------------------------------------------------
+
+const ListSuggestionsInput = z.object({
+  facilityId: z.string().uuid(),
+  targetSystem: z
+    .enum(["template_assessment", "cap_assessment", "field_assessment"])
+    .optional(),
+});
+
+export const listIntakeSuggestions = createServerFn({ method: "GET" })
+  .middleware([requireAuth])
+  .inputValidator((d: unknown) => ListSuggestionsInput.parse(d))
+  .handler(async ({ data, context }) =>
+    withUser(context.userId, async (client) => {
+      const { rows } = await client.query(
+        `SELECT id, target_system, template_assessment_id, cap_assessment_id, field_assessment_id,
+                target_field_path, suggested_value, confidence, source_document_ids, status, created_at
+           FROM public.intake_field_suggestions
+          WHERE facility_id = $1
+            AND ($2::public.intake_target_system IS NULL OR target_system = $2)
+          ORDER BY created_at DESC`,
+        [data.facilityId, data.targetSystem ?? null],
+      );
+      return rows;
+    }),
+  );
+
+const UpdateSuggestionStatusInput = z.object({
+  id: z.string().uuid(),
+  status: z.enum(["accepted", "edited", "rejected"]),
+  editedValue: z.string().optional(),
+});
+
+export const updateIntakeSuggestionStatus = createServerFn({ method: "POST" })
+  .middleware([requireAuth])
+  .inputValidator((d: unknown) => UpdateSuggestionStatusInput.parse(d))
+  .handler(async ({ data, context }) =>
+    withUser(context.userId, async (client) => {
+      if (data.status === "edited" && data.editedValue !== undefined) {
+        await client.query(
+          `UPDATE public.intake_field_suggestions
+              SET status = $2, suggested_value = $3, reviewed_by = $4
+            WHERE id = $1`,
+          [data.id, data.status, data.editedValue, context.userId],
+        );
+      } else {
+        await client.query(
+          `UPDATE public.intake_field_suggestions SET status = $2, reviewed_by = $3 WHERE id = $1`,
+          [data.id, data.status, context.userId],
+        );
+      }
+    }),
+  );
 
 const DeleteIntakeDocumentInput = z.object({
   id: z.string().uuid(),

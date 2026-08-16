@@ -17,6 +17,7 @@ import { Route as AuthenticatedDashboardRouteImport } from './routes/_authentica
 import { Route as AuthenticatedEstimatesRouteImport } from './routes/_authenticated/estimates'
 import { Route as AuthenticatedFacilitiesRouteImport } from './routes/_authenticated/facilities'
 import { Route as AuthenticatedFindingsRouteImport } from './routes/_authenticated/findings'
+import { Route as AuthenticatedIntakeRouteImport } from './routes/_authenticated/intake'
 import { Route as AuthenticatedOrganizationsRouteImport } from './routes/_authenticated/organizations'
 import { Route as AuthenticatedProductionRouteImport } from './routes/_authenticated/production'
 import { Route as AuthenticatedProjectsRouteImport } from './routes/_authenticated/projects'
@@ -72,6 +73,11 @@ const AuthenticatedFacilitiesRoute = AuthenticatedFacilitiesRouteImport.update({
 const AuthenticatedFindingsRoute = AuthenticatedFindingsRouteImport.update({
   id: '/findings',
   path: '/findings',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedIntakeRoute = AuthenticatedIntakeRouteImport.update({
+  id: '/intake',
+  path: '/intake',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedOrganizationsRoute =
@@ -174,6 +180,7 @@ export interface FileRoutesByFullPath {
   '/estimates': typeof AuthenticatedEstimatesRoute
   '/facilities': typeof AuthenticatedFacilitiesRoute
   '/findings': typeof AuthenticatedFindingsRoute
+  '/intake': typeof AuthenticatedIntakeRoute
   '/organizations': typeof AuthenticatedOrganizationsRoute
   '/production': typeof AuthenticatedProductionRouteWithChildren
   '/projects': typeof AuthenticatedProjectsRoute
@@ -199,6 +206,7 @@ export interface FileRoutesByTo {
   '/estimates': typeof AuthenticatedEstimatesRoute
   '/facilities': typeof AuthenticatedFacilitiesRoute
   '/findings': typeof AuthenticatedFindingsRoute
+  '/intake': typeof AuthenticatedIntakeRoute
   '/organizations': typeof AuthenticatedOrganizationsRoute
   '/projects': typeof AuthenticatedProjectsRoute
   '/reports': typeof AuthenticatedReportsRoute
@@ -225,6 +233,7 @@ export interface FileRoutesById {
   '/_authenticated/estimates': typeof AuthenticatedEstimatesRoute
   '/_authenticated/facilities': typeof AuthenticatedFacilitiesRoute
   '/_authenticated/findings': typeof AuthenticatedFindingsRoute
+  '/_authenticated/intake': typeof AuthenticatedIntakeRoute
   '/_authenticated/organizations': typeof AuthenticatedOrganizationsRoute
   '/_authenticated/production': typeof AuthenticatedProductionRouteWithChildren
   '/_authenticated/projects': typeof AuthenticatedProjectsRoute
@@ -252,6 +261,7 @@ export interface FileRouteTypes {
     | '/estimates'
     | '/facilities'
     | '/findings'
+    | '/intake'
     | '/organizations'
     | '/production'
     | '/projects'
@@ -277,6 +287,7 @@ export interface FileRouteTypes {
     | '/estimates'
     | '/facilities'
     | '/findings'
+    | '/intake'
     | '/organizations'
     | '/projects'
     | '/reports'
@@ -302,6 +313,7 @@ export interface FileRouteTypes {
     | '/_authenticated/estimates'
     | '/_authenticated/facilities'
     | '/_authenticated/findings'
+    | '/_authenticated/intake'
     | '/_authenticated/organizations'
     | '/_authenticated/production'
     | '/_authenticated/projects'
@@ -382,6 +394,13 @@ declare module '@tanstack/react-router' {
       path: '/findings'
       fullPath: '/findings'
       preLoaderRoute: typeof AuthenticatedFindingsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/intake': {
+      id: '/_authenticated/intake'
+      path: '/intake'
+      fullPath: '/intake'
+      preLoaderRoute: typeof AuthenticatedIntakeRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/organizations': {
@@ -527,6 +546,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedEstimatesRoute: typeof AuthenticatedEstimatesRoute
   AuthenticatedFacilitiesRoute: typeof AuthenticatedFacilitiesRoute
   AuthenticatedFindingsRoute: typeof AuthenticatedFindingsRoute
+  AuthenticatedIntakeRoute: typeof AuthenticatedIntakeRoute
   AuthenticatedOrganizationsRoute: typeof AuthenticatedOrganizationsRoute
   AuthenticatedProductionRoute: typeof AuthenticatedProductionRouteWithChildren
   AuthenticatedProjectsRoute: typeof AuthenticatedProjectsRoute
@@ -547,6 +567,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedEstimatesRoute: AuthenticatedEstimatesRoute,
   AuthenticatedFacilitiesRoute: AuthenticatedFacilitiesRoute,
   AuthenticatedFindingsRoute: AuthenticatedFindingsRoute,
+  AuthenticatedIntakeRoute: AuthenticatedIntakeRoute,
   AuthenticatedOrganizationsRoute: AuthenticatedOrganizationsRoute,
   AuthenticatedProductionRoute: AuthenticatedProductionRouteWithChildren,
   AuthenticatedProjectsRoute: AuthenticatedProjectsRoute,
