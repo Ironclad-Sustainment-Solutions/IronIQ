@@ -1,6 +1,11 @@
 // Replaces Supabase Storage. Works with any S3-compatible bucket (Cloudflare
 // R2, AWS S3, MinIO, Render Disk via a sidecar, etc.) — configure via env vars.
-import { S3Client, PutObjectCommand, DeleteObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
+import {
+  S3Client,
+  PutObjectCommand,
+  DeleteObjectCommand,
+  GetObjectCommand,
+} from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 
 function getClient(): S3Client {
@@ -65,7 +70,36 @@ export async function getSignedDownloadUrl(
   return getSignedUrl(getClient(), command, { expiresIn: expiresInSeconds });
 }
 
-export async function deleteObject(logicalBucket: string, path: string): Promise<void> {
+export async function deleteObject(
+  logicalBucket: string,
+  path: string,
+): Promise<void> {
   const key = `${logicalBucket}/${path}`;
-  await getClient().send(new DeleteObjectCommand({ Bucket: bucketName(), Key: key }));
+  await getClient().send(
+    new DeleteObjectCommand({ Bucket: bucketName(), Key: key }),
+  );
+}
+
+/**
+ * Read an object's bytes back out of storage. Added for Bulk Intake document
+ * parsing — nothing before this needed to read a file's content server-side,
+ * only upload it or hand back a signed URL for the browser to fetch directly.
+ */
+export async function getObjectBuffer(
+  logicalBucket: string,
+  path: string,
+): Promise<Buffer> {
+  const key = `${logicalBucket}/${path}`;
+  const response = await getClient().send(
+    new GetObjectCommand({ Bucket: bucketName(), Key: key }),
+  );
+  const body = response.Body;
+  if (!body) throw new Error(`Empty object body for ${key}`);
+  const chunks: Buffer[] = [];
+  // AWS SDK v3's Body is a web/node ReadableStream depending on runtime;
+  // both expose an async iterator of Uint8Array chunks.
+  for await (const chunk of body as unknown as AsyncIterable<Uint8Array>) {
+    chunks.push(Buffer.from(chunk));
+  }
+  return Buffer.concat(chunks);
 }
