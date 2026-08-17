@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedAdministrationRouteImport } from './routes/_authenticated/administration'
+import { Route as AuthenticatedCadRouteImport } from './routes/_authenticated/cad'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedEstimatesRouteImport } from './routes/_authenticated/estimates'
 import { Route as AuthenticatedFacilitiesRouteImport } from './routes/_authenticated/facilities'
@@ -55,6 +56,11 @@ const AuthenticatedAdministrationRoute =
     path: '/administration',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedCadRoute = AuthenticatedCadRouteImport.update({
+  id: '/cad',
+  path: '/cad',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
@@ -176,6 +182,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/administration': typeof AuthenticatedAdministrationRoute
+  '/cad': typeof AuthenticatedCadRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/estimates': typeof AuthenticatedEstimatesRoute
   '/facilities': typeof AuthenticatedFacilitiesRoute
@@ -202,6 +209,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/administration': typeof AuthenticatedAdministrationRoute
+  '/cad': typeof AuthenticatedCadRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/estimates': typeof AuthenticatedEstimatesRoute
   '/facilities': typeof AuthenticatedFacilitiesRoute
@@ -229,6 +237,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/_authenticated/administration': typeof AuthenticatedAdministrationRoute
+  '/_authenticated/cad': typeof AuthenticatedCadRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/estimates': typeof AuthenticatedEstimatesRoute
   '/_authenticated/facilities': typeof AuthenticatedFacilitiesRoute
@@ -257,6 +266,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/administration'
+    | '/cad'
     | '/dashboard'
     | '/estimates'
     | '/facilities'
@@ -283,6 +293,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/administration'
+    | '/cad'
     | '/dashboard'
     | '/estimates'
     | '/facilities'
@@ -309,6 +320,7 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/auth'
     | '/_authenticated/administration'
+    | '/_authenticated/cad'
     | '/_authenticated/dashboard'
     | '/_authenticated/estimates'
     | '/_authenticated/facilities'
@@ -366,6 +378,13 @@ declare module '@tanstack/react-router' {
       path: '/administration'
       fullPath: '/administration'
       preLoaderRoute: typeof AuthenticatedAdministrationRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/cad': {
+      id: '/_authenticated/cad'
+      path: '/cad'
+      fullPath: '/cad'
+      preLoaderRoute: typeof AuthenticatedCadRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/dashboard': {
@@ -542,6 +561,7 @@ const AuthenticatedProductionRouteWithChildren =
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdministrationRoute: typeof AuthenticatedAdministrationRoute
+  AuthenticatedCadRoute: typeof AuthenticatedCadRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedEstimatesRoute: typeof AuthenticatedEstimatesRoute
   AuthenticatedFacilitiesRoute: typeof AuthenticatedFacilitiesRoute
@@ -563,6 +583,7 @@ interface AuthenticatedRouteRouteChildren {
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdministrationRoute: AuthenticatedAdministrationRoute,
+  AuthenticatedCadRoute: AuthenticatedCadRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedEstimatesRoute: AuthenticatedEstimatesRoute,
   AuthenticatedFacilitiesRoute: AuthenticatedFacilitiesRoute,
