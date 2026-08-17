@@ -61,7 +61,12 @@ import {
 // to Setup or Administration.
 const PRODUCT_NAV: {
   section: string;
-  items: { to: string; label: string; icon: typeof LayoutDashboard }[];
+  items: {
+    to: string;
+    label: string;
+    icon: typeof LayoutDashboard;
+    heading?: string;
+  }[];
 }[] = [
   {
     // The only product with enough sub-pages to need a real accordion —
@@ -78,13 +83,28 @@ const PRODUCT_NAV: {
     // portfolio-wide, cross-product coverage it never actually had.
     section: "Assessment",
     items: [
-      { to: "/dashboard", label: "Readiness Dashboard", icon: LayoutDashboard },
+      {
+        to: "/dashboard",
+        label: "Readiness Dashboard",
+        icon: LayoutDashboard,
+        heading: "Overview",
+      },
       { to: "/assessment", label: "Assessment Hub", icon: Compass },
-      { to: "/intake", label: "Bulk Intake", icon: UploadCloud },
+      {
+        to: "/intake",
+        label: "Bulk Intake",
+        icon: UploadCloud,
+        heading: "Start an assessment",
+      },
       { to: "/assessments", label: "Assessments", icon: ClipboardCheck },
       { to: "/capability", label: "Capability Assessment", icon: Gauge },
       { to: "/field", label: "Field Assessment", icon: ClipboardList },
-      { to: "/findings", label: "Findings", icon: AlertTriangle },
+      {
+        to: "/findings",
+        label: "Findings",
+        icon: AlertTriangle,
+        heading: "Findings & follow-up",
+      },
       { to: "/projects", label: "Improvement Projects", icon: TrendingUp },
     ],
   },
@@ -113,7 +133,12 @@ const PRODUCT_NAV: {
 // the products" (Reporting) or "managing the app itself" (Administration).
 const SETUP_NAV: {
   section: string;
-  items: { to: string; label: string; icon: typeof LayoutDashboard }[];
+  items: {
+    to: string;
+    label: string;
+    icon: typeof LayoutDashboard;
+    heading?: string;
+  }[];
 }[] = [
   {
     section: "Setup",
@@ -148,7 +173,12 @@ const OTHER_NAV: {
 // section rather than competing visually with the real products above.
 const LATER_NAV: {
   section: string;
-  items: { to: string; label: string; icon: typeof LayoutDashboard }[];
+  items: {
+    to: string;
+    label: string;
+    icon: typeof LayoutDashboard;
+    heading?: string;
+  }[];
 }[] = [
   {
     section: "Coming Soon",
@@ -346,7 +376,16 @@ function NavSection({
 }: {
   group: {
     section: string;
-    items: { to: string; label: string; icon: typeof LayoutDashboard }[];
+    items: {
+      to: string;
+      label: string;
+      icon: typeof LayoutDashboard;
+      // Marks the start of a new logical sub-group within an expanded
+      // dropdown — real segmentation for a section like Assessment
+      // (8 items) rather than one undifferentiated flat list, without
+      // needing a whole separate nested-group data model.
+      heading?: string;
+    }[];
   };
   pathname: string;
   isExpanded: boolean;
@@ -415,21 +454,27 @@ function NavSection({
           {group.items.map((item) => {
             const active = isItemActive(pathname, item.to);
             return (
-              <Link
-                key={item.to}
-                to={item.to}
-                title={item.label}
-                onClick={onNavigate}
-                className={cn(
-                  "flex items-center gap-3 rounded-sm px-3 py-2 text-sm transition-colors",
-                  active
-                    ? "bg-sidebar-accent font-medium text-sidebar-accent-foreground shadow-[inset_3px_0_0_0_var(--sidebar-primary)]"
-                    : "text-sidebar-foreground/70 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground",
-                )}
-              >
-                <item.icon className="size-4 shrink-0" aria-hidden />
-                <span className="truncate">{item.label}</span>
-              </Link>
+              <div key={item.to}>
+                {item.heading ? (
+                  <p className="mb-0.5 mt-2 truncate px-3 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60 first:mt-0.5">
+                    {item.heading}
+                  </p>
+                ) : null}
+                <Link
+                  to={item.to}
+                  title={item.label}
+                  onClick={onNavigate}
+                  className={cn(
+                    "flex items-center gap-3 rounded-sm px-3 py-2 text-sm transition-colors",
+                    active
+                      ? "bg-sidebar-accent font-medium text-sidebar-accent-foreground shadow-[inset_3px_0_0_0_var(--sidebar-primary)]"
+                      : "text-sidebar-foreground/70 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground",
+                  )}
+                >
+                  <item.icon className="size-4 shrink-0" aria-hidden />
+                  <span className="truncate">{item.label}</span>
+                </Link>
+              </div>
             );
           })}
         </div>
