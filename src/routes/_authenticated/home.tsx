@@ -38,7 +38,7 @@ const PRODUCTS = [
   {
     to: "/assessment",
     icon: Compass,
-    label: "Assessment",
+    label: "Assessments",
     description:
       "Evaluate a machine shop's manufacturing readiness — find capability gaps, document findings backed by evidence, and track corrective work to closure.",
   },

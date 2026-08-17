@@ -57,7 +57,7 @@ function AssessmentHubPage() {
   return (
     <div className="mx-auto max-w-4xl space-y-8">
       <PageHeader
-        eyebrow="Assessment"
+        eyebrow="Assessments"
         title="Assessment Hub"
         description="Evaluate a machine shop's manufacturing readiness — find capability gaps, document findings backed by evidence, and track corrective work to closure. Three steps, in order."
       />

@@ -37,7 +37,7 @@ export const Route = createFileRoute("/_authenticated/ask-ironiq")({
 });
 
 const PRODUCT_LABELS: Record<IntelligenceProductFilter, string> = {
-  assessment: "Assessment",
+  assessment: "Assessments",
   cad: "CAD Conversion",
   cnc: "CNC Coding",
 };
