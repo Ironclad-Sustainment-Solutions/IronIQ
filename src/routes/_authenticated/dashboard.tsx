@@ -32,6 +32,7 @@ import { useFindings, useProjects, useReadinessHistory } from "@/lib/api";
 import { SEVERITY_ORDER, type FindingSeverity } from "@/lib/domain";
 import { formatScore } from "@/lib/scoring";
 import { Button } from "@/components/ui/button";
+import { useFacilityTrendSummary } from "@/lib/facility-trend-api";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   head: () => ({
@@ -61,6 +62,7 @@ function Dashboard() {
   const findings = useFindings(facility?.id).data ?? [];
   const projects = useProjects(facility?.id).data ?? [];
   const history = useReadinessHistory(facility?.id).data ?? [];
+  const trendSummary = useFacilityTrendSummary();
   const { questions, responses } = useAssessmentResult(assessment);
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(
     null,
@@ -231,7 +233,28 @@ function Dashboard() {
               subtitle="Score progression across assessment cycles"
             >
               {trendData.length > 1 ? (
-                <TrendLine data={trendData} />
+                <div className="space-y-3">
+                  <TrendLine data={trendData} />
+                  <div className="border-t border-border pt-3">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={!facility || trendSummary.isPending}
+                      onClick={() =>
+                        facility && trendSummary.mutate(facility.id)
+                      }
+                    >
+                      {trendSummary.isPending
+                        ? "Summarizing…"
+                        : "Summarize what's changed since last visit"}
+                    </Button>
+                    {trendSummary.data ? (
+                      <p className="mt-3 text-sm text-muted-foreground">
+                        {trendSummary.data.summary}
+                      </p>
+                    ) : null}
+                  </div>
+                </div>
               ) : (
                 <EmptyState message="At least two assessment cycles are required to trend." />
               )}
