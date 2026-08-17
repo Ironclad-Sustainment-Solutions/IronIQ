@@ -114,10 +114,7 @@ const NAV: {
     // somewhere to live in the meantime, same as Bulk Intake got one
     // entry before the bigger reorg happened.
     section: "Intelligence",
-    items: [
-      { to: "/ask-ironiq", label: "Ask IronIQ", icon: Sparkles },
-      { to: "/executive-rollup", label: "Executive Rollup", icon: TrendingUp },
-    ],
+    items: [{ to: "/ask-ironiq", label: "Ask IronIQ", icon: Sparkles }],
   },
   {
     // A genuinely separate capability from the facility-assessment
@@ -129,6 +126,19 @@ const NAV: {
       { to: "/estimates", label: "Estimating", icon: Calculator },
       { to: "/production", label: "Production Flow", icon: Cpu },
       { to: "/production/libraries", label: "Machine & Tooling", icon: Wrench },
+    ],
+  },
+  {
+    // Home for features that are built but deliberately not activated
+    // yet — right now just Executive Rollup, held back because it
+    // answers a question about Ironclad's own internal RFQ/estimating
+    // performance rather than customer-facing value from the three
+    // product streams or the Intelligence Layer. Add future not-yet-
+    // prioritized features here rather than either hiding them entirely
+    // or shipping them live before they're actually the priority.
+    section: "Coming Soon",
+    items: [
+      { to: "/executive-rollup", label: "Executive Rollup", icon: TrendingUp },
     ],
   },
   {
