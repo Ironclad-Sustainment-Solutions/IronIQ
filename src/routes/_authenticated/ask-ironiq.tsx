@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
+import { Globe } from "lucide-react";
 import {
   PageHeader,
   Panel,
@@ -112,6 +113,23 @@ function AskIronIQPage() {
       {ask.data ? (
         <Panel title="Answer">
           <div className="space-y-4">
+            {ask.data.usedExternalKnowledge ? (
+              <div className="flex items-start gap-2 rounded-md border border-primary/40 bg-primary/10 p-3">
+                <Globe
+                  className="mt-0.5 size-4 shrink-0 text-primary"
+                  aria-hidden
+                />
+                <p className="text-xs text-foreground">
+                  <span className="font-semibold uppercase tracking-wide text-primary">
+                    Using external knowledge —{" "}
+                  </span>
+                  no matching precedent was found in IronIQ's own reviewed
+                  engagement history. This answer comes from Claude's general
+                  knowledge instead, not from anything this app's clients have
+                  actually done.
+                </p>
+              </div>
+            ) : null}
             <p className="whitespace-pre-wrap text-sm text-foreground">
               {ask.data.answer}
             </p>
