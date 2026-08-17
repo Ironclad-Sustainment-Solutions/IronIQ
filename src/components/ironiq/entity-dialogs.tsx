@@ -49,6 +49,9 @@ import {
   type FacilityInput,
   type OrganizationInput,
 } from "@/lib/mutations";
+import { useFindings } from "@/lib/api";
+import { useDraftFromPrecedent } from "@/lib/precedent-draft-api";
+import { toast } from "sonner";
 
 function Field({ label, children }: { label: string; children: ReactNode }) {
   const id = useId();
@@ -550,6 +553,11 @@ export function CorrectiveActionDialog({
 }) {
   const [open, setOpen] = useState(false);
   const save = useSaveCorrectiveAction();
+  const draftAI = useDraftFromPrecedent();
+  // Reused rather than a new fetch — useFindings(facilityId) is already
+  // called by the page this dialog opens from (findings.tsx), so this is
+  // almost always served from cache, not a fresh round trip.
+  const finding = useFindings(facilityId).data?.find((f) => f.id === findingId);
   const [form, setForm] = useState({
     action_description: action?.action_description ?? "",
     owner: action?.owner ?? "",
@@ -598,6 +606,48 @@ export function CorrectiveActionDialog({
                 }
               />
             </Field>
+            <div className="mt-1.5 flex items-center gap-2">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                disabled={!finding?.description || draftAI.isPending}
+                onClick={() =>
+                  finding?.description &&
+                  draftAI.mutate(
+                    {
+                      problemDescription: finding.description,
+                      fieldLabel: "corrective action",
+                    },
+                    {
+                      onSuccess: (result) => {
+                        if (result.draft) {
+                          setForm((f) => ({
+                            ...f,
+                            action_description: result.draft as string,
+                          }));
+                        } else {
+                          toast.info(
+                            "No closely-matching precedent found for this finding yet.",
+                          );
+                        }
+                      },
+                    },
+                  )
+                }
+              >
+                {draftAI.isPending
+                  ? "Checking precedent…"
+                  : "Draft from precedent"}
+              </Button>
+              {draftAI.data?.draft ? (
+                <span className="text-xs text-muted-foreground">
+                  AI-drafted from {draftAI.data.patterns.length} pattern
+                  {draftAI.data.patterns.length === 1 ? "" : "s"} — review
+                  before saving
+                </span>
+              ) : null}
+            </div>
           </div>
           <Field label="Owner">
             <Input
