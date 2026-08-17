@@ -27,6 +27,8 @@ import {
   type CncChangeCategory,
   type CncChangeLogRow,
 } from "@/lib/cnc-api";
+import { useDraftFromPrecedent } from "@/lib/precedent-draft-api";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/cnc")({
   head: () => ({
@@ -62,6 +64,7 @@ function CncChangeLogPage() {
   const { organization } = useApp();
   const entries = useCncChangeLog(organization?.id).data ?? [];
   const create = useCreateCncLogEntry(organization?.id);
+  const draftAI = useDraftFromPrecedent();
 
   const [machineName, setMachineName] = useState("");
   const [programIdentifier, setProgramIdentifier] = useState("");
@@ -159,6 +162,44 @@ function CncChangeLogPage() {
               value={reason}
               onChange={(e) => setReason(e.target.value)}
             />
+            <div className="mt-1.5 flex items-center gap-2">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                disabled={!reason.trim() || draftAI.isPending}
+                onClick={() =>
+                  draftAI.mutate(
+                    {
+                      problemDescription: reason,
+                      fieldLabel: "fix or machine/program change",
+                    },
+                    {
+                      onSuccess: (result) => {
+                        if (result.draft) {
+                          setChangeDescription(result.draft);
+                        } else {
+                          toast.info(
+                            "No closely-matching precedent found for this yet.",
+                          );
+                        }
+                      },
+                    },
+                  )
+                }
+              >
+                {draftAI.isPending
+                  ? "Checking precedent…"
+                  : "Draft what changed from precedent"}
+              </Button>
+              {draftAI.data?.draft ? (
+                <span className="text-xs text-muted-foreground">
+                  AI-drafted from {draftAI.data.patterns.length} pattern
+                  {draftAI.data.patterns.length === 1 ? "" : "s"} — review
+                  before saving
+                </span>
+              ) : null}
+            </div>
           </div>
         </div>
         <div className="mt-3">
