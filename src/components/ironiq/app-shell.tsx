@@ -33,6 +33,10 @@ import { logout } from "@/lib/auth/auth.functions";
 import { useQueryClient } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
 import { useApp } from "@/context/app-context";
+import {
+  useProductRestrictions,
+  type RestrictableProduct,
+} from "@/lib/product-access-api";
 import { ROLE_LABELS } from "@/lib/domain";
 import { useNotifications } from "@/lib/api";
 import {
@@ -201,6 +205,15 @@ const ALL_NAV_GROUPS = [
   ...LATER_NAV,
 ];
 
+// Maps a PRODUCT_NAV section name to the product-restriction enum value —
+// only Assessment/CAD/CNC are restrictable products; Intelligence sits on
+// top of them and isn't itself something an org gets restricted from.
+const SECTION_TO_PRODUCT: Record<string, RestrictableProduct> = {
+  Assessment: "assessment",
+  "CAD Conversion": "cad",
+  "CNC Coding": "cnc",
+};
+
 function isItemActive(pathname: string, to: string): boolean {
   return pathname === to || pathname.startsWith(`${to}/`);
 }
@@ -208,6 +221,11 @@ function isItemActive(pathname: string, to: string): boolean {
 export function AppShell({ children }: { children: ReactNode }) {
   const [collapsed, setCollapsed] = useState(false);
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const { organization } = useApp();
+  // Fetched once here, passed down to both NavLinks renders (desktop +
+  // mobile sheet) rather than duplicating the query in each.
+  const restrictedProducts =
+    useProductRestrictions(organization?.id).data ?? [];
 
   return (
     <div className="flex min-h-screen w-full bg-background">
@@ -232,7 +250,11 @@ export function AppShell({ children }: { children: ReactNode }) {
         </div>
 
         <nav className="flex-1 space-y-0.5 overflow-y-auto p-2">
-          <NavLinks collapsed={collapsed} pathname={pathname} />
+          <NavLinks
+            collapsed={collapsed}
+            pathname={pathname}
+            restrictedProducts={restrictedProducts}
+          />
         </nav>
 
         <div className="border-t border-sidebar-border p-2">
@@ -263,19 +285,37 @@ function NavLinks({
   collapsed,
   pathname,
   onNavigate,
+  restrictedProducts = [],
 }: {
   collapsed?: boolean;
   pathname: string;
   onNavigate?: () => void;
+  restrictedProducts?: RestrictableProduct[];
 }) {
+  const isSectionVisible = (section: string) => {
+    const product = SECTION_TO_PRODUCT[section];
+    return !product || !restrictedProducts.includes(product);
+  };
+  const visibleProductNav = PRODUCT_NAV.filter((g) =>
+    isSectionVisible(g.section),
+  );
+  const visibleAllGroups = [
+    ...visibleProductNav,
+    ...SETUP_NAV,
+    ...OTHER_NAV,
+    ...LATER_NAV,
+  ];
+
   // Computed unconditionally, before any early return — hooks must run in
   // the same order every render, and collapsed genuinely toggles at
   // runtime via the sidebar's own collapse button, so this can't live
   // inside the icon-only branch below.
   const activeSection =
-    ALL_NAV_GROUPS.find((g) =>
+    visibleAllGroups.find((g) =>
       g.items.some((item) => isItemActive(pathname, item.to)),
-    )?.section ?? PRODUCT_NAV[0].section;
+    )?.section ??
+    visibleProductNav[0]?.section ??
+    SETUP_NAV[0].section;
   const [expanded, setExpanded] = useState(activeSection);
   const toggle = (section: string) =>
     setExpanded((current) => (current === section ? "" : section));
@@ -287,7 +327,7 @@ function NavLinks({
   if (collapsed) {
     return (
       <>
-        {[HOME_ITEM, ...ALL_NAV_GROUPS.flatMap((g) => g.items)].map((item) => {
+        {[HOME_ITEM, ...visibleAllGroups.flatMap((g) => g.items)].map((item) => {
           const active = isItemActive(pathname, item.to);
           return (
             <Link
@@ -331,7 +371,7 @@ function NavLinks({
       <p className="mb-1.5 px-3 text-[10px] font-semibold uppercase tracking-widest text-primary/80">
         Products
       </p>
-      {PRODUCT_NAV.map((group) => (
+      {visibleProductNav.map((group) => (
         <NavSection
           key={group.section}
           group={group}
@@ -505,6 +545,9 @@ function NavSection({
 function MobileNav() {
   const [open, setOpen] = useState(false);
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const { organization } = useApp();
+  const restrictedProducts =
+    useProductRestrictions(organization?.id).data ?? [];
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
@@ -525,7 +568,11 @@ function MobileNav() {
           </SheetTitle>
         </SheetHeader>
         <nav className="space-y-0.5 overflow-y-auto p-2">
-          <NavLinks pathname={pathname} onNavigate={() => setOpen(false)} />
+          <NavLinks
+            pathname={pathname}
+            onNavigate={() => setOpen(false)}
+            restrictedProducts={restrictedProducts}
+          />
         </nav>
       </SheetContent>
     </Sheet>
