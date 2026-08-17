@@ -23,6 +23,7 @@ import {
   UploadCloud,
   FileImage,
   Sparkles,
+  Code2,
 } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { IronIQMark } from "@/components/ironiq/ironiq-mark";
@@ -89,6 +90,11 @@ const NAV: {
     // restructuring into distinct product streams is Phase H, still later.
     section: "CAD Conversion",
     items: [{ to: "/cad", label: "CAD Conversion", icon: FileImage }],
+  },
+  {
+    // Same single-entry pattern as CAD/Bulk Intake/Ask IronIQ before it.
+    section: "CNC Coding Enhancement",
+    items: [{ to: "/cnc", label: "CNC Coding Enhancement", icon: Code2 }],
   },
   {
     section: "Findings & Improvement",
