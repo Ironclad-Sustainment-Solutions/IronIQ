@@ -68,6 +68,7 @@ const HOME_ITEM = { to: "/home", label: "Home", icon: Home };
 
 const PRODUCT_NAV: {
   section: string;
+  groupIcon?: typeof LayoutDashboard;
   items: {
     to: string;
     label: string;
@@ -88,7 +89,8 @@ const PRODUCT_NAV: {
     // appears anywhere in it. Renamed from "Executive Dashboard" to
     // "Readiness Dashboard" for the same reason — the old name implied
     // portfolio-wide, cross-product coverage it never actually had.
-    section: "Assessment",
+    section: "Assessments",
+    groupIcon: Compass,
     items: [
       {
         to: "/dashboard",
@@ -140,6 +142,7 @@ const PRODUCT_NAV: {
 // the products" (Reporting) or "managing the app itself" (Administration).
 const SETUP_NAV: {
   section: string;
+  groupIcon?: typeof LayoutDashboard;
   items: {
     to: string;
     label: string;
@@ -160,6 +163,7 @@ const SETUP_NAV: {
 // Ordered per direct feedback: Administration before Reporting.
 const OTHER_NAV: {
   section: string;
+  groupIcon?: typeof LayoutDashboard;
   items: { to: string; label: string; icon: typeof LayoutDashboard }[];
 }[] = [
   {
@@ -180,6 +184,7 @@ const OTHER_NAV: {
 // section rather than competing visually with the real products above.
 const LATER_NAV: {
   section: string;
+  groupIcon?: typeof LayoutDashboard;
   items: {
     to: string;
     label: string;
@@ -209,7 +214,7 @@ const ALL_NAV_GROUPS = [
 // only Assessment/CAD/CNC are restrictable products; Intelligence sits on
 // top of them and isn't itself something an org gets restricted from.
 const SECTION_TO_PRODUCT: Record<string, RestrictableProduct> = {
-  Assessment: "assessment",
+  Assessments: "assessment",
   "CAD Conversion": "cad",
   "CNC Coding": "cnc",
 };
@@ -439,6 +444,7 @@ function NavSection({
 }: {
   group: {
     section: string;
+    groupIcon?: typeof LayoutDashboard;
     items: {
       to: string;
       label: string;
@@ -503,7 +509,12 @@ function NavSection({
             : "text-sidebar-foreground/70 hover:text-sidebar-foreground",
         )}
       >
-        <span className="truncate">{group.section}</span>
+        <span className="flex min-w-0 items-center gap-2">
+          {group.groupIcon ? (
+            <group.groupIcon className="size-4 shrink-0" aria-hidden />
+          ) : null}
+          <span className="truncate">{group.section}</span>
+        </span>
         <ChevronDown
           className={cn(
             "size-3.5 shrink-0 transition-transform",

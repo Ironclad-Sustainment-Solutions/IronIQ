@@ -125,7 +125,7 @@ function AdministrationPage() {
 }
 
 const PRODUCT_LABELS: Record<RestrictableProduct, string> = {
-  assessment: "Assessment",
+  assessment: "Assessments",
   cad: "CAD Conversion",
   cnc: "CNC Coding",
 };
