@@ -310,12 +310,14 @@ function NavLinks({
   // the same order every render, and collapsed genuinely toggles at
   // runtime via the sidebar's own collapse button, so this can't live
   // inside the icon-only branch below.
+  // Falls back to "" (nothing expanded) rather than defaulting to
+  // Assessment specifically — landing on a page that isn't part of any
+  // nav group (like Home) shouldn't pre-open a product section that has
+  // nothing to do with where the user actually is.
   const activeSection =
     visibleAllGroups.find((g) =>
       g.items.some((item) => isItemActive(pathname, item.to)),
-    )?.section ??
-    visibleProductNav[0]?.section ??
-    SETUP_NAV[0].section;
+    )?.section ?? "";
   const [expanded, setExpanded] = useState(activeSection);
   const toggle = (section: string) =>
     setExpanded((current) => (current === section ? "" : section));
@@ -327,25 +329,27 @@ function NavLinks({
   if (collapsed) {
     return (
       <>
-        {[HOME_ITEM, ...visibleAllGroups.flatMap((g) => g.items)].map((item) => {
-          const active = isItemActive(pathname, item.to);
-          return (
-            <Link
-              key={item.to}
-              to={item.to}
-              title={item.label}
-              onClick={onNavigate}
-              className={cn(
-                "flex items-center gap-3 rounded-sm px-3 py-2.5 text-sm transition-colors",
-                active
-                  ? "bg-sidebar-accent font-medium text-sidebar-accent-foreground shadow-[inset_3px_0_0_0_var(--sidebar-primary)]"
-                  : "text-sidebar-foreground/70 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground",
-              )}
-            >
-              <item.icon className="size-4 shrink-0" aria-hidden />
-            </Link>
-          );
-        })}
+        {[HOME_ITEM, ...visibleAllGroups.flatMap((g) => g.items)].map(
+          (item) => {
+            const active = isItemActive(pathname, item.to);
+            return (
+              <Link
+                key={item.to}
+                to={item.to}
+                title={item.label}
+                onClick={onNavigate}
+                className={cn(
+                  "flex items-center gap-3 rounded-sm px-3 py-2.5 text-sm transition-colors",
+                  active
+                    ? "bg-sidebar-accent font-medium text-sidebar-accent-foreground shadow-[inset_3px_0_0_0_var(--sidebar-primary)]"
+                    : "text-sidebar-foreground/70 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground",
+                )}
+              >
+                <item.icon className="size-4 shrink-0" aria-hidden />
+              </Link>
+            );
+          },
+        )}
       </>
     );
   }

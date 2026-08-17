@@ -84,20 +84,22 @@ function AuthPage() {
         </div>
 
         <div className="max-w-lg">
-          <p className="eyebrow">Manufacturing Readiness Module</p>
+          <p className="eyebrow">Manufacturing Intelligence Platform</p>
           <h1 className="mt-3 text-4xl font-semibold uppercase leading-tight tracking-wide">
-            Prove a plant can build it right — repeatably, compliantly, at rate.
+            Assess readiness, convert drawings, and improve CNC programs — with
+            one intelligence layer behind all three.
           </h1>
           <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
-            Seven weighted readiness categories. Evidence-graded confidence
-            scoring. Critical-control gating that will not let a plant be called
-            production ready when a fundamental control has failed.
+            Three connected pipelines — Assessment, CAD Conversion, and CNC
+            Coding — each feed one shared Intelligence Layer. Every problem an
+            engagement resolves becomes anonymized, reviewed precedent the next
+            one can draw on.
           </p>
           <dl className="mt-10 grid grid-cols-3 gap-6 border-t border-border pt-8">
             {[
-              ["7", "Weighted categories"],
-              ["0–5", "Maturity scale"],
-              ["100%", "Evidence graded"],
+              ["3", "Product pipelines"],
+              ["AI", "Grounded in cited precedent"],
+              ["1", "Shared intelligence layer"],
             ].map(([v, l]) => (
               <div key={l}>
                 <dt className="metric text-3xl font-semibold text-primary">
@@ -131,7 +133,7 @@ function AuthPage() {
           </h2>
           <p className="mt-1.5 text-sm text-muted-foreground">
             {mode === "signin"
-              ? "Access your organization's readiness workspace."
+              ? "Access your organization's IronIQ workspace."
               : "Request access — an admin will review and approve your account before you can sign in."}
           </p>
 
