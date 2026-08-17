@@ -42,7 +42,7 @@ function AuthPage() {
 
   useEffect(() => {
     void getCurrentUser().then((user) => {
-      if (user) navigate({ to: "/dashboard", replace: true });
+      if (user) navigate({ to: "/home", replace: true });
     });
   }, [navigate]);
 
@@ -59,7 +59,7 @@ function AuthPage() {
         setPassword("");
       } else {
         await login({ data: { email, password } });
-        navigate({ to: "/dashboard", replace: true });
+        navigate({ to: "/home", replace: true });
       }
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Authentication failed");
