@@ -123,6 +123,9 @@ export function useUpdateCadFieldStatus(jobId?: string | null) {
       id: string;
       status: "accepted" | "edited" | "rejected";
       editedValue?: string;
+      editedFieldName?: string;
+      editedFieldType?: string;
+      editedLocationHint?: string;
     }) => fn.updateCadFieldStatus({ data: input }),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ["cad-fields", jobId] });
