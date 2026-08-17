@@ -21,6 +21,7 @@ import {
   Menu,
   ClipboardList,
   UploadCloud,
+  FileImage,
   Sparkles,
 } from "lucide-react";
 import { useState, type ReactNode } from "react";
@@ -79,6 +80,14 @@ const NAV: {
       { to: "/field", label: "Field Assessment", icon: ClipboardList },
       { to: "/templates", label: "Assessment Templates", icon: FileStack },
     ],
+  },
+  {
+    // A single entry for now, deliberately — same reasoning as Bulk
+    // Intake and Ask IronIQ before it: this is a genuinely separate
+    // product (per the product-family strategy), but the full nav
+    // restructuring into distinct product streams is Phase H, still later.
+    section: "CAD Conversion",
+    items: [{ to: "/cad", label: "CAD Conversion", icon: FileImage }],
   },
   {
     section: "Findings & Improvement",
