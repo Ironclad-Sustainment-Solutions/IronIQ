@@ -25,6 +25,7 @@ import {
   Sparkles,
   Code2,
   Compass,
+  Home,
 } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { IronIQMark } from "@/components/ironiq/ironiq-mark";
@@ -59,6 +60,8 @@ import {
 // too now, not under Setup/Reporting-style "support" — it's the shared
 // layer built ON TOP of the three products, closer in kind to them than
 // to Setup or Administration.
+const HOME_ITEM = { to: "/home", label: "Home", icon: Home };
+
 const PRODUCT_NAV: {
   section: string;
   items: {
@@ -284,7 +287,7 @@ function NavLinks({
   if (collapsed) {
     return (
       <>
-        {ALL_NAV_GROUPS.flatMap((g) => g.items).map((item) => {
+        {[HOME_ITEM, ...ALL_NAV_GROUPS.flatMap((g) => g.items)].map((item) => {
           const active = isItemActive(pathname, item.to);
           return (
             <Link
@@ -309,6 +312,22 @@ function NavLinks({
 
   return (
     <>
+      <Link
+        to={HOME_ITEM.to}
+        title={HOME_ITEM.label}
+        onClick={onNavigate}
+        className={cn(
+          "flex items-center gap-3 rounded-sm px-3 py-2.5 text-sm transition-colors",
+          isItemActive(pathname, HOME_ITEM.to)
+            ? "bg-sidebar-accent font-medium text-sidebar-accent-foreground shadow-[inset_3px_0_0_0_var(--sidebar-primary)]"
+            : "text-sidebar-foreground/70 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground",
+        )}
+      >
+        <HOME_ITEM.icon className="size-4 shrink-0" aria-hidden />
+        <span className="truncate">{HOME_ITEM.label}</span>
+      </Link>
+
+      <div className="my-3 border-t border-sidebar-border" />
       <p className="mb-1.5 px-3 text-[10px] font-semibold uppercase tracking-widest text-primary/80">
         Products
       </p>
@@ -546,7 +565,7 @@ function TopBar() {
   return (
     <header className="no-print sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-border bg-surface/95 px-4 backdrop-blur md:px-8">
       <MobileNav />
-      <Link to="/dashboard" className="mr-1 flex items-center gap-2 md:hidden">
+      <Link to="/home" className="mr-1 flex items-center gap-2 md:hidden">
         <IronIQMark className="size-5" />
         <span className="font-display text-base font-bold uppercase tracking-widest">
           Iron<span className="text-primary">IQ</span>

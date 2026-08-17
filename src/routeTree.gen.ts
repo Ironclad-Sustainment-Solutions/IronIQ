@@ -22,6 +22,7 @@ import { Route as AuthenticatedEstimatesRouteImport } from './routes/_authentica
 import { Route as AuthenticatedExecutiveRollupRouteImport } from './routes/_authenticated/executive-rollup'
 import { Route as AuthenticatedFacilitiesRouteImport } from './routes/_authenticated/facilities'
 import { Route as AuthenticatedFindingsRouteImport } from './routes/_authenticated/findings'
+import { Route as AuthenticatedHomeRouteImport } from './routes/_authenticated/home'
 import { Route as AuthenticatedIntakeRouteImport } from './routes/_authenticated/intake'
 import { Route as AuthenticatedOrganizationsRouteImport } from './routes/_authenticated/organizations'
 import { Route as AuthenticatedProductionRouteImport } from './routes/_authenticated/production'
@@ -104,6 +105,11 @@ const AuthenticatedFacilitiesRoute = AuthenticatedFacilitiesRouteImport.update({
 const AuthenticatedFindingsRoute = AuthenticatedFindingsRouteImport.update({
   id: '/findings',
   path: '/findings',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedHomeRoute = AuthenticatedHomeRouteImport.update({
+  id: '/home',
+  path: '/home',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedIntakeRoute = AuthenticatedIntakeRouteImport.update({
@@ -216,6 +222,7 @@ export interface FileRoutesByFullPath {
   '/executive-rollup': typeof AuthenticatedExecutiveRollupRoute
   '/facilities': typeof AuthenticatedFacilitiesRoute
   '/findings': typeof AuthenticatedFindingsRoute
+  '/home': typeof AuthenticatedHomeRoute
   '/intake': typeof AuthenticatedIntakeRoute
   '/organizations': typeof AuthenticatedOrganizationsRoute
   '/production': typeof AuthenticatedProductionRouteWithChildren
@@ -247,6 +254,7 @@ export interface FileRoutesByTo {
   '/executive-rollup': typeof AuthenticatedExecutiveRollupRoute
   '/facilities': typeof AuthenticatedFacilitiesRoute
   '/findings': typeof AuthenticatedFindingsRoute
+  '/home': typeof AuthenticatedHomeRoute
   '/intake': typeof AuthenticatedIntakeRoute
   '/organizations': typeof AuthenticatedOrganizationsRoute
   '/projects': typeof AuthenticatedProjectsRoute
@@ -279,6 +287,7 @@ export interface FileRoutesById {
   '/_authenticated/executive-rollup': typeof AuthenticatedExecutiveRollupRoute
   '/_authenticated/facilities': typeof AuthenticatedFacilitiesRoute
   '/_authenticated/findings': typeof AuthenticatedFindingsRoute
+  '/_authenticated/home': typeof AuthenticatedHomeRoute
   '/_authenticated/intake': typeof AuthenticatedIntakeRoute
   '/_authenticated/organizations': typeof AuthenticatedOrganizationsRoute
   '/_authenticated/production': typeof AuthenticatedProductionRouteWithChildren
@@ -312,6 +321,7 @@ export interface FileRouteTypes {
     | '/executive-rollup'
     | '/facilities'
     | '/findings'
+    | '/home'
     | '/intake'
     | '/organizations'
     | '/production'
@@ -343,6 +353,7 @@ export interface FileRouteTypes {
     | '/executive-rollup'
     | '/facilities'
     | '/findings'
+    | '/home'
     | '/intake'
     | '/organizations'
     | '/projects'
@@ -374,6 +385,7 @@ export interface FileRouteTypes {
     | '/_authenticated/executive-rollup'
     | '/_authenticated/facilities'
     | '/_authenticated/findings'
+    | '/_authenticated/home'
     | '/_authenticated/intake'
     | '/_authenticated/organizations'
     | '/_authenticated/production'
@@ -490,6 +502,13 @@ declare module '@tanstack/react-router' {
       path: '/findings'
       fullPath: '/findings'
       preLoaderRoute: typeof AuthenticatedFindingsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/home': {
+      id: '/_authenticated/home'
+      path: '/home'
+      fullPath: '/home'
+      preLoaderRoute: typeof AuthenticatedHomeRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/intake': {
@@ -647,6 +666,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedExecutiveRollupRoute: typeof AuthenticatedExecutiveRollupRoute
   AuthenticatedFacilitiesRoute: typeof AuthenticatedFacilitiesRoute
   AuthenticatedFindingsRoute: typeof AuthenticatedFindingsRoute
+  AuthenticatedHomeRoute: typeof AuthenticatedHomeRoute
   AuthenticatedIntakeRoute: typeof AuthenticatedIntakeRoute
   AuthenticatedOrganizationsRoute: typeof AuthenticatedOrganizationsRoute
   AuthenticatedProductionRoute: typeof AuthenticatedProductionRouteWithChildren
@@ -673,6 +693,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedExecutiveRollupRoute: AuthenticatedExecutiveRollupRoute,
   AuthenticatedFacilitiesRoute: AuthenticatedFacilitiesRoute,
   AuthenticatedFindingsRoute: AuthenticatedFindingsRoute,
+  AuthenticatedHomeRoute: AuthenticatedHomeRoute,
   AuthenticatedIntakeRoute: AuthenticatedIntakeRoute,
   AuthenticatedOrganizationsRoute: AuthenticatedOrganizationsRoute,
   AuthenticatedProductionRoute: AuthenticatedProductionRouteWithChildren,

@@ -34,7 +34,7 @@ function IndexRedirect() {
 
   useEffect(() => {
     void getCurrentUser().then((user) => {
-      navigate({ to: user ? "/dashboard" : "/auth", replace: true });
+      navigate({ to: user ? "/home" : "/auth", replace: true });
     });
   }, [navigate]);
 
