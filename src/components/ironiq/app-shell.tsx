@@ -55,7 +55,10 @@ import {
 // section below. This is the actual fix for products reading as "blended
 // in with everything else": size, weight, and position now signal these
 // are THE three things this app does, not three more entries in one flat
-// list of equal-looking sections.
+// list of equal-looking sections. Intelligence (Ask IronIQ) lives here
+// too now, not under Setup/Reporting-style "support" — it's the shared
+// layer built ON TOP of the three products, closer in kind to them than
+// to Setup or Administration.
 const PRODUCT_NAV: {
   section: string;
   items: { to: string; label: string; icon: typeof LayoutDashboard }[];
@@ -96,11 +99,19 @@ const PRODUCT_NAV: {
     section: "CNC Coding",
     items: [{ to: "/cnc", label: "CNC Coding Enhancement", icon: Code2 }],
   },
+  {
+    section: "Intelligence",
+    items: [{ to: "/ask-ironiq", label: "Ask IronIQ", icon: Sparkles }],
+  },
 ];
 
-// Everything that supports the three products but isn't one of them —
-// compact, collapsed by default, one tier down visually from PRODUCT_NAV.
-const SUPPORT_NAV: {
+// Its own clearly separated tier, not lumped in with Reporting/
+// Administration below — Setup is the prerequisite you do BEFORE using
+// any product (an assessment can't be scoped without an organization and
+// facility; see PrerequisiteGate in layout-primitives.tsx), which makes
+// it a genuinely different kind of thing than "output you get from using
+// the products" (Reporting) or "managing the app itself" (Administration).
+const SETUP_NAV: {
   section: string;
   items: { to: string; label: string; icon: typeof LayoutDashboard }[];
 }[] = [
@@ -112,13 +123,20 @@ const SUPPORT_NAV: {
       { to: "/templates", label: "Assessment Templates", icon: FileStack },
     ],
   },
+];
+
+// Ordered deliberately, not arbitrarily: Reporting is a direct output of
+// using the products above, so it comes first; Administration (managing
+// users/roles/orgs) is meta-level — about the app itself, not something
+// that flows from day-to-day product use — so it comes last, right
+// before the de-emphasized Coming Soon tier below.
+const OTHER_NAV: {
+  section: string;
+  items: { to: string; label: string; icon: typeof LayoutDashboard }[];
+}[] = [
   {
     section: "Reporting",
     items: [{ to: "/reports", label: "Reports", icon: FileBarChart }],
-  },
-  {
-    section: "Intelligence",
-    items: [{ to: "/ask-ironiq", label: "Ask IronIQ", icon: Sparkles }],
   },
   {
     section: "Administration",
@@ -147,7 +165,12 @@ const LATER_NAV: {
   },
 ];
 
-const ALL_NAV_GROUPS = [...PRODUCT_NAV, ...SUPPORT_NAV, ...LATER_NAV];
+const ALL_NAV_GROUPS = [
+  ...PRODUCT_NAV,
+  ...SETUP_NAV,
+  ...OTHER_NAV,
+  ...LATER_NAV,
+];
 
 function isItemActive(pathname: string, to: string): boolean {
   return pathname === to || pathname.startsWith(`${to}/`);
@@ -260,6 +283,9 @@ function NavLinks({
 
   return (
     <>
+      <p className="mb-1.5 px-3 text-[10px] font-semibold uppercase tracking-widest text-primary/80">
+        Products
+      </p>
       {PRODUCT_NAV.map((group) => (
         <NavSection
           key={group.section}
@@ -273,7 +299,20 @@ function NavLinks({
       ))}
 
       <div className="my-3 border-t border-sidebar-border" />
-      {SUPPORT_NAV.map((group) => (
+      {SETUP_NAV.map((group) => (
+        <NavSection
+          key={group.section}
+          group={group}
+          pathname={pathname}
+          isExpanded={expanded === group.section}
+          onToggle={() => toggle(group.section)}
+          onNavigate={onNavigate}
+          tier="support"
+        />
+      ))}
+
+      <div className="my-3 border-t border-sidebar-border" />
+      {OTHER_NAV.map((group) => (
         <NavSection
           key={group.section}
           group={group}
