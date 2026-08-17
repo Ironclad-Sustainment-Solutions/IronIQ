@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Building2 } from "lucide-react";
+import { Building2, Pencil } from "lucide-react";
 import {
   PageHeader,
   Panel,
@@ -145,7 +145,7 @@ function OrganizationsPage() {
                           organization={org}
                           trigger={
                             <Button variant="outline" size="sm">
-                              Edit
+                              <Pencil className="size-3.5" aria-hidden /> Edit
                             </Button>
                           }
                         />

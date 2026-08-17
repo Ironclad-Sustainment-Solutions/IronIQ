@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
+import { Pencil } from "lucide-react";
 import {
   PageHeader,
   Panel,
@@ -24,6 +25,7 @@ import {
   useCreateCncLogEntry,
   useVerifyCncLogEntry,
   useDeleteCncLogEntry,
+  useUpdateCncLogEntry,
   type CncChangeCategory,
   type CncChangeLogRow,
 } from "@/lib/cnc-api";
@@ -249,8 +251,105 @@ function ChangeLogRow({
 }) {
   const verify = useVerifyCncLogEntry(organizationId);
   const remove = useDeleteCncLogEntry(organizationId);
+  const update = useUpdateCncLogEntry(organizationId);
   const [outcome, setOutcome] = useState("");
   const [contribute, setContribute] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState({
+    machineName: entry.machine_name,
+    programIdentifier: entry.program_identifier ?? "",
+    changeCategory: entry.change_category,
+    changeDescription: entry.change_description,
+    reason: entry.reason,
+  });
+
+  if (editing) {
+    return (
+      <div className="rounded-md border border-border p-4">
+        <div className="grid gap-3 sm:grid-cols-2">
+          <Input
+            value={draft.machineName}
+            onChange={(e) =>
+              setDraft((d) => ({ ...d, machineName: e.target.value }))
+            }
+            placeholder="Machine"
+          />
+          <Input
+            value={draft.programIdentifier}
+            onChange={(e) =>
+              setDraft((d) => ({ ...d, programIdentifier: e.target.value }))
+            }
+            placeholder="Program # (optional)"
+          />
+          <Select
+            value={draft.changeCategory}
+            onValueChange={(v) =>
+              setDraft((d) => ({
+                ...d,
+                changeCategory: v as CncChangeCategory,
+              }))
+            }
+          >
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {Object.entries(CATEGORY_LABELS).map(([value, label]) => (
+                <SelectItem key={value} value={value}>
+                  {label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <div />
+          <div className="sm:col-span-2">
+            <Textarea
+              rows={2}
+              value={draft.changeDescription}
+              onChange={(e) =>
+                setDraft((d) => ({ ...d, changeDescription: e.target.value }))
+              }
+            />
+          </div>
+          <div className="sm:col-span-2">
+            <Textarea
+              rows={2}
+              value={draft.reason}
+              onChange={(e) =>
+                setDraft((d) => ({ ...d, reason: e.target.value }))
+              }
+            />
+          </div>
+        </div>
+        <div className="mt-3 flex gap-2">
+          <Button
+            size="sm"
+            disabled={
+              update.isPending ||
+              !draft.machineName.trim() ||
+              !draft.changeDescription.trim() ||
+              !draft.reason.trim()
+            }
+            onClick={() =>
+              update.mutate(
+                {
+                  id: entry.id,
+                  ...draft,
+                  programIdentifier: draft.programIdentifier || undefined,
+                },
+                { onSuccess: () => setEditing(false) },
+              )
+            }
+          >
+            Save
+          </Button>
+          <Button size="sm" variant="ghost" onClick={() => setEditing(false)}>
+            Cancel
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="rounded-md border border-border p-4">
@@ -284,6 +383,9 @@ function ChangeLogRow({
               Verify
             </Button>
           ) : null}
+          <Button size="sm" variant="ghost" onClick={() => setEditing(true)}>
+            <Pencil className="size-3.5" aria-hidden /> Edit
+          </Button>
           <Button
             size="sm"
             variant="ghost"

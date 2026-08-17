@@ -115,3 +115,37 @@ export const deleteCncChangeLogEntry = createServerFn({ method: "POST" })
       ]),
     ),
   );
+
+// Previously no way to fix a typo or correct the original log entry at
+// all after creation — only the outcome could ever be set, once, via
+// verifyCncChangeLogEntry. This is the general-purpose fix for that.
+const UpdateCncLogInput = z.object({
+  id: z.string().uuid(),
+  machineName: z.string().min(1),
+  programIdentifier: z.string().optional(),
+  changeCategory: z.enum(CHANGE_CATEGORIES),
+  changeDescription: z.string().min(1),
+  reason: z.string().min(1),
+});
+
+export const updateCncChangeLogEntry = createServerFn({ method: "POST" })
+  .middleware([requireAuth])
+  .inputValidator((d: unknown) => UpdateCncLogInput.parse(d))
+  .handler(({ data, context }) =>
+    withUser(context.userId, (client) =>
+      client.query(
+        `UPDATE public.cnc_change_log
+            SET machine_name = $2, program_identifier = $3, change_category = $4,
+                change_description = $5, reason = $6
+          WHERE id = $1`,
+        [
+          data.id,
+          data.machineName,
+          data.programIdentifier ?? null,
+          data.changeCategory,
+          data.changeDescription,
+          data.reason,
+        ],
+      ),
+    ),
+  );

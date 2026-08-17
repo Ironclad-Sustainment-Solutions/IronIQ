@@ -116,6 +116,9 @@ export function useArchiveFacility() {
 export type FindingUpdate = Partial<
   Pick<
     Finding,
+    | "description"
+    | "severity"
+    | "category_name"
     | "assigned_owner"
     | "target_date"
     | "status"

@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { Pencil } from "lucide-react";
 import {
   PageHeader,
   Panel,
@@ -85,7 +86,7 @@ function FindingsPage() {
                             size="sm"
                             className="ml-auto"
                           >
-                            Manage
+                            <Pencil className="size-3.5" aria-hidden /> Manage
                           </Button>
                         }
                       />
@@ -162,6 +163,10 @@ function FindingsPage() {
                                   facilityId={facility.id}
                                   trigger={
                                     <Button variant="outline" size="sm">
+                                      <Pencil
+                                        className="size-3.5"
+                                        aria-hidden
+                                      />{" "}
                                       Manage
                                     </Button>
                                   }
