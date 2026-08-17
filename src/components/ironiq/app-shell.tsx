@@ -125,22 +125,18 @@ const SETUP_NAV: {
   },
 ];
 
-// Ordered deliberately, not arbitrarily: Reporting is a direct output of
-// using the products above, so it comes first; Administration (managing
-// users/roles/orgs) is meta-level — about the app itself, not something
-// that flows from day-to-day product use — so it comes last, right
-// before the de-emphasized Coming Soon tier below.
+// Ordered per direct feedback: Administration before Reporting.
 const OTHER_NAV: {
   section: string;
   items: { to: string; label: string; icon: typeof LayoutDashboard }[];
 }[] = [
   {
-    section: "Reporting",
-    items: [{ to: "/reports", label: "Reports", icon: FileBarChart }],
-  },
-  {
     section: "Administration",
     items: [{ to: "/administration", label: "Administration", icon: Settings }],
+  },
+  {
+    section: "Reporting",
+    items: [{ to: "/reports", label: "Reports", icon: FileBarChart }],
   },
 ];
 
