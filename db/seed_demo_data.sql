@@ -205,3 +205,149 @@ END $$;
 -- particular order.
 -- ---------------------------------------------------------------------
 -- DELETE FROM public.organizations WHERE name LIKE '[DEMO]%';
+
+-- =====================================================================
+-- Expansion: CAD jobs, CNC change log entries, and Capability/Field
+-- assessments — added after direct feedback that the demo needed to
+-- look genuinely "lived in" across ALL THREE products, not just
+-- Assessment. Looks up the three orgs seeded above by name rather than
+-- redeclaring them, so this can be run as its own follow-up against a
+-- database that already has the block above applied.
+--
+-- Still safe by the same construction as the rest of this file: direct
+-- SQL, no server functions touched, so nothing here can trigger
+-- Intelligence Layer pattern generation. CAD jobs use a placeholder
+-- storage_path with no real object behind it in S3 — the metadata and
+-- extracted fields display correctly in the UI, but the original file
+-- itself isn't actually downloadable. Worth knowing before a demo where
+-- someone might click "view original."
+-- =====================================================================
+
+DO $$
+DECLARE
+  v_org_aero uuid;
+  v_org_auto uuid;
+  v_org_tool uuid;
+  v_fac_aero uuid;
+  v_fac_auto uuid;
+  v_fac_tool uuid;
+  v_cad_job uuid;
+  v_cap_assessment uuid;
+  v_field_assessment uuid;
+BEGIN
+  SELECT id INTO v_org_aero FROM organizations WHERE name = '[DEMO] Meridian Aerostructures';
+  SELECT id INTO v_org_auto FROM organizations WHERE name = '[DEMO] Ridgeline Powertrain Components';
+  SELECT id INTO v_org_tool FROM organizations WHERE name = '[DEMO] Blackstone Tool & Die';
+  IF v_org_aero IS NULL THEN
+    RAISE EXCEPTION 'Demo organizations not found — run the seed block above this one first.';
+  END IF;
+
+  SELECT id INTO v_fac_aero FROM facilities WHERE organization_id = v_org_aero LIMIT 1;
+  SELECT id INTO v_fac_auto FROM facilities WHERE organization_id = v_org_auto LIMIT 1;
+  SELECT id INTO v_fac_tool FROM facilities WHERE organization_id = v_org_tool LIMIT 1;
+
+  -- ---------------------------------------------------------------
+  -- CAD Conversion: 2 jobs for the aerospace org — one fully reviewed,
+  -- one still sitting at extracted (awaiting review), so the page
+  -- shows a real mix rather than everything perfectly finished.
+  -- ---------------------------------------------------------------
+  INSERT INTO cad_jobs
+    (organization_id, facility_id, original_filename, mime_type, byte_size, storage_path, source_type, status)
+  VALUES
+    (v_org_aero, v_fac_aero, 'bracket-assembly-rev-c.jpg', 'image/jpeg', 2400000,
+     v_org_aero::text || '/demo-placeholder-1.jpg', 'raster', 'reviewed')
+  RETURNING id INTO v_cad_job;
+
+  INSERT INTO cad_extracted_fields (job_id, field_type, field_name, field_value, location_hint, confidence, status)
+  VALUES
+    (v_cad_job, 'title_block', 'Part Number', 'MER-BRK-1042-C', 'title block, bottom-right', 'high', 'accepted'),
+    (v_cad_job, 'title_block', 'Revision', 'C', 'title block, bottom-right', 'high', 'accepted'),
+    (v_cad_job, 'dimension', 'Overall length', '184.5 mm ± 0.2', 'primary view, left edge', 'high', 'accepted'),
+    (v_cad_job, 'tolerance', 'Mounting hole diameter', '8.00 +0.02/-0.00 mm', 'diameter callout, upper-left', 'moderate', 'accepted'),
+    (v_cad_job, 'material', 'Material', '7075-T6 aluminum', 'notes block', 'high', 'accepted');
+
+  INSERT INTO cad_jobs
+    (organization_id, facility_id, original_filename, mime_type, byte_size, storage_path, source_type, status)
+  VALUES
+    (v_org_aero, v_fac_aero, 'wing-rib-fitting.jpg', 'image/jpeg', 1800000,
+     v_org_aero::text || '/demo-placeholder-2.jpg', 'raster', 'extracted')
+  RETURNING id INTO v_cad_job;
+
+  INSERT INTO cad_extracted_fields (job_id, field_type, field_name, field_value, location_hint, confidence, status)
+  VALUES
+    (v_cad_job, 'title_block', 'Part Number', 'MER-RIB-2201', 'title block, bottom-right', 'high', 'suggested'),
+    (v_cad_job, 'dimension', 'Rib thickness', '4.75 mm', 'section view', 'moderate', 'suggested'),
+    (v_cad_job, 'note', 'General note', 'Break all sharp edges 0.5mm max', 'notes block', 'moderate', 'suggested');
+
+  -- ---------------------------------------------------------------
+  -- CNC Coding: 3 entries for the automotive org (machining-heavy
+  -- context fits well) — one verified with a real measured outcome and
+  -- sharing enabled, one verified without sharing, one still just
+  -- logged (not yet verified).
+  -- ---------------------------------------------------------------
+  INSERT INTO cnc_change_log
+    (organization_id, facility_id, machine_name, program_identifier, change_category,
+     change_description, reason, outcome_description, status, contribute_consent, verified_at)
+  VALUES
+    (v_org_auto, v_fac_auto, 'Okuma LB3000 #2', 'PRG-4471', 'feed_speed',
+     'Reduced feed rate 12% on finish pass, added a dwell at the tool retract point',
+     'Chatter marks on the transmission housing bore finish, intermittent across the shift',
+     'Chatter eliminated on all parts run since; surface finish now consistently within spec.',
+     'verified', true, now() - interval '4 days');
+
+  INSERT INTO cnc_change_log
+    (organization_id, facility_id, machine_name, program_identifier, change_category,
+     change_description, reason, outcome_description, status, contribute_consent, verified_at)
+  VALUES
+    (v_org_auto, v_fac_auto, 'Mazak QT-250', 'PRG-2209', 'tooling',
+     'Switched to a coated carbide insert rated for higher heat, same geometry',
+     'Excessive tool wear on gear blank turning — inserts lasting under 40 parts',
+     'Insert life roughly doubled to ~85 parts before replacement needed.',
+     'verified', false, now() - interval '11 days');
+
+  INSERT INTO cnc_change_log
+    (organization_id, facility_id, machine_name, program_identifier, change_category, change_description, reason, status)
+  VALUES
+    (v_org_auto, v_fac_auto, 'Haas VF-2 #1', 'PRG-3315', 'toolpath',
+     'Adjusted lead-in/lead-out on the finish contour to a tangential arc instead of a straight plunge',
+     'Witness marks visible at the toolpath entry point on the housing face',
+     'logged');
+
+  -- ---------------------------------------------------------------
+  -- Capability Assessment: one finalized assessment for the tool & die
+  -- org, with a couple of documented problems — gives the Assessment
+  -- Hub's live status card something real to show for this type too.
+  -- ---------------------------------------------------------------
+  INSERT INTO cap_assessments (organization_id, facility_id, name, lead_assessor, scope, status, overall_score)
+  VALUES (v_org_tool, v_fac_tool, 'Rockford Shop — Q3 Capability Review', 'D. Whitfield',
+          'Die design and toolmaking capability', 'finalized', 52.5)
+  RETURNING id INTO v_cap_assessment;
+
+  INSERT INTO cap_problems
+    (assessment_id, stated_problem, location_process, performance_impact, previous_actions, desired_outcome)
+  VALUES
+    (v_cap_assessment,
+     'Die design hours are estimated from memory of past jobs rather than tracked historical data',
+     'Quoting and die design planning',
+     'Recent complex progressive die quotes ran 15-30% over estimated hours',
+     'None — informal tribal knowledge only',
+     'A simple historical-hours log the lead toolmaker can reference when quoting similar jobs');
+
+  -- ---------------------------------------------------------------
+  -- Field Assessment: one in-progress walkthrough for the aerospace
+  -- org, with a documented gap.
+  -- ---------------------------------------------------------------
+  INSERT INTO field_assessments (organization_id, facility_id, area, work_center, observer_name, assessment_status)
+  VALUES (v_org_aero, v_fac_aero, 'Line 2 — CNC Milling', 'Mill 6/7/8 cell', 'J. Alvarez', 'in_progress')
+  RETURNING id INTO v_field_assessment;
+
+  INSERT INTO field_gaps
+    (field_assessment_id, gap_number, location, observed_condition, objective_evidence, missing_capability, severity)
+  VALUES
+    (v_field_assessment, 1, 'Mill 7 control panel',
+     'No networked data collection — operator logs cycle counts on a paper sheet taped to the machine',
+     'Photo taken of the paper log sheet, cross-checked against the MES showing zero data for this machine',
+     'Real-time OEE and scrap tracking for this machine', 'high');
+
+  RAISE NOTICE 'Demo data expansion complete: CAD jobs, CNC log entries, capability assessment, field assessment.';
+END $$;
