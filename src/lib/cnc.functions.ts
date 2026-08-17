@@ -12,6 +12,7 @@ import { z } from "zod";
 import { requireAuth } from "@/lib/auth/auth-middleware";
 import { withUser } from "@/lib/db.server";
 import { captureFromCncChangeLog } from "@/lib/intelligence-capture.server";
+import { assertProductAllowed } from "@/lib/product-access-check.server";
 
 const CHANGE_CATEGORIES = [
   "feed_speed",
@@ -35,8 +36,9 @@ const CreateCncLogInput = z.object({
 export const createCncChangeLogEntry = createServerFn({ method: "POST" })
   .middleware([requireAuth])
   .inputValidator((d: unknown) => CreateCncLogInput.parse(d))
-  .handler(({ data, context }) =>
-    withUser(context.userId, async (client) => {
+  .handler(async ({ data, context }) => {
+    await assertProductAllowed(context.userId, data.organizationId, "cnc");
+    return withUser(context.userId, async (client) => {
       const { rows } = await client.query<{ id: string }>(
         `INSERT INTO public.cnc_change_log
            (organization_id, facility_id, machine_name, program_identifier, change_category,
@@ -55,8 +57,8 @@ export const createCncChangeLogEntry = createServerFn({ method: "POST" })
         ],
       );
       return { id: rows[0].id };
-    }),
-  );
+    });
+  });
 
 const ListCncLogInput = z.object({ organizationId: z.string().uuid() });
 
