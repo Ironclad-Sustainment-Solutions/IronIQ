@@ -50,12 +50,6 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 
-const OVERVIEW_ITEM = {
-  to: "/dashboard",
-  label: "Executive Dashboard",
-  icon: LayoutDashboard,
-};
-
 // The three co-equal product pipelines — rendered with prominent styling,
 // always at the top of the nav, visually distinct from every supporting
 // section below. This is the actual fix for products reading as "blended
@@ -71,8 +65,17 @@ const PRODUCT_NAV: {
     // collapsed by default unless the current route is inside it. See
     // "Assessment Hub" note in assessment.tsx for why these are grouped
     // as one pipeline rather than split across sections.
+    //
+    // Readiness Dashboard lives here, not as a separate top-level
+    // "Overview" — checked the actual page's data sources directly
+    // (useFacilityResult, findings, projects, readiness scores) and every
+    // one of them is Assessment-specific; nothing about CAD or CNC
+    // appears anywhere in it. Renamed from "Executive Dashboard" to
+    // "Readiness Dashboard" for the same reason — the old name implied
+    // portfolio-wide, cross-product coverage it never actually had.
     section: "Assessment",
     items: [
+      { to: "/dashboard", label: "Readiness Dashboard", icon: LayoutDashboard },
       { to: "/assessment", label: "Assessment Hub", icon: Compass },
       { to: "/intake", label: "Bulk Intake", icon: UploadCloud },
       { to: "/assessments", label: "Assessments", icon: ClipboardCheck },
@@ -232,49 +235,31 @@ function NavLinks({
   if (collapsed) {
     return (
       <>
-        {[OVERVIEW_ITEM, ...ALL_NAV_GROUPS.flatMap((g) => g.items)].map(
-          (item) => {
-            const active = isItemActive(pathname, item.to);
-            return (
-              <Link
-                key={item.to}
-                to={item.to}
-                title={item.label}
-                onClick={onNavigate}
-                className={cn(
-                  "flex items-center gap-3 rounded-sm px-3 py-2.5 text-sm transition-colors",
-                  active
-                    ? "bg-sidebar-accent font-medium text-sidebar-accent-foreground shadow-[inset_3px_0_0_0_var(--sidebar-primary)]"
-                    : "text-sidebar-foreground/70 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground",
-                )}
-              >
-                <item.icon className="size-4 shrink-0" aria-hidden />
-              </Link>
-            );
-          },
-        )}
+        {ALL_NAV_GROUPS.flatMap((g) => g.items).map((item) => {
+          const active = isItemActive(pathname, item.to);
+          return (
+            <Link
+              key={item.to}
+              to={item.to}
+              title={item.label}
+              onClick={onNavigate}
+              className={cn(
+                "flex items-center gap-3 rounded-sm px-3 py-2.5 text-sm transition-colors",
+                active
+                  ? "bg-sidebar-accent font-medium text-sidebar-accent-foreground shadow-[inset_3px_0_0_0_var(--sidebar-primary)]"
+                  : "text-sidebar-foreground/70 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground",
+              )}
+            >
+              <item.icon className="size-4 shrink-0" aria-hidden />
+            </Link>
+          );
+        })}
       </>
     );
   }
 
   return (
     <>
-      <Link
-        to={OVERVIEW_ITEM.to}
-        title={OVERVIEW_ITEM.label}
-        onClick={onNavigate}
-        className={cn(
-          "flex items-center gap-3 rounded-sm px-3 py-2.5 text-sm transition-colors",
-          isItemActive(pathname, OVERVIEW_ITEM.to)
-            ? "bg-sidebar-accent font-medium text-sidebar-accent-foreground shadow-[inset_3px_0_0_0_var(--sidebar-primary)]"
-            : "text-sidebar-foreground/70 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground",
-        )}
-      >
-        <OVERVIEW_ITEM.icon className="size-4 shrink-0" aria-hidden />
-        <span className="truncate">{OVERVIEW_ITEM.label}</span>
-      </Link>
-
-      <div className="my-3 border-t border-sidebar-border" />
       {PRODUCT_NAV.map((group) => (
         <NavSection
           key={group.section}
