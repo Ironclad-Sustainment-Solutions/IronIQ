@@ -22,7 +22,8 @@ const ALLOWED_TABLES = new Set([
 ]);
 
 function assertAllowed(table: string) {
-  if (!ALLOWED_TABLES.has(table)) throw new Error(`Table "${table}" is not allowed here.`);
+  if (!ALLOWED_TABLES.has(table))
+    throw new Error(`Table "${table}" is not allowed here.`);
 }
 
 export const fetchCapabilityLibrary = createServerFn({ method: "GET" })
@@ -49,7 +50,9 @@ export const fetchCapAssessments = createServerFn({ method: "GET" })
             "SELECT * FROM public.cap_assessments WHERE organization_id = $1 ORDER BY assessment_date DESC",
             [data.id],
           )
-        : await client.query("SELECT * FROM public.cap_assessments ORDER BY assessment_date DESC");
+        : await client.query(
+            "SELECT * FROM public.cap_assessments ORDER BY assessment_date DESC",
+          );
       return rows;
     }),
   );
@@ -61,9 +64,10 @@ export const fetchCapAssessment = createServerFn({ method: "GET" })
   .inputValidator((d: unknown) => idInput.parse(d))
   .handler(({ data, context }) =>
     withUser(context.userId, async (client) => {
-      const { rows } = await client.query("SELECT * FROM public.cap_assessments WHERE id = $1", [
-        data.id,
-      ]);
+      const { rows } = await client.query(
+        "SELECT * FROM public.cap_assessments WHERE id = $1",
+        [data.id],
+      );
       return rows[0] ?? null;
     }),
   );
@@ -74,32 +78,55 @@ export const fetchCapWorkspace = createServerFn({ method: "GET" })
   .handler(({ data, context }) =>
     withUser(context.userId, async (client) => {
       const assessmentId = data.id;
-      const [problem, impacts, scores, findings, links, gaps, actions] = await Promise.all([
-        client.query("SELECT * FROM public.cap_problems WHERE assessment_id = $1", [assessmentId]),
-        client.query("SELECT * FROM public.cap_performance_impacts WHERE assessment_id = $1", [
-          assessmentId,
-        ]),
-        client.query("SELECT * FROM public.cap_scores WHERE assessment_id = $1", [assessmentId]),
-        client.query(
-          "SELECT * FROM public.cap_findings WHERE assessment_id = $1 ORDER BY created_at",
-          [assessmentId],
-        ),
-        client.query("SELECT * FROM public.cap_finding_links"),
-        client.query("SELECT * FROM public.cap_root_gaps WHERE assessment_id = $1", [assessmentId]),
-        client.query("SELECT * FROM public.cap_actions WHERE assessment_id = $1", [assessmentId]),
-      ]);
+      const [problem, impacts, scores, findings, links, gaps, actions] =
+        await Promise.all([
+          client.query(
+            "SELECT * FROM public.cap_problems WHERE assessment_id = $1",
+            [assessmentId],
+          ),
+          client.query(
+            "SELECT * FROM public.cap_performance_impacts WHERE assessment_id = $1",
+            [assessmentId],
+          ),
+          client.query(
+            "SELECT * FROM public.cap_scores WHERE assessment_id = $1",
+            [assessmentId],
+          ),
+          client.query(
+            "SELECT * FROM public.cap_findings WHERE assessment_id = $1 ORDER BY created_at",
+            [assessmentId],
+          ),
+          client.query("SELECT * FROM public.cap_finding_links"),
+          client.query(
+            "SELECT * FROM public.cap_root_gaps WHERE assessment_id = $1",
+            [assessmentId],
+          ),
+          client.query(
+            "SELECT * FROM public.cap_actions WHERE assessment_id = $1",
+            [assessmentId],
+          ),
+        ]);
 
       const findingIds = findings.rows.map((f) => f.id as string);
       const actionIds = actions.rows.map((a) => a.id as string);
       const [evidence, results, validations] = await Promise.all([
         findingIds.length
-          ? client.query("SELECT * FROM public.cap_evidence WHERE finding_id = ANY($1)", [findingIds])
+          ? client.query(
+              "SELECT * FROM public.cap_evidence WHERE finding_id = ANY($1)",
+              [findingIds],
+            )
           : Promise.resolve({ rows: [] }),
         actionIds.length
-          ? client.query("SELECT * FROM public.cap_results WHERE action_id = ANY($1)", [actionIds])
+          ? client.query(
+              "SELECT * FROM public.cap_results WHERE action_id = ANY($1)",
+              [actionIds],
+            )
           : Promise.resolve({ rows: [] }),
         actionIds.length
-          ? client.query("SELECT * FROM public.cap_validations WHERE action_id = ANY($1)", [actionIds])
+          ? client.query(
+              "SELECT * FROM public.cap_validations WHERE action_id = ANY($1)",
+              [actionIds],
+            )
           : Promise.resolve({ rows: [] }),
       ]);
 
@@ -135,10 +162,10 @@ export const capUpsert = createServerFn({ method: "POST" })
       if (data.id) {
         const cols = Object.keys(payload);
         const setClause = cols.map((c, i) => `${c} = $${i + 1}`).join(", ");
-        await client.query(`UPDATE public.${data.table} SET ${setClause} WHERE id = $${cols.length + 1}`, [
-          ...Object.values(payload),
-          data.id,
-        ]);
+        await client.query(
+          `UPDATE public.${data.table} SET ${setClause} WHERE id = $${cols.length + 1}`,
+          [...Object.values(payload), data.id],
+        );
         return data.id;
       }
       const insertPayload = { ...payload, created_by: context.userId };
@@ -157,9 +184,9 @@ const CapDeleteInput = z.object({ table: z.string(), id: z.string().uuid() });
 export const capDelete = createServerFn({ method: "POST" })
   .middleware([requireAuth])
   .inputValidator((d: unknown) => CapDeleteInput.parse(d))
-  .handler(({ data, context }) => {
+  .handler(async ({ data, context }) => {
     assertAllowed(data.table);
-    return withUser(context.userId, (client) =>
+    await withUser(context.userId, (client) =>
       client.query(`DELETE FROM public.${data.table} WHERE id = $1`, [data.id]),
     );
   });
@@ -212,8 +239,8 @@ const SaveCapScoreInput = z.object({
 export const saveCapScore = createServerFn({ method: "POST" })
   .middleware([requireAuth])
   .inputValidator((d: unknown) => SaveCapScoreInput.parse(d))
-  .handler(({ data, context }) =>
-    withUser(context.userId, (client) =>
+  .handler(async ({ data, context }) => {
+    await withUser(context.userId, (client) =>
       client.query(
         `INSERT INTO public.cap_scores
            (assessment_id, criterion_id, dimension, score, not_applicable, rationale, confidence, modified_by, created_by)
@@ -231,8 +258,8 @@ export const saveCapScore = createServerFn({ method: "POST" })
           context.userId,
         ],
       ),
-    ),
-  );
+    );
+  });
 
 const SetAssessmentScoreInput = z.object({
   assessmentId: z.string().uuid(),
@@ -243,27 +270,30 @@ const SetAssessmentScoreInput = z.object({
 export const setAssessmentScore = createServerFn({ method: "POST" })
   .middleware([requireAuth])
   .inputValidator((d: unknown) => SetAssessmentScoreInput.parse(d))
-  .handler(({ data, context }) =>
-    withUser(context.userId, (client) =>
+  .handler(async ({ data, context }) => {
+    await withUser(context.userId, (client) =>
       data.status
         ? client.query(
             "UPDATE public.cap_assessments SET overall_score = $1, status = $2 WHERE id = $3",
             [data.overall, data.status, data.assessmentId],
           )
-        : client.query("UPDATE public.cap_assessments SET overall_score = $1 WHERE id = $2", [
-            data.overall,
-            data.assessmentId,
-          ]),
-    ),
-  );
+        : client.query(
+            "UPDATE public.cap_assessments SET overall_score = $1 WHERE id = $2",
+            [data.overall, data.assessmentId],
+          ),
+    );
+  });
 
-const ApproveFindingInput = z.object({ id: z.string().uuid(), approved: z.boolean() });
+const ApproveFindingInput = z.object({
+  id: z.string().uuid(),
+  approved: z.boolean(),
+});
 
 export const approveFinding = createServerFn({ method: "POST" })
   .middleware([requireAuth])
   .inputValidator((d: unknown) => ApproveFindingInput.parse(d))
-  .handler(({ data, context }) =>
-    withUser(context.userId, (client) =>
+  .handler(async ({ data, context }) => {
+    await withUser(context.userId, (client) =>
       client.query(
         `UPDATE public.cap_findings
          SET approved = $1, approved_by = $2, approved_at = $3, modified_by = $4
@@ -276,5 +306,5 @@ export const approveFinding = createServerFn({ method: "POST" })
           data.id,
         ],
       ),
-    ),
-  );
+    );
+  });

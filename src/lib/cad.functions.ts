@@ -200,8 +200,8 @@ const UpdateCadFieldInput = z.object({
 export const updateCadFieldStatus = createServerFn({ method: "POST" })
   .middleware([requireAuth])
   .inputValidator((d: unknown) => UpdateCadFieldInput.parse(d))
-  .handler(({ data, context }) =>
-    withUser(context.userId, (client) =>
+  .handler(async ({ data, context }) => {
+    await withUser(context.userId, (client) =>
       data.status === "edited" && data.editedValue !== undefined
         ? client.query(
             `UPDATE public.cad_extracted_fields
@@ -223,8 +223,8 @@ export const updateCadFieldStatus = createServerFn({ method: "POST" })
             `UPDATE public.cad_extracted_fields SET status = $2, reviewed_by = $3 WHERE id = $1`,
             [data.id, data.status, context.userId],
           ),
-    ),
-  );
+    );
+  });
 
 const DeleteCadJobInput = z.object({
   id: z.string().uuid(),

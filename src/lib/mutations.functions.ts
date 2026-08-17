@@ -8,22 +8,23 @@ import {
   captureFromProject,
 } from "@/lib/intelligence-capture.server";
 
-function upsert(
+async function upsert(
   client: import("pg").PoolClient,
   table: string,
   id: string | undefined,
   values: Record<string, unknown>,
-) {
+): Promise<void> {
   const cols = Object.keys(values);
   if (id) {
     const setClause = cols.map((c, i) => `${c} = $${i + 1}`).join(", ");
-    return client.query(
+    await client.query(
       `UPDATE public.${table} SET ${setClause} WHERE id = $${cols.length + 1}`,
       [...Object.values(values), id],
     );
+    return;
   }
   const placeholders = cols.map((_, i) => `$${i + 1}`).join(", ");
-  return client.query(
+  await client.query(
     `INSERT INTO public.${table} (${cols.join(", ")}) VALUES (${placeholders})`,
     Object.values(values),
   );
@@ -48,14 +49,14 @@ const ArchiveInput = z.object({ id: z.string().uuid(), archived: z.boolean() });
 export const archiveOrganization = createServerFn({ method: "POST" })
   .middleware([requireAuth])
   .inputValidator((d: unknown) => ArchiveInput.parse(d))
-  .handler(({ data, context }) =>
-    withUser(context.userId, (client) =>
+  .handler(async ({ data, context }) => {
+    await withUser(context.userId, (client) =>
       client.query(
         "UPDATE public.organizations SET archived = $1, status = $2 WHERE id = $3",
         [data.archived, data.archived ? "archived" : "active", data.id],
       ),
-    ),
-  );
+    );
+  });
 
 const FacilityInput = z.object({
   id: z.string().uuid().optional(),
@@ -74,14 +75,14 @@ export const saveFacility = createServerFn({ method: "POST" })
 export const archiveFacility = createServerFn({ method: "POST" })
   .middleware([requireAuth])
   .inputValidator((d: unknown) => ArchiveInput.parse(d))
-  .handler(({ data, context }) =>
-    withUser(context.userId, (client) =>
+  .handler(async ({ data, context }) => {
+    await withUser(context.userId, (client) =>
       client.query(
         "UPDATE public.facilities SET archived = $1, status = $2 WHERE id = $3",
         [data.archived, data.archived ? "archived" : "active", data.id],
       ),
-    ),
-  );
+    );
+  });
 
 const UpdateFindingInput = z.object({
   id: z.string().uuid(),
@@ -134,8 +135,8 @@ const ToggleProjectFindingInput = z.object({
 export const toggleProjectFinding = createServerFn({ method: "POST" })
   .middleware([requireAuth])
   .inputValidator((d: unknown) => ToggleProjectFindingInput.parse(d))
-  .handler(({ data, context }) =>
-    withUser(context.userId, (client) =>
+  .handler(async ({ data, context }) => {
+    await withUser(context.userId, (client) =>
       data.linked
         ? client.query(
             "DELETE FROM public.project_findings WHERE project_id = $1 AND finding_id = $2",
@@ -145,8 +146,8 @@ export const toggleProjectFinding = createServerFn({ method: "POST" })
             "INSERT INTO public.project_findings (project_id, finding_id) VALUES ($1, $2)",
             [data.projectId, data.findingId],
           ),
-    ),
-  );
+    );
+  });
 
 // ---------------------------------------------------------------------
 // Corrective actions and improvement projects previously had no write
@@ -195,13 +196,13 @@ const DeleteCorrectiveActionInput = z.object({ id: z.string().uuid() });
 export const deleteCorrectiveAction = createServerFn({ method: "POST" })
   .middleware([requireAuth])
   .inputValidator((d: unknown) => DeleteCorrectiveActionInput.parse(d))
-  .handler(({ data, context }) =>
-    withUser(context.userId, (client) =>
+  .handler(async ({ data, context }) => {
+    await withUser(context.userId, (client) =>
       client.query("DELETE FROM public.corrective_actions WHERE id = $1", [
         data.id,
       ]),
-    ),
-  );
+    );
+  });
 
 const SaveImprovementProjectInput = z.object({
   id: z.string().uuid().optional(),
@@ -242,10 +243,10 @@ const DeleteImprovementProjectInput = z.object({ id: z.string().uuid() });
 export const deleteImprovementProject = createServerFn({ method: "POST" })
   .middleware([requireAuth])
   .inputValidator((d: unknown) => DeleteImprovementProjectInput.parse(d))
-  .handler(({ data, context }) =>
-    withUser(context.userId, (client) =>
+  .handler(async ({ data, context }) => {
+    await withUser(context.userId, (client) =>
       client.query("DELETE FROM public.improvement_projects WHERE id = $1", [
         data.id,
       ]),
-    ),
-  );
+    );
+  });

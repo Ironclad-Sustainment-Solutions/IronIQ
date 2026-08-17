@@ -3,7 +3,11 @@ import { z } from "zod";
 import { requireAuth } from "@/lib/auth/auth-middleware";
 import { withUser } from "@/lib/db.server";
 
-const ChildTable = z.enum(["field_gaps", "field_constraints", "field_opportunities"]);
+const ChildTable = z.enum([
+  "field_gaps",
+  "field_constraints",
+  "field_opportunities",
+]);
 
 const FieldAssessmentsInput = z.object({
   organizationId: z.string().uuid(),
@@ -36,7 +40,9 @@ export const fetchFieldAssessment = createServerFn({ method: "GET" })
   .handler(({ data, context }) =>
     withUser(context.userId, async (client) => {
       const [assessment, ratings] = await Promise.all([
-        client.query("SELECT * FROM public.field_assessments WHERE id = $1", [data.id]),
+        client.query("SELECT * FROM public.field_assessments WHERE id = $1", [
+          data.id,
+        ]),
         client.query(
           "SELECT * FROM public.field_assessment_ratings WHERE field_assessment_id = $1",
           [data.id],
@@ -90,8 +96,8 @@ const SaveFieldRatingInput = z.object({
 export const saveFieldRating = createServerFn({ method: "POST" })
   .middleware([requireAuth])
   .inputValidator((d: unknown) => SaveFieldRatingInput.parse(d))
-  .handler(({ data, context }) =>
-    withUser(context.userId, (client) =>
+  .handler(async ({ data, context }) => {
+    await withUser(context.userId, (client) =>
       client.query(
         `INSERT INTO public.field_assessment_ratings
            (field_assessment_id, domain_id, score, not_applicable, note, needs_action)
@@ -107,10 +113,13 @@ export const saveFieldRating = createServerFn({ method: "POST" })
           data.needs_action ?? false,
         ],
       ),
-    ),
-  );
+    );
+  });
 
-const UpdateFieldAssessmentInput = z.object({ id: z.string().uuid(), values: z.record(z.any()) });
+const UpdateFieldAssessmentInput = z.object({
+  id: z.string().uuid(),
+  values: z.record(z.any()),
+});
 
 export const updateFieldAssessment = createServerFn({ method: "POST" })
   .middleware([requireAuth])
@@ -130,11 +139,13 @@ export const updateFieldAssessment = createServerFn({ method: "POST" })
 export const deleteFieldAssessment = createServerFn({ method: "POST" })
   .middleware([requireAuth])
   .inputValidator((d: unknown) => idInput.parse(d))
-  .handler(({ data, context }) =>
-    withUser(context.userId, (client) =>
-      client.query("DELETE FROM public.field_assessments WHERE id = $1", [data.id]),
-    ),
-  );
+  .handler(async ({ data, context }) => {
+    await withUser(context.userId, (client) =>
+      client.query("DELETE FROM public.field_assessments WHERE id = $1", [
+        data.id,
+      ]),
+    );
+  });
 
 const fieldIdInput = z.object({ fieldId: z.string().uuid() });
 
@@ -144,21 +155,25 @@ export const fetchFieldReview = createServerFn({ method: "GET" })
   .handler(({ data, context }) =>
     withUser(context.userId, async (client) => {
       const id = data.fieldId;
-      const [observations, gaps, constraints, opportunities] = await Promise.all([
-        client.query("SELECT * FROM public.field_observations WHERE field_assessment_id = $1", [id]),
-        client.query(
-          "SELECT * FROM public.field_gaps WHERE field_assessment_id = $1 ORDER BY sort_order",
-          [id],
-        ),
-        client.query(
-          "SELECT * FROM public.field_constraints WHERE field_assessment_id = $1 ORDER BY rank",
-          [id],
-        ),
-        client.query(
-          "SELECT * FROM public.field_opportunities WHERE field_assessment_id = $1 ORDER BY sort_order",
-          [id],
-        ),
-      ]);
+      const [observations, gaps, constraints, opportunities] =
+        await Promise.all([
+          client.query(
+            "SELECT * FROM public.field_observations WHERE field_assessment_id = $1",
+            [id],
+          ),
+          client.query(
+            "SELECT * FROM public.field_gaps WHERE field_assessment_id = $1 ORDER BY sort_order",
+            [id],
+          ),
+          client.query(
+            "SELECT * FROM public.field_constraints WHERE field_assessment_id = $1 ORDER BY rank",
+            [id],
+          ),
+          client.query(
+            "SELECT * FROM public.field_opportunities WHERE field_assessment_id = $1 ORDER BY sort_order",
+            [id],
+          ),
+        ]);
       return {
         observations: observations.rows,
         gaps: gaps.rows,
@@ -180,8 +195,8 @@ const SaveObservationInput = z.object({
 export const saveObservation = createServerFn({ method: "POST" })
   .middleware([requireAuth])
   .inputValidator((d: unknown) => SaveObservationInput.parse(d))
-  .handler(({ data, context }) =>
-    withUser(context.userId, (client) =>
+  .handler(async ({ data, context }) => {
+    await withUser(context.userId, (client) =>
       client.query(
         `INSERT INTO public.field_observations
            (field_assessment_id, section_code, area_code, rating, not_observed, notes)
@@ -197,10 +212,14 @@ export const saveObservation = createServerFn({ method: "POST" })
           data.notes?.slice(0, 2000) ?? null,
         ],
       ),
-    ),
-  );
+    );
+  });
 
-const ChildAddInput = z.object({ fieldId: z.string().uuid(), table: ChildTable, values: z.record(z.any()) });
+const ChildAddInput = z.object({
+  fieldId: z.string().uuid(),
+  table: ChildTable,
+  values: z.record(z.any()),
+});
 
 export const childAdd = createServerFn({ method: "POST" })
   .middleware([requireAuth])
@@ -218,7 +237,11 @@ export const childAdd = createServerFn({ method: "POST" })
     }),
   );
 
-const ChildUpdateInput = z.object({ table: ChildTable, id: z.string().uuid(), values: z.record(z.any()) });
+const ChildUpdateInput = z.object({
+  table: ChildTable,
+  id: z.string().uuid(),
+  values: z.record(z.any()),
+});
 
 export const childUpdate = createServerFn({ method: "POST" })
   .middleware([requireAuth])
@@ -228,10 +251,10 @@ export const childUpdate = createServerFn({ method: "POST" })
       const cols = Object.keys(data.values);
       if (cols.length === 0) return;
       const setClause = cols.map((c, i) => `${c} = $${i + 1}`).join(", ");
-      await client.query(`UPDATE public.${data.table} SET ${setClause} WHERE id = $${cols.length + 1}`, [
-        ...Object.values(data.values),
-        data.id,
-      ]);
+      await client.query(
+        `UPDATE public.${data.table} SET ${setClause} WHERE id = $${cols.length + 1}`,
+        [...Object.values(data.values), data.id],
+      );
     }),
   );
 
@@ -240,8 +263,8 @@ const ChildRemoveInput = z.object({ table: ChildTable, id: z.string().uuid() });
 export const childRemove = createServerFn({ method: "POST" })
   .middleware([requireAuth])
   .inputValidator((d: unknown) => ChildRemoveInput.parse(d))
-  .handler(({ data, context }) =>
-    withUser(context.userId, (client) =>
+  .handler(async ({ data, context }) => {
+    await withUser(context.userId, (client) =>
       client.query(`DELETE FROM public.${data.table} WHERE id = $1`, [data.id]),
-    ),
-  );
+    );
+  });

@@ -17,7 +17,8 @@ const ALLOWED_TABLES = new Set([
 ]);
 
 function assertAllowed(table: string) {
-  if (!ALLOWED_TABLES.has(table)) throw new Error(`Table "${table}" is not allowed here.`);
+  if (!ALLOWED_TABLES.has(table))
+    throw new Error(`Table "${table}" is not allowed here.`);
 }
 
 const fieldIdInput = z.object({ fieldId: z.string().uuid() });
@@ -28,7 +29,16 @@ export const fetchFieldOps = createServerFn({ method: "GET" })
   .handler(({ data, context }) =>
     withUser(context.userId, async (client) => {
       const id = data.fieldId;
-      const [events, delays, causes, evidence, smes, metrics, pilots, opportunities] = await Promise.all([
+      const [
+        events,
+        delays,
+        causes,
+        evidence,
+        smes,
+        metrics,
+        pilots,
+        opportunities,
+      ] = await Promise.all([
         client.query(
           "SELECT * FROM public.field_production_events WHERE field_assessment_id = $1 ORDER BY occurred_at DESC",
           [id],
@@ -107,7 +117,10 @@ export const rowAdd = createServerFn({ method: "POST" })
   .handler(({ data, context }) => {
     assertAllowed(data.table);
     return withUser(context.userId, async (client) => {
-      const payload: Record<string, unknown> = { [data.parentColumn]: data.parentId, ...data.values };
+      const payload: Record<string, unknown> = {
+        [data.parentColumn]: data.parentId,
+        ...data.values,
+      };
       if (data.stampCreatedBy) payload.created_by = context.userId;
       const cols = Object.keys(payload);
       const placeholders = cols.map((_, i) => `$${i + 1}`).join(", ");
@@ -119,7 +132,11 @@ export const rowAdd = createServerFn({ method: "POST" })
     });
   });
 
-const RowUpdateInput = z.object({ table: z.string(), id: z.string().uuid(), values: z.record(z.any()) });
+const RowUpdateInput = z.object({
+  table: z.string(),
+  id: z.string().uuid(),
+  values: z.record(z.any()),
+});
 
 export const rowUpdate = createServerFn({ method: "POST" })
   .middleware([requireAuth])
@@ -130,10 +147,10 @@ export const rowUpdate = createServerFn({ method: "POST" })
       const cols = Object.keys(data.values);
       if (cols.length === 0) return;
       const setClause = cols.map((c, i) => `${c} = $${i + 1}`).join(", ");
-      await client.query(`UPDATE public.${data.table} SET ${setClause} WHERE id = $${cols.length + 1}`, [
-        ...Object.values(data.values),
-        data.id,
-      ]);
+      await client.query(
+        `UPDATE public.${data.table} SET ${setClause} WHERE id = $${cols.length + 1}`,
+        [...Object.values(data.values), data.id],
+      );
     });
   });
 
@@ -142,9 +159,9 @@ const RowRemoveInput = z.object({ table: z.string(), id: z.string().uuid() });
 export const rowRemove = createServerFn({ method: "POST" })
   .middleware([requireAuth])
   .inputValidator((d: unknown) => RowRemoveInput.parse(d))
-  .handler(({ data, context }) => {
+  .handler(async ({ data, context }) => {
     assertAllowed(data.table);
-    return withUser(context.userId, (client) =>
+    await withUser(context.userId, (client) =>
       client.query(`DELETE FROM public.${data.table} WHERE id = $1`, [data.id]),
     );
   });
@@ -168,7 +185,9 @@ export const markEvent = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => MarkEventInput.parse(d))
   .handler(({ data, context }) =>
     withUser(context.userId, async (client) => {
-      const stamp = data.at ? new Date(data.at).toISOString() : new Date().toISOString();
+      const stamp = data.at
+        ? new Date(data.at).toISOString()
+        : new Date().toISOString();
       if (data.existing) {
         const history = [
           ...(data.existing.edit_history ?? []),

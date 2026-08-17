@@ -13,7 +13,8 @@ const ALLOWED_TABLES = new Set([
 ]);
 
 function assertAllowed(table: string) {
-  if (!ALLOWED_TABLES.has(table)) throw new Error(`Table "${table}" is not allowed here.`);
+  if (!ALLOWED_TABLES.has(table))
+    throw new Error(`Table "${table}" is not allowed here.`);
 }
 
 const assessmentIdInput = z.object({ assessmentId: z.string().uuid() });
@@ -24,23 +25,33 @@ export const fetchCapInvestigation = createServerFn({ method: "GET" })
   .handler(({ data, context }) =>
     withUser(context.userId, async (client) => {
       const id = data.assessmentId;
-      const [metrics, observations, screens, chain, sweep, constraint] = await Promise.all([
-        client.query(
-          "SELECT * FROM public.cap_metrics WHERE assessment_id = $1 ORDER BY created_at",
-          [id],
-        ),
-        client.query(
-          "SELECT * FROM public.cap_observations WHERE assessment_id = $1 ORDER BY created_at",
-          [id],
-        ),
-        client.query("SELECT * FROM public.cap_domain_screens WHERE assessment_id = $1", [id]),
-        client.query(
-          "SELECT * FROM public.cap_chain_nodes WHERE assessment_id = $1 ORDER BY sort_order",
-          [id],
-        ),
-        client.query("SELECT * FROM public.cap_health_sweep WHERE assessment_id = $1", [id]),
-        client.query("SELECT * FROM public.cap_primary_constraints WHERE assessment_id = $1", [id]),
-      ]);
+      const [metrics, observations, screens, chain, sweep, constraint] =
+        await Promise.all([
+          client.query(
+            "SELECT * FROM public.cap_metrics WHERE assessment_id = $1 ORDER BY created_at",
+            [id],
+          ),
+          client.query(
+            "SELECT * FROM public.cap_observations WHERE assessment_id = $1 ORDER BY created_at",
+            [id],
+          ),
+          client.query(
+            "SELECT * FROM public.cap_domain_screens WHERE assessment_id = $1",
+            [id],
+          ),
+          client.query(
+            "SELECT * FROM public.cap_chain_nodes WHERE assessment_id = $1 ORDER BY sort_order",
+            [id],
+          ),
+          client.query(
+            "SELECT * FROM public.cap_health_sweep WHERE assessment_id = $1",
+            [id],
+          ),
+          client.query(
+            "SELECT * FROM public.cap_primary_constraints WHERE assessment_id = $1",
+            [id],
+          ),
+        ]);
       return {
         metrics: metrics.rows,
         observations: observations.rows,
@@ -73,10 +84,10 @@ export const investigationUpsert = createServerFn({ method: "POST" })
       if (data.id) {
         const cols = Object.keys(payload);
         const setClause = cols.map((c, i) => `${c} = $${i + 1}`).join(", ");
-        await client.query(`UPDATE public.${data.table} SET ${setClause} WHERE id = $${cols.length + 1}`, [
-          ...Object.values(payload),
-          data.id,
-        ]);
+        await client.query(
+          `UPDATE public.${data.table} SET ${setClause} WHERE id = $${cols.length + 1}`,
+          [...Object.values(payload), data.id],
+        );
         return data.id;
       }
       const insertPayload = { ...payload, created_by: context.userId };
@@ -90,14 +101,17 @@ export const investigationUpsert = createServerFn({ method: "POST" })
     });
   });
 
-const InvestigationDeleteInput = z.object({ table: z.string(), id: z.string().uuid() });
+const InvestigationDeleteInput = z.object({
+  table: z.string(),
+  id: z.string().uuid(),
+});
 
 export const investigationDelete = createServerFn({ method: "POST" })
   .middleware([requireAuth])
   .inputValidator((d: unknown) => InvestigationDeleteInput.parse(d))
-  .handler(({ data, context }) => {
+  .handler(async ({ data, context }) => {
     assertAllowed(data.table);
-    return withUser(context.userId, (client) =>
+    await withUser(context.userId, (client) =>
       client.query(`DELETE FROM public.${data.table} WHERE id = $1`, [data.id]),
     );
   });
@@ -113,8 +127,8 @@ const SetDomainScreenInput = z.object({
 export const setDomainScreen = createServerFn({ method: "POST" })
   .middleware([requireAuth])
   .inputValidator((d: unknown) => SetDomainScreenInput.parse(d))
-  .handler(({ data, context }) =>
-    withUser(context.userId, (client) =>
+  .handler(async ({ data, context }) => {
+    await withUser(context.userId, (client) =>
       client.query(
         `INSERT INTO public.cap_domain_screens
            (assessment_id, domain_id, status, screen_items, notes, created_by, modified_by)
@@ -134,8 +148,8 @@ export const setDomainScreen = createServerFn({ method: "POST" })
           context.userId,
         ],
       ),
-    ),
-  );
+    );
+  });
 
 const SetHealthSweepInput = z.object({
   assessmentId: z.string().uuid(),
@@ -147,8 +161,8 @@ const SetHealthSweepInput = z.object({
 export const setHealthSweep = createServerFn({ method: "POST" })
   .middleware([requireAuth])
   .inputValidator((d: unknown) => SetHealthSweepInput.parse(d))
-  .handler(({ data, context }) =>
-    withUser(context.userId, (client) =>
+  .handler(async ({ data, context }) => {
+    await withUser(context.userId, (client) =>
       client.query(
         `INSERT INTO public.cap_health_sweep
            (assessment_id, domain_id, classification, note, created_by, modified_by)
@@ -158,10 +172,16 @@ export const setHealthSweep = createServerFn({ method: "POST" })
            classification = COALESCE($3, public.cap_health_sweep.classification),
            note = COALESCE($4, public.cap_health_sweep.note),
            modified_by = $5`,
-        [data.assessmentId, data.domain_id, data.classification ?? null, data.note ?? null, context.userId],
+        [
+          data.assessmentId,
+          data.domain_id,
+          data.classification ?? null,
+          data.note ?? null,
+          context.userId,
+        ],
       ),
-    ),
-  );
+    );
+  });
 
 const SavePrimaryConstraintInput = z.object({
   assessmentId: z.string().uuid(),
@@ -219,7 +239,13 @@ export const saveChainNode = createServerFn({ method: "POST" })
         `INSERT INTO public.cap_chain_nodes
            (assessment_id, step_key, content, sort_order, created_by, modified_by)
          VALUES ($1,$2,$3,$4,$5,$5)`,
-        [data.assessmentId, data.step_key, data.content, data.sort_order, context.userId],
+        [
+          data.assessmentId,
+          data.step_key,
+          data.content,
+          data.sort_order,
+          context.userId,
+        ],
       );
     }),
   );
