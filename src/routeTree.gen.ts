@@ -32,6 +32,8 @@ import { Route as AuthenticatedTemplatesRouteImport } from './routes/_authentica
 import { Route as AuthenticatedAssessmentsIndexRouteImport } from './routes/_authenticated/assessments/index'
 import { Route as AuthenticatedAssessmentsAssessmentIdRouteImport } from './routes/_authenticated/assessments/$assessmentId'
 import { Route as AuthenticatedAssessmentsNewRouteImport } from './routes/_authenticated/assessments/new'
+import { Route as AuthenticatedBusinessDevelopmentIndexRouteImport } from './routes/_authenticated/business-development/index'
+import { Route as AuthenticatedBusinessDevelopmentProspectIdRouteImport } from './routes/_authenticated/business-development/$prospectId'
 import { Route as AuthenticatedCapabilityIndexRouteImport } from './routes/_authenticated/capability/index'
 import { Route as AuthenticatedCapabilityAssessmentIdRouteImport } from './routes/_authenticated/capability/$assessmentId'
 import { Route as AuthenticatedFieldIndexRouteImport } from './routes/_authenticated/field/index'
@@ -161,6 +163,18 @@ const AuthenticatedAssessmentsNewRoute =
     path: '/assessments/new',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedBusinessDevelopmentIndexRoute =
+  AuthenticatedBusinessDevelopmentIndexRouteImport.update({
+    id: '/business-development/',
+    path: '/business-development/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedBusinessDevelopmentProspectIdRoute =
+  AuthenticatedBusinessDevelopmentProspectIdRouteImport.update({
+    id: '/business-development/$prospectId',
+    path: '/business-development/$prospectId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedCapabilityIndexRoute =
   AuthenticatedCapabilityIndexRouteImport.update({
     id: '/capability/',
@@ -231,11 +245,13 @@ export interface FileRoutesByFullPath {
   '/templates': typeof AuthenticatedTemplatesRoute
   '/assessments/$assessmentId': typeof AuthenticatedAssessmentsAssessmentIdRoute
   '/assessments/new': typeof AuthenticatedAssessmentsNewRoute
+  '/business-development/$prospectId': typeof AuthenticatedBusinessDevelopmentProspectIdRoute
   '/capability/$assessmentId': typeof AuthenticatedCapabilityAssessmentIdRoute
   '/field/$fieldId': typeof AuthenticatedFieldFieldIdRoute
   '/production/libraries': typeof AuthenticatedProductionLibrariesRoute
   '/production/new': typeof AuthenticatedProductionNewRoute
   '/assessments/': typeof AuthenticatedAssessmentsIndexRoute
+  '/business-development/': typeof AuthenticatedBusinessDevelopmentIndexRoute
   '/capability/': typeof AuthenticatedCapabilityIndexRoute
   '/field/': typeof AuthenticatedFieldIndexRoute
   '/production/': typeof AuthenticatedProductionIndexRoute
@@ -262,11 +278,13 @@ export interface FileRoutesByTo {
   '/templates': typeof AuthenticatedTemplatesRoute
   '/assessments/$assessmentId': typeof AuthenticatedAssessmentsAssessmentIdRoute
   '/assessments/new': typeof AuthenticatedAssessmentsNewRoute
+  '/business-development/$prospectId': typeof AuthenticatedBusinessDevelopmentProspectIdRoute
   '/capability/$assessmentId': typeof AuthenticatedCapabilityAssessmentIdRoute
   '/field/$fieldId': typeof AuthenticatedFieldFieldIdRoute
   '/production/libraries': typeof AuthenticatedProductionLibrariesRoute
   '/production/new': typeof AuthenticatedProductionNewRoute
   '/assessments': typeof AuthenticatedAssessmentsIndexRoute
+  '/business-development': typeof AuthenticatedBusinessDevelopmentIndexRoute
   '/capability': typeof AuthenticatedCapabilityIndexRoute
   '/field': typeof AuthenticatedFieldIndexRoute
   '/production': typeof AuthenticatedProductionIndexRoute
@@ -296,11 +314,13 @@ export interface FileRoutesById {
   '/_authenticated/templates': typeof AuthenticatedTemplatesRoute
   '/_authenticated/assessments/$assessmentId': typeof AuthenticatedAssessmentsAssessmentIdRoute
   '/_authenticated/assessments/new': typeof AuthenticatedAssessmentsNewRoute
+  '/_authenticated/business-development/$prospectId': typeof AuthenticatedBusinessDevelopmentProspectIdRoute
   '/_authenticated/capability/$assessmentId': typeof AuthenticatedCapabilityAssessmentIdRoute
   '/_authenticated/field/$fieldId': typeof AuthenticatedFieldFieldIdRoute
   '/_authenticated/production/libraries': typeof AuthenticatedProductionLibrariesRoute
   '/_authenticated/production/new': typeof AuthenticatedProductionNewRoute
   '/_authenticated/assessments/': typeof AuthenticatedAssessmentsIndexRoute
+  '/_authenticated/business-development/': typeof AuthenticatedBusinessDevelopmentIndexRoute
   '/_authenticated/capability/': typeof AuthenticatedCapabilityIndexRoute
   '/_authenticated/field/': typeof AuthenticatedFieldIndexRoute
   '/_authenticated/production/': typeof AuthenticatedProductionIndexRoute
@@ -330,11 +350,13 @@ export interface FileRouteTypes {
     | '/templates'
     | '/assessments/$assessmentId'
     | '/assessments/new'
+    | '/business-development/$prospectId'
     | '/capability/$assessmentId'
     | '/field/$fieldId'
     | '/production/libraries'
     | '/production/new'
     | '/assessments/'
+    | '/business-development/'
     | '/capability/'
     | '/field/'
     | '/production/'
@@ -361,11 +383,13 @@ export interface FileRouteTypes {
     | '/templates'
     | '/assessments/$assessmentId'
     | '/assessments/new'
+    | '/business-development/$prospectId'
     | '/capability/$assessmentId'
     | '/field/$fieldId'
     | '/production/libraries'
     | '/production/new'
     | '/assessments'
+    | '/business-development'
     | '/capability'
     | '/field'
     | '/production'
@@ -394,11 +418,13 @@ export interface FileRouteTypes {
     | '/_authenticated/templates'
     | '/_authenticated/assessments/$assessmentId'
     | '/_authenticated/assessments/new'
+    | '/_authenticated/business-development/$prospectId'
     | '/_authenticated/capability/$assessmentId'
     | '/_authenticated/field/$fieldId'
     | '/_authenticated/production/libraries'
     | '/_authenticated/production/new'
     | '/_authenticated/assessments/'
+    | '/_authenticated/business-development/'
     | '/_authenticated/capability/'
     | '/_authenticated/field/'
     | '/_authenticated/production/'
@@ -574,6 +600,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAssessmentsNewRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/business-development/': {
+      id: '/_authenticated/business-development/'
+      path: '/business-development'
+      fullPath: '/business-development/'
+      preLoaderRoute: typeof AuthenticatedBusinessDevelopmentIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/business-development/$prospectId': {
+      id: '/_authenticated/business-development/$prospectId'
+      path: '/business-development/$prospectId'
+      fullPath: '/business-development/$prospectId'
+      preLoaderRoute: typeof AuthenticatedBusinessDevelopmentProspectIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/capability/': {
       id: '/_authenticated/capability/'
       path: '/capability'
@@ -675,9 +715,11 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedTemplatesRoute: typeof AuthenticatedTemplatesRoute
   AuthenticatedAssessmentsAssessmentIdRoute: typeof AuthenticatedAssessmentsAssessmentIdRoute
   AuthenticatedAssessmentsNewRoute: typeof AuthenticatedAssessmentsNewRoute
+  AuthenticatedBusinessDevelopmentProspectIdRoute: typeof AuthenticatedBusinessDevelopmentProspectIdRoute
   AuthenticatedCapabilityAssessmentIdRoute: typeof AuthenticatedCapabilityAssessmentIdRoute
   AuthenticatedFieldFieldIdRoute: typeof AuthenticatedFieldFieldIdRoute
   AuthenticatedAssessmentsIndexRoute: typeof AuthenticatedAssessmentsIndexRoute
+  AuthenticatedBusinessDevelopmentIndexRoute: typeof AuthenticatedBusinessDevelopmentIndexRoute
   AuthenticatedCapabilityIndexRoute: typeof AuthenticatedCapabilityIndexRoute
   AuthenticatedFieldIndexRoute: typeof AuthenticatedFieldIndexRoute
 }
@@ -703,10 +745,14 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAssessmentsAssessmentIdRoute:
     AuthenticatedAssessmentsAssessmentIdRoute,
   AuthenticatedAssessmentsNewRoute: AuthenticatedAssessmentsNewRoute,
+  AuthenticatedBusinessDevelopmentProspectIdRoute:
+    AuthenticatedBusinessDevelopmentProspectIdRoute,
   AuthenticatedCapabilityAssessmentIdRoute:
     AuthenticatedCapabilityAssessmentIdRoute,
   AuthenticatedFieldFieldIdRoute: AuthenticatedFieldFieldIdRoute,
   AuthenticatedAssessmentsIndexRoute: AuthenticatedAssessmentsIndexRoute,
+  AuthenticatedBusinessDevelopmentIndexRoute:
+    AuthenticatedBusinessDevelopmentIndexRoute,
   AuthenticatedCapabilityIndexRoute: AuthenticatedCapabilityIndexRoute,
   AuthenticatedFieldIndexRoute: AuthenticatedFieldIndexRoute,
 }

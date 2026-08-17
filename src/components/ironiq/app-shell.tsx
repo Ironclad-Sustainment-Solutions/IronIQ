@@ -26,6 +26,7 @@ import {
   Code2,
   Compass,
   Home,
+  Handshake,
 } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { IronIQMark } from "@/components/ironiq/ironiq-mark";
@@ -37,7 +38,7 @@ import {
   useProductRestrictions,
   type RestrictableProduct,
 } from "@/lib/product-access-api";
-import { ROLE_LABELS } from "@/lib/domain";
+import { ROLE_LABELS, type AppRole } from "@/lib/domain";
 import { useNotifications } from "@/lib/api";
 import {
   DropdownMenu,
@@ -134,6 +135,24 @@ const PRODUCT_NAV: {
   },
 ];
 
+// Internal-only, gated to platform staff — deliberately given the same
+// visual prominence as PRODUCT_NAV (its own label, "product"-tier
+// styling), not folded into Setup/Reporting as an afterthought, since
+// it's a genuinely equal-weight concern for IronIQ staff, just not one
+// any customer should ever see.
+const BUSINESS_DEV_NAV: {
+  section: string;
+  groupIcon?: typeof LayoutDashboard;
+  items: { to: string; label: string; icon: typeof LayoutDashboard }[];
+}[] = [
+  {
+    section: "Pipeline",
+    items: [
+      { to: "/business-development", label: "Pipeline", icon: Handshake },
+    ],
+  },
+];
+
 // Its own clearly separated tier, not lumped in with Reporting/
 // Administration below — Setup is the prerequisite you do BEFORE using
 // any product (an assessment can't be scoped without an organization and
@@ -226,7 +245,7 @@ function isItemActive(pathname: string, to: string): boolean {
 export function AppShell({ children }: { children: ReactNode }) {
   const [collapsed, setCollapsed] = useState(false);
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const { organization } = useApp();
+  const { organization, roles } = useApp();
   // Fetched once here, passed down to both NavLinks renders (desktop +
   // mobile sheet) rather than duplicating the query in each.
   const restrictedProducts =
@@ -259,6 +278,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             collapsed={collapsed}
             pathname={pathname}
             restrictedProducts={restrictedProducts}
+            roles={roles}
           />
         </nav>
 
@@ -291,12 +311,16 @@ function NavLinks({
   pathname,
   onNavigate,
   restrictedProducts = [],
+  roles = [],
 }: {
   collapsed?: boolean;
   pathname: string;
   onNavigate?: () => void;
   restrictedProducts?: RestrictableProduct[];
+  roles?: AppRole[];
 }) {
+  const isPlatformStaff =
+    roles.includes("ironiq_admin") || roles.includes("consultant");
   const isSectionVisible = (section: string) => {
     const product = SECTION_TO_PRODUCT[section];
     return !product || !restrictedProducts.includes(product);
@@ -306,6 +330,7 @@ function NavLinks({
   );
   const visibleAllGroups = [
     ...visibleProductNav,
+    ...(isPlatformStaff ? BUSINESS_DEV_NAV : []),
     ...SETUP_NAV,
     ...OTHER_NAV,
     ...LATER_NAV,
@@ -391,6 +416,26 @@ function NavLinks({
           tier="product"
         />
       ))}
+
+      {isPlatformStaff ? (
+        <>
+          <div className="my-3 border-t border-sidebar-border" />
+          <p className="mb-1.5 px-3 text-[10px] font-semibold uppercase tracking-widest text-primary/80">
+            Business Development
+          </p>
+          {BUSINESS_DEV_NAV.map((group) => (
+            <NavSection
+              key={group.section}
+              group={group}
+              pathname={pathname}
+              isExpanded={expanded === group.section}
+              onToggle={() => toggle(group.section)}
+              onNavigate={onNavigate}
+              tier="product"
+            />
+          ))}
+        </>
+      ) : null}
 
       <div className="my-3 border-t border-sidebar-border" />
       {SETUP_NAV.map((group) => (
@@ -560,7 +605,7 @@ function NavSection({
 function MobileNav() {
   const [open, setOpen] = useState(false);
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const { organization } = useApp();
+  const { organization, roles } = useApp();
   const restrictedProducts =
     useProductRestrictions(organization?.id).data ?? [];
 
@@ -587,6 +632,7 @@ function MobileNav() {
             pathname={pathname}
             onNavigate={() => setOpen(false)}
             restrictedProducts={restrictedProducts}
+            roles={roles}
           />
         </nav>
       </SheetContent>
