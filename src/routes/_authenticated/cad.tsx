@@ -184,30 +184,57 @@ function CadFieldReviewRow({
 }) {
   const updateStatus = useUpdateCadFieldStatus(jobId);
   const [editing, setEditing] = useState(false);
-  const [draft, setDraft] = useState(f.field_value);
+  const [draft, setDraft] = useState({
+    fieldName: f.field_name,
+    fieldValue: f.field_value,
+    locationHint: f.location_hint ?? "",
+  });
 
   return (
     <div className="rounded-md border border-border p-4">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
-          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            {f.field_type} · {f.field_name}
-          </p>
           {editing ? (
-            <Input
-              autoFocus
-              value={draft}
-              onChange={(e) => setDraft(e.target.value)}
-              className="mt-1"
-            />
+            <div className="space-y-2">
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                {f.field_type}
+              </p>
+              <Input
+                autoFocus
+                value={draft.fieldName}
+                onChange={(e) =>
+                  setDraft((d) => ({ ...d, fieldName: e.target.value }))
+                }
+                placeholder="Field name (e.g. Part Number)"
+              />
+              <Input
+                value={draft.fieldValue}
+                onChange={(e) =>
+                  setDraft((d) => ({ ...d, fieldValue: e.target.value }))
+                }
+                placeholder="Value"
+              />
+              <Input
+                value={draft.locationHint}
+                onChange={(e) =>
+                  setDraft((d) => ({ ...d, locationHint: e.target.value }))
+                }
+                placeholder="Location on drawing (optional)"
+              />
+            </div>
           ) : (
-            <p className="mt-1 text-sm text-foreground">{f.field_value}</p>
+            <>
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                {f.field_type} · {f.field_name}
+              </p>
+              <p className="mt-1 text-sm text-foreground">{f.field_value}</p>
+              {f.location_hint ? (
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Location: {f.location_hint}
+                </p>
+              ) : null}
+            </>
           )}
-          {f.location_hint ? (
-            <p className="mt-1 text-xs text-muted-foreground">
-              Location: {f.location_hint}
-            </p>
-          ) : null}
         </div>
         <Tag
           token={
@@ -228,10 +255,20 @@ function CadFieldReviewRow({
             <>
               <Button
                 size="sm"
-                disabled={updateStatus.isPending || !draft.trim()}
+                disabled={
+                  updateStatus.isPending ||
+                  !draft.fieldName.trim() ||
+                  !draft.fieldValue.trim()
+                }
                 onClick={() =>
                   updateStatus.mutate(
-                    { id: f.id, status: "edited", editedValue: draft },
+                    {
+                      id: f.id,
+                      status: "edited",
+                      editedValue: draft.fieldValue,
+                      editedFieldName: draft.fieldName,
+                      editedLocationHint: draft.locationHint || undefined,
+                    },
                     { onSuccess: () => setEditing(false) },
                   )
                 }

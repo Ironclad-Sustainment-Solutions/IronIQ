@@ -182,6 +182,19 @@ const UpdateCadFieldInput = z.object({
   id: z.string().uuid(),
   status: z.enum(["accepted", "edited", "rejected"]),
   editedValue: z.string().optional(),
+  editedFieldName: z.string().optional(),
+  editedFieldType: z
+    .enum([
+      "title_block",
+      "dimension",
+      "tolerance",
+      "gdt",
+      "note",
+      "material",
+      "other",
+    ])
+    .optional(),
+  editedLocationHint: z.string().optional(),
 });
 
 export const updateCadFieldStatus = createServerFn({ method: "POST" })
@@ -191,8 +204,20 @@ export const updateCadFieldStatus = createServerFn({ method: "POST" })
     withUser(context.userId, (client) =>
       data.status === "edited" && data.editedValue !== undefined
         ? client.query(
-            `UPDATE public.cad_extracted_fields SET status = $2, field_value = $3, reviewed_by = $4 WHERE id = $1`,
-            [data.id, data.status, data.editedValue, context.userId],
+            `UPDATE public.cad_extracted_fields
+                SET status = $2, field_value = $3, field_name = COALESCE($4, field_name),
+                    field_type = COALESCE($5, field_type), location_hint = COALESCE($6, location_hint),
+                    reviewed_by = $7
+              WHERE id = $1`,
+            [
+              data.id,
+              data.status,
+              data.editedValue,
+              data.editedFieldName ?? null,
+              data.editedFieldType ?? null,
+              data.editedLocationHint ?? null,
+              context.userId,
+            ],
           )
         : client.query(
             `UPDATE public.cad_extracted_fields SET status = $2, reviewed_by = $3 WHERE id = $1`,
