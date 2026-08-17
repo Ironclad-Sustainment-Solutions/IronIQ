@@ -6,6 +6,7 @@ import {
 } from "@/components/ironiq/layout-primitives";
 import { Button } from "@/components/ui/button";
 import { useApp } from "@/context/app-context";
+import { useAssessmentHubStatus } from "@/lib/assessment-hub-status-api";
 
 export const Route = createFileRoute("/_authenticated/assessment")({
   head: () => ({
@@ -32,22 +33,26 @@ const ASSESSMENT_TYPES = [
   {
     to: "/assessments",
     label: "Assessments",
+    statusKey: "template" as const,
     when: "Best for a consistent, repeatable evaluation against a standardized, published question set — scores roll up the same way across every facility you assess.",
   },
   {
     to: "/capability",
     label: "Capability Assessment",
+    statusKey: "capability" as const,
     when: "Best when the real question is whether a capability actually performs well enough to support production, not just whether the equipment or process exists on paper.",
   },
   {
     to: "/field",
     label: "Field Assessment",
+    statusKey: "field" as const,
     when: "Best for a fast, on-the-floor walkthrough — capturing observations, gaps, and photos as you move through the facility, not sitting down with a fixed form.",
   },
 ];
 
 function AssessmentHubPage() {
-  const { organization, organizations, facilities } = useApp();
+  const { organization, organizations, facility, facilities } = useApp();
+  const status = useAssessmentHubStatus(facility?.id);
 
   return (
     <div className="mx-auto max-w-4xl space-y-8">
@@ -97,26 +102,58 @@ function AssessmentHubPage() {
             subtitle="These are alternatives, not sequential steps — pick the one that fits"
           >
             <div className="grid gap-4 sm:grid-cols-3">
-              {ASSESSMENT_TYPES.map((type) => (
-                <div
-                  key={type.to}
-                  className="flex flex-col justify-between rounded-md border border-border p-4"
-                >
-                  <div>
-                    <p className="font-display text-sm font-bold uppercase tracking-wide text-foreground">
-                      {type.label}
-                    </p>
-                    <p className="mt-2 text-xs text-muted-foreground">
-                      {type.when}
-                    </p>
+              {ASSESSMENT_TYPES.map((type) => {
+                const s = status.data?.[type.statusKey];
+                return (
+                  <div
+                    key={type.to}
+                    className="flex flex-col justify-between rounded-md border border-border p-4"
+                  >
+                    <div>
+                      <p className="font-display text-sm font-bold uppercase tracking-wide text-foreground">
+                        {type.label}
+                      </p>
+                      <p className="mt-2 text-xs text-muted-foreground">
+                        {type.when}
+                      </p>
+                      {facility ? (
+                        <p className="mt-3 border-t border-border pt-2 text-xs font-medium text-foreground">
+                          {status.isLoading ? (
+                            "Loading…"
+                          ) : s && "inProgress" in s ? (
+                            s.total === 0 ? (
+                              "None yet for this facility"
+                            ) : (
+                              <>
+                                {s.inProgress > 0
+                                  ? `${s.inProgress} in progress`
+                                  : null}
+                                {s.inProgress > 0 && s.finalized > 0
+                                  ? " · "
+                                  : null}
+                                {s.finalized > 0
+                                  ? `${s.finalized} finalized`
+                                  : null}
+                              </>
+                            )
+                          ) : s ? (
+                            s.total === 0 ? (
+                              "None yet for this facility"
+                            ) : (
+                              `${s.total} recorded`
+                            )
+                          ) : null}
+                        </p>
+                      ) : null}
+                    </div>
+                    <Link to={type.to} className="mt-4">
+                      <Button size="sm" className="w-full">
+                        Start
+                      </Button>
+                    </Link>
                   </div>
-                  <Link to={type.to} className="mt-4">
-                    <Button size="sm" className="w-full">
-                      Start
-                    </Button>
-                  </Link>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </Panel>
 
