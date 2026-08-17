@@ -1,11 +1,12 @@
 /**
- * Server-only: derives intelligence_events rows from the Assessment
- * product's three real closure points (findings, corrective_actions,
- * improvement_projects). Split into its own .server.ts file for the same
- * reason as intake-shared.server.ts — these are plain functions that call
- * withUser directly, and mixing them into a file that also exports
- * createServerFn results breaks TanStack Start's client/server code
- * splitting (see the Phase 4 bug this project already hit once).
+ * Server-only: derives intelligence_events rows from each product's real
+ * closure points — findings/corrective_actions/improvement_projects for
+ * the Assessment product (Phase C), cnc_change_log for the CNC product
+ * (Phase F). Split into its own .server.ts file for the same reason as
+ * intake-shared.server.ts — these are plain functions that call withUser
+ * directly, and mixing them into a file that also exports createServerFn
+ * results breaks TanStack Start's client/server code splitting (see the
+ * Phase 4 bug this project already hit once).
  *
  * Deliberately re-reads the source row from the database rather than
  * trusting client-supplied problem/resolution/outcome text — the entire
@@ -19,8 +20,11 @@
 import { withUser } from "@/lib/db.server";
 import { generatePatternFromEvent } from "@/lib/intelligence-pattern-ai.server";
 
+type IntelligenceProduct = "assessment" | "cad" | "cnc";
+
 async function insertEvent(
   userId: string,
+  product: IntelligenceProduct,
   row: {
     organization_id: string;
     facility_id: string | null;
@@ -38,11 +42,12 @@ async function insertEvent(
       `INSERT INTO public.intelligence_events
          (organization_id, facility_id, product, problem_summary, resolution_summary,
           outcome_summary, source_table, source_id, contribute_consent, created_by)
-       VALUES ($1,$2,'assessment',$3,$4,$5,$6,$7,true,$8)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,true,$9)
        RETURNING id`,
       [
         row.organization_id,
         row.facility_id,
+        product,
         row.problem_summary,
         row.resolution_summary,
         row.outcome_summary,
@@ -112,7 +117,7 @@ export async function captureFromFinding(
     ? `${row.description}\n\nRoot cause: ${row.root_cause}`
     : row.description;
 
-  await insertEvent(userId, {
+  await insertEvent(userId, "assessment", {
     organization_id: row.organization_id,
     facility_id: row.facility_id,
     source_table: "findings",
@@ -149,7 +154,7 @@ export async function captureFromCorrectiveAction(
   });
   if (!row) return;
 
-  await insertEvent(userId, {
+  await insertEvent(userId, "assessment", {
     organization_id: row.organization_id,
     facility_id: row.facility_id,
     source_table: "corrective_actions",
@@ -193,7 +198,7 @@ export async function captureFromProject(
     .filter(Boolean)
     .join("\n");
 
-  await insertEvent(userId, {
+  await insertEvent(userId, "assessment", {
     organization_id: row.organization_id,
     facility_id: row.facility_id,
     source_table: "improvement_projects",
@@ -201,5 +206,47 @@ export async function captureFromProject(
     problem_summary,
     resolution_summary: row.actions,
     outcome_summary: row.results,
+  });
+}
+
+/** Call after a CNC change log entry has just been marked 'verified'. */
+export async function captureFromCncChangeLog(
+  userId: string,
+  entryId: string,
+): Promise<void> {
+  const row = await withUser(userId, async (client) => {
+    const { rows } = await client.query(
+      `SELECT organization_id, facility_id, machine_name, program_identifier, change_description,
+              reason, outcome_description
+         FROM public.cnc_change_log WHERE id = $1`,
+      [entryId],
+    );
+    return rows[0] as
+      | {
+          organization_id: string;
+          facility_id: string | null;
+          machine_name: string;
+          program_identifier: string | null;
+          change_description: string;
+          reason: string;
+          outcome_description: string | null;
+        }
+      | undefined;
+  });
+  if (!row) return;
+
+  const machineContext = row.program_identifier
+    ? `${row.machine_name} (program ${row.program_identifier})`
+    : row.machine_name;
+  const problem_summary = `${row.reason}\n\nMachine: ${machineContext}`;
+
+  await insertEvent(userId, "cnc", {
+    organization_id: row.organization_id,
+    facility_id: row.facility_id,
+    source_table: "cnc_change_log",
+    source_id: entryId,
+    problem_summary,
+    resolution_summary: row.change_description,
+    outcome_summary: row.outcome_description,
   });
 }
