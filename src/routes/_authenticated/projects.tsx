@@ -1,11 +1,18 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { PageHeader, Panel, EmptyState } from "@/components/ironiq/layout-primitives";
+import {
+  PageHeader,
+  Panel,
+  EmptyState,
+} from "@/components/ironiq/layout-primitives";
 import { ProjectStatusBadge } from "@/components/ironiq/badges";
 import { StatCard } from "@/components/ironiq/score-visuals";
 import { useApp } from "@/context/app-context";
 import { useFindings, useProjects } from "@/lib/api";
 import { useProjectFindings } from "@/lib/mutations";
-import { ProjectFindingsDialog } from "@/components/ironiq/entity-dialogs";
+import {
+  ProjectFindingsDialog,
+  ImprovementProjectDialog,
+} from "@/components/ironiq/entity-dialogs";
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/_authenticated/projects")({
@@ -18,7 +25,10 @@ export const Route = createFileRoute("/_authenticated/projects")({
           "Improvement projects linked to readiness gaps, with sponsor, objective, baseline and target metrics, financial impact and progress.",
       },
       { property: "og:title", content: "Improvement Projects — IronIQ" },
-      { property: "og:description", content: "Improvement portfolio driving readiness score gains." },
+      {
+        property: "og:description",
+        content: "Improvement portfolio driving readiness score gains.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
@@ -27,12 +37,15 @@ export const Route = createFileRoute("/_authenticated/projects")({
 });
 
 function ProjectsPage() {
-  const { facility } = useApp();
+  const { organization, facility, can } = useApp();
   const projects = useProjects(facility?.id).data ?? [];
   const findings = useFindings(facility?.id).data ?? [];
   const links = useProjectFindings(projects.map((p) => p.id)).data ?? [];
 
-  const impact = projects.reduce((s, p) => s + Number(p.estimated_financial_impact ?? 0), 0);
+  const impact = projects.reduce(
+    (s, p) => s + Number(p.estimated_financial_impact ?? 0),
+    0,
+  );
   const active = projects.filter((p) => p.status === "in_progress").length;
   const complete = projects.filter((p) => p.status === "complete").length;
 
@@ -42,6 +55,15 @@ function ProjectsPage() {
         eyebrow={facility?.name ?? "Facility"}
         title="Improvement Projects"
         description="The execution layer of the readiness programme — each project closes a scored gap and is tracked to measurable results."
+        actions={
+          can("manage_findings") && organization && facility ? (
+            <ImprovementProjectDialog
+              organizationId={organization.id}
+              facilityId={facility.id}
+              trigger={<Button>+ New project</Button>}
+            />
+          ) : undefined
+        }
       />
 
       <div className="grid gap-4 sm:grid-cols-3">
@@ -59,12 +81,17 @@ function ProjectsPage() {
       ) : (
         <div className="space-y-4">
           {projects.map((p) => (
-            <Panel key={p.id} title={p.name} subtitle={p.objective ?? undefined}>
+            <Panel
+              key={p.id}
+              title={p.name}
+              subtitle={p.objective ?? undefined}
+            >
               <div className="space-y-4">
                 <div className="flex flex-wrap items-center gap-3">
                   <ProjectStatusBadge status={p.status} />
                   <span className="text-xs text-muted-foreground">
-                    Owner {p.owner ?? "—"} · Sponsor {p.executive_sponsor ?? "—"}
+                    Owner {p.owner ?? "—"} · Sponsor{" "}
+                    {p.executive_sponsor ?? "—"}
                   </span>
                   <span className="metric ml-auto text-sm font-semibold text-foreground">
                     {p.percent_complete}%
@@ -82,20 +109,39 @@ function ProjectsPage() {
                       </Button>
                     }
                   />
+                  {can("manage_findings") && organization && facility ? (
+                    <ImprovementProjectDialog
+                      project={p}
+                      organizationId={organization.id}
+                      facilityId={facility.id}
+                      trigger={
+                        <Button variant="outline" size="sm">
+                          Manage
+                        </Button>
+                      }
+                    />
+                  ) : null}
                 </div>
 
                 <div className="h-2 w-full overflow-hidden rounded-sm bg-muted">
-                  <div className="h-full bg-primary transition-all" style={{ width: `${p.percent_complete}%` }} />
+                  <div
+                    className="h-full bg-primary transition-all"
+                    style={{ width: `${p.percent_complete}%` }}
+                  />
                 </div>
 
                 <dl className="grid gap-4 text-sm md:grid-cols-3">
                   <div>
                     <dt className="eyebrow">Baseline</dt>
-                    <dd className="mt-0.5 text-muted-foreground">{p.baseline_metric ?? "—"}</dd>
+                    <dd className="mt-0.5 text-muted-foreground">
+                      {p.baseline_metric ?? "—"}
+                    </dd>
                   </div>
                   <div>
                     <dt className="eyebrow">Target</dt>
-                    <dd className="mt-0.5 text-muted-foreground">{p.target_metric ?? "—"}</dd>
+                    <dd className="mt-0.5 text-muted-foreground">
+                      {p.target_metric ?? "—"}
+                    </dd>
                   </div>
                   <div>
                     <dt className="eyebrow">Financial impact</dt>
@@ -113,13 +159,17 @@ function ProjectsPage() {
                   </div>
                   <div className="md:col-span-2">
                     <dt className="eyebrow">Risks</dt>
-                    <dd className="mt-0.5 text-muted-foreground">{p.risks ?? "—"}</dd>
+                    <dd className="mt-0.5 text-muted-foreground">
+                      {p.risks ?? "—"}
+                    </dd>
                   </div>
                 </dl>
 
                 {p.results ? (
                   <p className="border-t border-border pt-4 text-sm text-muted-foreground">
-                    <span className="font-semibold text-foreground/80">Results: </span>
+                    <span className="font-semibold text-foreground/80">
+                      Results:{" "}
+                    </span>
                     {p.results}
                   </p>
                 ) : null}

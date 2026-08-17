@@ -6,11 +6,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import * as fn from "@/lib/mutations.functions";
-import type { Finding, ImprovementProject } from "./domain";
+import type { CorrectiveAction, Finding, ImprovementProject } from "./domain";
 
 function useInvalidator(keys: string[]) {
   const queryClient = useQueryClient();
-  return () => keys.forEach((key) => queryClient.invalidateQueries({ queryKey: [key] }));
+  return () =>
+    keys.forEach((key) => queryClient.invalidateQueries({ queryKey: [key] }));
 }
 
 export interface OrganizationInput {
@@ -29,7 +30,8 @@ export function useSaveOrganization() {
   const invalidate = useInvalidator(["organizations"]);
   return useMutation({
     mutationFn: async (input: OrganizationInput) => {
-      if (!input.name?.trim()) throw new Error("Organization name is required.");
+      if (!input.name?.trim())
+        throw new Error("Organization name is required.");
       const { id, ...values } = input;
       await fn.saveOrganization({ data: { id, values } });
     },
@@ -37,7 +39,10 @@ export function useSaveOrganization() {
       invalidate();
       toast.success("Organization saved");
     },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Could not save organization"),
+    onError: (e) =>
+      toast.error(
+        e instanceof Error ? e.message : "Could not save organization",
+      ),
   });
 }
 
@@ -50,7 +55,10 @@ export function useArchiveOrganization() {
       invalidate();
       toast.success("Organization updated");
     },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Could not archive organization"),
+    onError: (e) =>
+      toast.error(
+        e instanceof Error ? e.message : "Could not archive organization",
+      ),
   });
 }
 
@@ -75,7 +83,8 @@ export function useSaveFacility() {
   return useMutation({
     mutationFn: async (input: FacilityInput) => {
       if (!input.name?.trim()) throw new Error("Facility name is required.");
-      if (!input.organization_id) throw new Error("Select an organization first.");
+      if (!input.organization_id)
+        throw new Error("Select an organization first.");
       const { id, ...values } = input;
       await fn.saveFacility({ data: { id, values } });
     },
@@ -83,7 +92,8 @@ export function useSaveFacility() {
       invalidate();
       toast.success("Facility saved");
     },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Could not save facility"),
+    onError: (e) =>
+      toast.error(e instanceof Error ? e.message : "Could not save facility"),
   });
 }
 
@@ -96,7 +106,10 @@ export function useArchiveFacility() {
       invalidate();
       toast.success("Facility updated");
     },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Could not archive facility"),
+    onError: (e) =>
+      toast.error(
+        e instanceof Error ? e.message : "Could not archive facility",
+      ),
   });
 }
 
@@ -117,17 +130,33 @@ export type FindingUpdate = Partial<
 export function useUpdateFinding() {
   const invalidate = useInvalidator(["findings"]);
   return useMutation({
-    mutationFn: async ({ id, values }: { id: string; values: FindingUpdate }) => {
+    mutationFn: async ({
+      id,
+      values,
+      contributeToIntelligence,
+    }: {
+      id: string;
+      values: FindingUpdate;
+      /** Consent captured at the moment of closing, per Phase A of the
+       * Intelligence Layer plan — only acted on when status is actually
+       * transitioning to closed/accepted_risk in this same call. */
+      contributeToIntelligence?: boolean;
+    }) => {
       if (values.status === "closed" && !values.closure_evidence?.trim()) {
-        throw new Error("Closure evidence is required before a finding can be closed.");
+        throw new Error(
+          "Closure evidence is required before a finding can be closed.",
+        );
       }
-      await fn.updateFinding({ data: { id, values } });
+      await fn.updateFinding({
+        data: { id, values, contributeToIntelligence },
+      });
     },
     onSuccess: () => {
       invalidate();
       toast.success("Finding updated");
     },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Could not update finding"),
+    onError: (e) =>
+      toast.error(e instanceof Error ? e.message : "Could not update finding"),
   });
 }
 
@@ -154,11 +183,156 @@ export function useToggleProjectFinding() {
       project: ImprovementProject;
       findingId: string;
       linked: boolean;
-    }) => fn.toggleProjectFinding({ data: { projectId: project.id, findingId, linked } }),
+    }) =>
+      fn.toggleProjectFinding({
+        data: { projectId: project.id, findingId, linked },
+      }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["project-findings"] });
       toast.success("Project links updated");
     },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Could not update project links"),
+    onError: (e) =>
+      toast.error(
+        e instanceof Error ? e.message : "Could not update project links",
+      ),
+  });
+}
+
+// ---------------------------------------------------------------------
+// Corrective actions — previously read-only (useCorrectiveActions in
+// api.ts existed; nothing wrote to this table). First save/delete path.
+// ---------------------------------------------------------------------
+
+export type CorrectiveActionInput = Partial<
+  Pick<
+    CorrectiveAction,
+    | "finding_id"
+    | "facility_id"
+    | "action_description"
+    | "owner"
+    | "target_date"
+    | "completed_date"
+    | "status"
+    | "verification_notes"
+  >
+>;
+
+export function useSaveCorrectiveAction() {
+  const invalidate = useInvalidator(["corrective-actions"]);
+  return useMutation({
+    mutationFn: async ({
+      id,
+      values,
+      contributeToIntelligence,
+    }: {
+      id?: string;
+      values: CorrectiveActionInput;
+      contributeToIntelligence?: boolean;
+    }) => {
+      if (!values.action_description?.trim())
+        throw new Error("Describe the corrective action first.");
+      if (values.status === "closed" && !values.verification_notes?.trim()) {
+        throw new Error(
+          "Verification notes are required before closing a corrective action.",
+        );
+      }
+      await fn.saveCorrectiveAction({
+        data: { id, values, contributeToIntelligence },
+      });
+    },
+    onSuccess: () => {
+      invalidate();
+      toast.success("Corrective action saved");
+    },
+    onError: (e) =>
+      toast.error(
+        e instanceof Error ? e.message : "Could not save corrective action",
+      ),
+  });
+}
+
+export function useDeleteCorrectiveAction() {
+  const invalidate = useInvalidator(["corrective-actions"]);
+  return useMutation({
+    mutationFn: (id: string) => fn.deleteCorrectiveAction({ data: { id } }),
+    onSuccess: () => {
+      invalidate();
+      toast.success("Corrective action removed");
+    },
+    onError: (e) =>
+      toast.error(
+        e instanceof Error ? e.message : "Could not remove corrective action",
+      ),
+  });
+}
+
+// ---------------------------------------------------------------------
+// Improvement projects — same story: read-only display existed
+// (useImprovementProjects in api.ts), nothing wrote to this table.
+// ---------------------------------------------------------------------
+
+export type ImprovementProjectInput = Partial<
+  Pick<
+    ImprovementProject,
+    | "organization_id"
+    | "facility_id"
+    | "name"
+    | "owner"
+    | "executive_sponsor"
+    | "objective"
+    | "baseline_metric"
+    | "target_metric"
+    | "estimated_financial_impact"
+    | "planned_start"
+    | "planned_completion"
+    | "status"
+    | "percent_complete"
+    | "risks"
+    | "actions"
+    | "results"
+  >
+>;
+
+export function useSaveImprovementProject() {
+  const invalidate = useInvalidator(["projects"]);
+  return useMutation({
+    mutationFn: async ({
+      id,
+      values,
+      contributeToIntelligence,
+    }: {
+      id?: string;
+      values: ImprovementProjectInput;
+      contributeToIntelligence?: boolean;
+    }) => {
+      if (!values.name?.trim()) throw new Error("Name the project first.");
+      if (values.status === "complete" && !values.results?.trim()) {
+        throw new Error(
+          "Record the results before marking a project complete.",
+        );
+      }
+      await fn.saveImprovementProject({
+        data: { id, values, contributeToIntelligence },
+      });
+    },
+    onSuccess: () => {
+      invalidate();
+      toast.success("Project saved");
+    },
+    onError: (e) =>
+      toast.error(e instanceof Error ? e.message : "Could not save project"),
+  });
+}
+
+export function useDeleteImprovementProject() {
+  const invalidate = useInvalidator(["projects"]);
+  return useMutation({
+    mutationFn: (id: string) => fn.deleteImprovementProject({ data: { id } }),
+    onSuccess: () => {
+      invalidate();
+      toast.success("Project removed");
+    },
+    onError: (e) =>
+      toast.error(e instanceof Error ? e.message : "Could not remove project"),
   });
 }
