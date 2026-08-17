@@ -14,8 +14,11 @@ import {
   rejectIntelligencePattern,
 } from "@/lib/intelligence-review.functions";
 
+export type IntelligenceProductFilter = "assessment" | "cad" | "cnc";
+
 export interface AskIronIQPattern {
   id: string;
+  product: IntelligenceProductFilter;
   category_label: string | null;
   pattern_summary: string;
   pattern_resolution: string | null;
@@ -30,8 +33,14 @@ export interface AskIronIQResult {
 
 export function useAskIronIQ() {
   return useMutation({
-    mutationFn: (question: string) =>
-      askIronIQ({ data: { question } }) as Promise<AskIronIQResult>,
+    mutationFn: ({
+      question,
+      products,
+    }: {
+      question: string;
+      products?: IntelligenceProductFilter[];
+    }) =>
+      askIronIQ({ data: { question, products } }) as Promise<AskIronIQResult>,
     onError: (e) =>
       toast.error(e instanceof Error ? e.message : "Could not get an answer"),
   });

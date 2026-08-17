@@ -24,6 +24,7 @@ import {
   FileImage,
   Sparkles,
   Code2,
+  Compass,
 } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { IronIQMark } from "@/components/ironiq/ironiq-mark";
@@ -63,45 +64,45 @@ const NAV: {
     // Prerequisite for everything below: an assessment can't be scoped
     // without an organization and (for most systems) a facility. See
     // PrerequisiteGate in layout-primitives.tsx, which points back here.
+    // Assessment Templates lives here too, not in the Assessment pipeline
+    // itself — it's org-wide configuration an admin sets up occasionally,
+    // not a step an assessor walks through while evaluating one client.
     section: "Setup",
     items: [
       { to: "/organizations", label: "Organizations", icon: Building2 },
       { to: "/facilities", label: "Facilities", icon: Factory },
-    ],
-  },
-  {
-    // Ordered to match how an assessment actually happens: gather
-    // documentation first (Bulk Intake), then pick which assessment type
-    // to run. Assessment Templates lives here too, not under
-    // Administration, since it's the thing Assessments directly consumes.
-    section: "Assessment Workflow",
-    items: [
-      { to: "/intake", label: "Bulk Intake", icon: UploadCloud },
-      { to: "/assessments", label: "Assessments", icon: ClipboardCheck },
-      { to: "/capability", label: "Capability Assessment", icon: Gauge },
-      { to: "/field", label: "Field Assessment", icon: ClipboardList },
       { to: "/templates", label: "Assessment Templates", icon: FileStack },
     ],
   },
   {
-    // A single entry for now, deliberately — same reasoning as Bulk
-    // Intake and Ask IronIQ before it: this is a genuinely separate
-    // product (per the product-family strategy), but the full nav
-    // restructuring into distinct product streams is Phase H, still later.
+    // One of three co-equal product pipelines (Assessment / CAD
+    // Conversion / CNC Coding) — deliberately visually equal-weighted
+    // with the other two, not treated as the "main" product with the
+    // others bolted on. "Assessment Hub" is first and is the actual
+    // entry point: it presents Template/Capability/Field Assessment as
+    // parallel alternatives with a "use this when" one-liner each,
+    // rather than a flat list with no indication of sequence. Findings
+    // and Improvement Projects live here too now, not in a separate
+    // section — a finding comes FROM an assessment, closing it is the
+    // next step, and splitting them apart was actively misleading.
+    section: "Assessment",
+    items: [
+      { to: "/assessment", label: "Assessment Hub", icon: Compass },
+      { to: "/intake", label: "Bulk Intake", icon: UploadCloud },
+      { to: "/assessments", label: "Assessments", icon: ClipboardCheck },
+      { to: "/capability", label: "Capability Assessment", icon: Gauge },
+      { to: "/field", label: "Field Assessment", icon: ClipboardList },
+      { to: "/findings", label: "Findings", icon: AlertTriangle },
+      { to: "/projects", label: "Improvement Projects", icon: TrendingUp },
+    ],
+  },
+  {
     section: "CAD Conversion",
     items: [{ to: "/cad", label: "CAD Conversion", icon: FileImage }],
   },
   {
-    // Same single-entry pattern as CAD/Bulk Intake/Ask IronIQ before it.
     section: "CNC Coding Enhancement",
     items: [{ to: "/cnc", label: "CNC Coding Enhancement", icon: Code2 }],
-  },
-  {
-    section: "Findings & Improvement",
-    items: [
-      { to: "/findings", label: "Findings", icon: AlertTriangle },
-      { to: "/projects", label: "Improvement Projects", icon: TrendingUp },
-    ],
   },
   {
     section: "Reporting",
@@ -126,6 +127,19 @@ const NAV: {
       { to: "/estimates", label: "Estimating", icon: Calculator },
       { to: "/production", label: "Production Flow", icon: Cpu },
       { to: "/production/libraries", label: "Machine & Tooling", icon: Wrench },
+    ],
+  },
+  {
+    // Home for features that are built but deliberately not activated
+    // yet — right now just Executive Rollup, held back because it
+    // answers a question about Ironclad's own internal RFQ/estimating
+    // performance rather than customer-facing value from the three
+    // product streams or the Intelligence Layer. Add future not-yet-
+    // prioritized features here rather than either hiding them entirely
+    // or shipping them live before they're actually the priority.
+    section: "Coming Soon",
+    items: [
+      { to: "/executive-rollup", label: "Executive Rollup", icon: TrendingUp },
     ],
   },
   {

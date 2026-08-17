@@ -14,10 +14,12 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedAdministrationRouteImport } from './routes/_authenticated/administration'
 import { Route as AuthenticatedAskIroniqRouteImport } from './routes/_authenticated/ask-ironiq'
+import { Route as AuthenticatedAssessmentRouteImport } from './routes/_authenticated/assessment'
 import { Route as AuthenticatedCadRouteImport } from './routes/_authenticated/cad'
 import { Route as AuthenticatedCncRouteImport } from './routes/_authenticated/cnc'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedEstimatesRouteImport } from './routes/_authenticated/estimates'
+import { Route as AuthenticatedExecutiveRollupRouteImport } from './routes/_authenticated/executive-rollup'
 import { Route as AuthenticatedFacilitiesRouteImport } from './routes/_authenticated/facilities'
 import { Route as AuthenticatedFindingsRouteImport } from './routes/_authenticated/findings'
 import { Route as AuthenticatedIntakeRouteImport } from './routes/_authenticated/intake'
@@ -63,6 +65,11 @@ const AuthenticatedAskIroniqRoute = AuthenticatedAskIroniqRouteImport.update({
   path: '/ask-ironiq',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedAssessmentRoute = AuthenticatedAssessmentRouteImport.update({
+  id: '/assessment',
+  path: '/assessment',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedCadRoute = AuthenticatedCadRouteImport.update({
   id: '/cad',
   path: '/cad',
@@ -83,6 +90,12 @@ const AuthenticatedEstimatesRoute = AuthenticatedEstimatesRouteImport.update({
   path: '/estimates',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedExecutiveRollupRoute =
+  AuthenticatedExecutiveRollupRouteImport.update({
+    id: '/executive-rollup',
+    path: '/executive-rollup',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedFacilitiesRoute = AuthenticatedFacilitiesRouteImport.update({
   id: '/facilities',
   path: '/facilities',
@@ -195,10 +208,12 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/administration': typeof AuthenticatedAdministrationRoute
   '/ask-ironiq': typeof AuthenticatedAskIroniqRoute
+  '/assessment': typeof AuthenticatedAssessmentRoute
   '/cad': typeof AuthenticatedCadRoute
   '/cnc': typeof AuthenticatedCncRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/estimates': typeof AuthenticatedEstimatesRoute
+  '/executive-rollup': typeof AuthenticatedExecutiveRollupRoute
   '/facilities': typeof AuthenticatedFacilitiesRoute
   '/findings': typeof AuthenticatedFindingsRoute
   '/intake': typeof AuthenticatedIntakeRoute
@@ -224,10 +239,12 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/administration': typeof AuthenticatedAdministrationRoute
   '/ask-ironiq': typeof AuthenticatedAskIroniqRoute
+  '/assessment': typeof AuthenticatedAssessmentRoute
   '/cad': typeof AuthenticatedCadRoute
   '/cnc': typeof AuthenticatedCncRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/estimates': typeof AuthenticatedEstimatesRoute
+  '/executive-rollup': typeof AuthenticatedExecutiveRollupRoute
   '/facilities': typeof AuthenticatedFacilitiesRoute
   '/findings': typeof AuthenticatedFindingsRoute
   '/intake': typeof AuthenticatedIntakeRoute
@@ -254,10 +271,12 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/_authenticated/administration': typeof AuthenticatedAdministrationRoute
   '/_authenticated/ask-ironiq': typeof AuthenticatedAskIroniqRoute
+  '/_authenticated/assessment': typeof AuthenticatedAssessmentRoute
   '/_authenticated/cad': typeof AuthenticatedCadRoute
   '/_authenticated/cnc': typeof AuthenticatedCncRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/estimates': typeof AuthenticatedEstimatesRoute
+  '/_authenticated/executive-rollup': typeof AuthenticatedExecutiveRollupRoute
   '/_authenticated/facilities': typeof AuthenticatedFacilitiesRoute
   '/_authenticated/findings': typeof AuthenticatedFindingsRoute
   '/_authenticated/intake': typeof AuthenticatedIntakeRoute
@@ -285,10 +304,12 @@ export interface FileRouteTypes {
     | '/auth'
     | '/administration'
     | '/ask-ironiq'
+    | '/assessment'
     | '/cad'
     | '/cnc'
     | '/dashboard'
     | '/estimates'
+    | '/executive-rollup'
     | '/facilities'
     | '/findings'
     | '/intake'
@@ -314,10 +335,12 @@ export interface FileRouteTypes {
     | '/auth'
     | '/administration'
     | '/ask-ironiq'
+    | '/assessment'
     | '/cad'
     | '/cnc'
     | '/dashboard'
     | '/estimates'
+    | '/executive-rollup'
     | '/facilities'
     | '/findings'
     | '/intake'
@@ -343,10 +366,12 @@ export interface FileRouteTypes {
     | '/auth'
     | '/_authenticated/administration'
     | '/_authenticated/ask-ironiq'
+    | '/_authenticated/assessment'
     | '/_authenticated/cad'
     | '/_authenticated/cnc'
     | '/_authenticated/dashboard'
     | '/_authenticated/estimates'
+    | '/_authenticated/executive-rollup'
     | '/_authenticated/facilities'
     | '/_authenticated/findings'
     | '/_authenticated/intake'
@@ -411,6 +436,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAskIroniqRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/assessment': {
+      id: '/_authenticated/assessment'
+      path: '/assessment'
+      fullPath: '/assessment'
+      preLoaderRoute: typeof AuthenticatedAssessmentRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/cad': {
       id: '/_authenticated/cad'
       path: '/cad'
@@ -437,6 +469,13 @@ declare module '@tanstack/react-router' {
       path: '/estimates'
       fullPath: '/estimates'
       preLoaderRoute: typeof AuthenticatedEstimatesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/executive-rollup': {
+      id: '/_authenticated/executive-rollup'
+      path: '/executive-rollup'
+      fullPath: '/executive-rollup'
+      preLoaderRoute: typeof AuthenticatedExecutiveRollupRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/facilities': {
@@ -600,10 +639,12 @@ const AuthenticatedProductionRouteWithChildren =
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdministrationRoute: typeof AuthenticatedAdministrationRoute
   AuthenticatedAskIroniqRoute: typeof AuthenticatedAskIroniqRoute
+  AuthenticatedAssessmentRoute: typeof AuthenticatedAssessmentRoute
   AuthenticatedCadRoute: typeof AuthenticatedCadRoute
   AuthenticatedCncRoute: typeof AuthenticatedCncRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedEstimatesRoute: typeof AuthenticatedEstimatesRoute
+  AuthenticatedExecutiveRollupRoute: typeof AuthenticatedExecutiveRollupRoute
   AuthenticatedFacilitiesRoute: typeof AuthenticatedFacilitiesRoute
   AuthenticatedFindingsRoute: typeof AuthenticatedFindingsRoute
   AuthenticatedIntakeRoute: typeof AuthenticatedIntakeRoute
@@ -624,10 +665,12 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdministrationRoute: AuthenticatedAdministrationRoute,
   AuthenticatedAskIroniqRoute: AuthenticatedAskIroniqRoute,
+  AuthenticatedAssessmentRoute: AuthenticatedAssessmentRoute,
   AuthenticatedCadRoute: AuthenticatedCadRoute,
   AuthenticatedCncRoute: AuthenticatedCncRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedEstimatesRoute: AuthenticatedEstimatesRoute,
+  AuthenticatedExecutiveRollupRoute: AuthenticatedExecutiveRollupRoute,
   AuthenticatedFacilitiesRoute: AuthenticatedFacilitiesRoute,
   AuthenticatedFindingsRoute: AuthenticatedFindingsRoute,
   AuthenticatedIntakeRoute: AuthenticatedIntakeRoute,
