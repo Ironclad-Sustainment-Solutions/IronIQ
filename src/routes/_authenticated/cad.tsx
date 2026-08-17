@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
+import { Pencil } from "lucide-react";
 import {
   PageHeader,
   Panel,
@@ -7,6 +8,7 @@ import {
 } from "@/components/ironiq/layout-primitives";
 import { Tag } from "@/components/ironiq/badges";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { useApp } from "@/context/app-context";
 import {
   useCadJobs,
@@ -15,6 +17,7 @@ import {
   useCadFields,
   useUpdateCadFieldStatus,
   type CadJobRow,
+  type CadFieldRow,
 } from "@/lib/cad-api";
 
 export const Route = createFileRoute("/_authenticated/cad")({
@@ -163,65 +166,121 @@ function CadConversionPage() {
         ) : (
           <div className="space-y-3">
             {(fields.data ?? []).map((f) => (
-              <div key={f.id} className="rounded-md border border-border p-4">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                      {f.field_type} · {f.field_name}
-                    </p>
-                    <p className="mt-1 text-sm text-foreground">
-                      {f.field_value}
-                    </p>
-                    {f.location_hint ? (
-                      <p className="mt-1 text-xs text-muted-foreground">
-                        Location: {f.location_hint}
-                      </p>
-                    ) : null}
-                  </div>
-                  <Tag
-                    token={
-                      f.confidence === "high"
-                        ? "success"
-                        : f.confidence === "moderate"
-                          ? "primary"
-                          : "steel"
-                    }
-                  >
-                    {f.confidence}
-                  </Tag>
-                </div>
-                <div className="mt-3 flex items-center justify-between gap-3">
-                  <p className="text-xs text-muted-foreground">
-                    status: {f.status}
-                  </p>
-                  {f.status === "suggested" ? (
-                    <div className="flex gap-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() =>
-                          updateStatus.mutate({ id: f.id, status: "accepted" })
-                        }
-                      >
-                        Accept
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() =>
-                          updateStatus.mutate({ id: f.id, status: "rejected" })
-                        }
-                      >
-                        Reject
-                      </Button>
-                    </div>
-                  ) : null}
-                </div>
-              </div>
+              <CadFieldReviewRow key={f.id} field={f} jobId={selectedJobId} />
             ))}
           </div>
         )}
       </Panel>
+    </div>
+  );
+}
+
+function CadFieldReviewRow({
+  field: f,
+  jobId,
+}: {
+  field: CadFieldRow;
+  jobId: string;
+}) {
+  const updateStatus = useUpdateCadFieldStatus(jobId);
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(f.field_value);
+
+  return (
+    <div className="rounded-md border border-border p-4">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0 flex-1">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            {f.field_type} · {f.field_name}
+          </p>
+          {editing ? (
+            <Input
+              autoFocus
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              className="mt-1"
+            />
+          ) : (
+            <p className="mt-1 text-sm text-foreground">{f.field_value}</p>
+          )}
+          {f.location_hint ? (
+            <p className="mt-1 text-xs text-muted-foreground">
+              Location: {f.location_hint}
+            </p>
+          ) : null}
+        </div>
+        <Tag
+          token={
+            f.confidence === "high"
+              ? "success"
+              : f.confidence === "moderate"
+                ? "primary"
+                : "steel"
+          }
+        >
+          {f.confidence}
+        </Tag>
+      </div>
+      <div className="mt-3 flex items-center justify-between gap-3">
+        <p className="text-xs text-muted-foreground">status: {f.status}</p>
+        <div className="flex gap-2">
+          {editing ? (
+            <>
+              <Button
+                size="sm"
+                disabled={updateStatus.isPending || !draft.trim()}
+                onClick={() =>
+                  updateStatus.mutate(
+                    { id: f.id, status: "edited", editedValue: draft },
+                    { onSuccess: () => setEditing(false) },
+                  )
+                }
+              >
+                Save correction
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => setEditing(false)}
+              >
+                Cancel
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => setEditing(true)}
+              >
+                <Pencil className="size-3.5" aria-hidden /> Edit
+              </Button>
+              {f.status === "suggested" ? (
+                <>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() =>
+                      updateStatus.mutate({ id: f.id, status: "accepted" })
+                    }
+                  >
+                    Accept
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() =>
+                      updateStatus.mutate({ id: f.id, status: "rejected" })
+                    }
+                  >
+                    Reject
+                  </Button>
+                </>
+              ) : null}
+            </>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

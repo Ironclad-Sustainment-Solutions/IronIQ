@@ -86,3 +86,25 @@ export function useDeleteCncLogEntry(organizationId?: string | null) {
       toast.error(e instanceof Error ? e.message : "Could not remove entry"),
   });
 }
+
+export function useUpdateCncLogEntry(organizationId?: string | null) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: {
+      id: string;
+      machineName: string;
+      programIdentifier?: string;
+      changeCategory: CncChangeCategory;
+      changeDescription: string;
+      reason: string;
+    }) => fn.updateCncChangeLogEntry({ data: input }),
+    onSuccess: () => {
+      void qc.invalidateQueries({
+        queryKey: ["cnc-change-log", organizationId],
+      });
+      toast.success("Entry updated");
+    },
+    onError: (e) =>
+      toast.error(e instanceof Error ? e.message : "Could not update entry"),
+  });
+}

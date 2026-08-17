@@ -31,9 +31,11 @@ import {
 import {
   FINDING_STATUS_LABELS,
   PROJECT_STATUS_LABELS,
+  SEVERITY_ORDER,
   type CorrectiveAction,
   type Facility,
   type Finding,
+  type FindingSeverity,
   type FindingStatus,
   type ImprovementProject,
   type Organization,
@@ -325,6 +327,11 @@ export function FindingDialog({
   const [open, setOpen] = useState(false);
   const update = useUpdateFinding();
   const [form, setForm] = useState({
+    description: finding.description,
+    severity: finding.severity,
+    category_name: finding.category_name ?? "",
+    root_cause: finding.root_cause ?? "",
+    recommended_action: finding.recommended_action ?? "",
     assigned_owner: finding.assigned_owner ?? "",
     target_date: finding.target_date ?? "",
     status: finding.status as FindingStatus,
@@ -338,6 +345,11 @@ export function FindingDialog({
   useEffect(() => {
     if (!open) return;
     setForm({
+      description: finding.description,
+      severity: finding.severity,
+      category_name: finding.category_name ?? "",
+      root_cause: finding.root_cause ?? "",
+      recommended_action: finding.recommended_action ?? "",
       assigned_owner: finding.assigned_owner ?? "",
       target_date: finding.target_date ?? "",
       status: finding.status,
@@ -355,94 +367,171 @@ export function FindingDialog({
         <DialogHeader>
           <DialogTitle>Manage finding {finding.finding_code ?? ""}</DialogTitle>
           <DialogDescription>
-            Assign an owner, track progress and verify closure.
+            Edit the finding itself, assign an owner, track progress and verify
+            closure.
           </DialogDescription>
         </DialogHeader>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="Assigned owner">
-            <Input
-              value={form.assigned_owner}
-              onChange={(e) =>
-                setForm((f) => ({ ...f, assigned_owner: e.target.value }))
-              }
-            />
-          </Field>
-          <Field label="Target date">
-            <Input
-              type="date"
-              value={form.target_date}
-              onChange={(e) =>
-                setForm((f) => ({ ...f, target_date: e.target.value }))
-              }
-            />
-          </Field>
-          <div className="sm:col-span-2">
-            <Field label="Status">
+        <div className="max-h-[65vh] space-y-4 overflow-y-auto pr-1">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="sm:col-span-2">
+              <Field label="Description">
+                <Textarea
+                  rows={3}
+                  value={form.description}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, description: e.target.value }))
+                  }
+                />
+              </Field>
+            </div>
+            <Field label="Severity">
               <Select
-                value={form.status}
+                value={form.severity}
                 onValueChange={(v) =>
-                  setForm((f) => ({ ...f, status: v as FindingStatus }))
+                  setForm((f) => ({ ...f, severity: v as FindingSeverity }))
                 }
               >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {FINDING_STATUSES.map((s) => (
+                  {SEVERITY_ORDER.map((s) => (
                     <SelectItem key={s} value={s}>
-                      {FINDING_STATUS_LABELS[s]}
+                      {s.charAt(0).toUpperCase() + s.slice(1)}
                     </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             </Field>
-          </div>
-          <div className="sm:col-span-2">
-            <Field label="Closure evidence">
-              <Textarea
-                rows={3}
-                value={form.closure_evidence}
+            <Field label="Category">
+              <Input
+                value={form.category_name}
                 onChange={(e) =>
-                  setForm((f) => ({ ...f, closure_evidence: e.target.value }))
+                  setForm((f) => ({ ...f, category_name: e.target.value }))
                 }
               />
             </Field>
-          </div>
-          <Field label="Verified by">
-            <Input
-              value={form.verified_by}
-              onChange={(e) =>
-                setForm((f) => ({ ...f, verified_by: e.target.value }))
-              }
-            />
-          </Field>
-          <Field label="Verification date">
-            <Input
-              type="date"
-              value={form.verification_date}
-              onChange={(e) =>
-                setForm((f) => ({ ...f, verification_date: e.target.value }))
-              }
-            />
-          </Field>
-          {isClosing ? (
-            <div className="sm:col-span-2 flex items-start gap-2 rounded-md border border-border bg-muted/20 p-3">
-              <Checkbox
-                id={`contribute-finding-${finding.id}`}
-                checked={contribute}
-                onCheckedChange={(v) => setContribute(v === true)}
-              />
-              <Label
-                htmlFor={`contribute-finding-${finding.id}`}
-                className="text-xs font-normal text-muted-foreground"
-              >
-                Contribute an anonymized version of this resolution to the
-                IronIQ Intelligence Layer, to help other shops with similar
-                problems. Nothing identifying is shared, and it's reviewed
-                before it's ever visible to anyone else.
-              </Label>
+            <div className="sm:col-span-2">
+              <Field label="Root cause">
+                <Textarea
+                  rows={2}
+                  value={form.root_cause}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, root_cause: e.target.value }))
+                  }
+                />
+              </Field>
             </div>
-          ) : null}
+            <div className="sm:col-span-2">
+              <Field label="Recommended action">
+                <Textarea
+                  rows={2}
+                  value={form.recommended_action}
+                  onChange={(e) =>
+                    setForm((f) => ({
+                      ...f,
+                      recommended_action: e.target.value,
+                    }))
+                  }
+                />
+              </Field>
+            </div>
+          </div>
+
+          <div className="border-t border-border pt-4">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field label="Assigned owner">
+                <Input
+                  value={form.assigned_owner}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, assigned_owner: e.target.value }))
+                  }
+                />
+              </Field>
+              <Field label="Target date">
+                <Input
+                  type="date"
+                  value={form.target_date}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, target_date: e.target.value }))
+                  }
+                />
+              </Field>
+              <div className="sm:col-span-2">
+                <Field label="Status">
+                  <Select
+                    value={form.status}
+                    onValueChange={(v) =>
+                      setForm((f) => ({ ...f, status: v as FindingStatus }))
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {FINDING_STATUSES.map((s) => (
+                        <SelectItem key={s} value={s}>
+                          {FINDING_STATUS_LABELS[s]}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </Field>
+              </div>
+              <div className="sm:col-span-2">
+                <Field label="Closure evidence">
+                  <Textarea
+                    rows={3}
+                    value={form.closure_evidence}
+                    onChange={(e) =>
+                      setForm((f) => ({
+                        ...f,
+                        closure_evidence: e.target.value,
+                      }))
+                    }
+                  />
+                </Field>
+              </div>
+              <Field label="Verified by">
+                <Input
+                  value={form.verified_by}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, verified_by: e.target.value }))
+                  }
+                />
+              </Field>
+              <Field label="Verification date">
+                <Input
+                  type="date"
+                  value={form.verification_date}
+                  onChange={(e) =>
+                    setForm((f) => ({
+                      ...f,
+                      verification_date: e.target.value,
+                    }))
+                  }
+                />
+              </Field>
+              {isClosing ? (
+                <div className="sm:col-span-2 flex items-start gap-2 rounded-md border border-border bg-muted/20 p-3">
+                  <Checkbox
+                    id={`contribute-finding-${finding.id}`}
+                    checked={contribute}
+                    onCheckedChange={(v) => setContribute(v === true)}
+                  />
+                  <Label
+                    htmlFor={`contribute-finding-${finding.id}`}
+                    className="text-xs font-normal text-muted-foreground"
+                  >
+                    Contribute an anonymized version of this resolution to the
+                    IronIQ Intelligence Layer, to help other shops with similar
+                    problems. Nothing identifying is shared, and it's reviewed
+                    before it's ever visible to anyone else.
+                  </Label>
+                </div>
+              ) : null}
+            </div>
+          </div>
         </div>
         <DialogFooter>
           <Button
@@ -452,6 +541,11 @@ export function FindingDialog({
                 {
                   id: finding.id,
                   values: {
+                    description: form.description,
+                    severity: form.severity,
+                    category_name: form.category_name || null,
+                    root_cause: form.root_cause || null,
+                    recommended_action: form.recommended_action || null,
                     assigned_owner: form.assigned_owner || null,
                     target_date: form.target_date || null,
                     status: form.status,

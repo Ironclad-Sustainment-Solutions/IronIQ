@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { Pencil } from "lucide-react";
 import {
   PageHeader,
   Panel,
@@ -159,7 +160,7 @@ function FacilitiesPage() {
                           organizationId={f.organization_id}
                           trigger={
                             <Button size="sm" variant="outline">
-                              Edit
+                              <Pencil className="size-3.5" aria-hidden /> Edit
                             </Button>
                           }
                         />

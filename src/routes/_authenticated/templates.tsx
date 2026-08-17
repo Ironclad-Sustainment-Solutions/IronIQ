@@ -1,6 +1,12 @@
 import { useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { PageHeader, Panel, EmptyState, DefinitionList } from "@/components/ironiq/layout-primitives";
+import { Pencil } from "lucide-react";
+import {
+  PageHeader,
+  Panel,
+  EmptyState,
+  DefinitionList,
+} from "@/components/ironiq/layout-primitives";
 import { Tag } from "@/components/ironiq/badges";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -66,7 +72,8 @@ export const Route = createFileRoute("/_authenticated/templates")({
       { property: "og:title", content: "Assessment Templates — IronIQ" },
       {
         property: "og:description",
-        content: "Template authoring and version control for manufacturing readiness assessments.",
+        content:
+          "Template authoring and version control for manufacturing readiness assessments.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -97,15 +104,20 @@ function TemplatesPage() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [showArchived, setShowArchived] = useState(false);
-  const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
-  const [selectedVersionId, setSelectedVersionId] = useState<string | null>(null);
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(
+    null,
+  );
+  const [selectedVersionId, setSelectedVersionId] = useState<string | null>(
+    null,
+  );
   const [preview, setPreview] = useState(false);
 
   const visibleTemplates = templates.filter((t) => {
     if (!showArchived && t.archived) return false;
     if (statusFilter !== "all") {
       const templateVersions = versions.filter((v) => v.template_id === t.id);
-      if (!templateVersions.some((v) => v.status === statusFilter)) return false;
+      if (!templateVersions.some((v) => v.status === statusFilter))
+        return false;
     }
     const needle = search.trim().toLowerCase();
     if (!needle) return true;
@@ -115,15 +127,21 @@ function TemplatesPage() {
   });
 
   const template =
-    templates.find((t) => t.id === selectedTemplateId) ?? visibleTemplates[0] ?? null;
+    templates.find((t) => t.id === selectedTemplateId) ??
+    visibleTemplates[0] ??
+    null;
   const templateVersions = versions
     .filter((v) => v.template_id === template?.id)
     .sort((a, b) => b.version - a.version);
   const version =
-    templateVersions.find((v) => v.id === selectedVersionId) ?? templateVersions[0] ?? null;
+    templateVersions.find((v) => v.id === selectedVersionId) ??
+    templateVersions[0] ??
+    null;
 
   const perms = templatePermissions(roles, template, ownedOrganizationIds);
-  const editable = Boolean(version && isVersionEditable(version.status) && perms.canEditDraft);
+  const editable = Boolean(
+    version && isVersionEditable(version.status) && perms.canEditDraft,
+  );
 
   const versionCategories = categories
     .filter((c) => c.template_version_id === version?.id)
@@ -182,7 +200,10 @@ function TemplatesPage() {
             <SelectItem value="published">Has published version</SelectItem>
           </SelectContent>
         </Select>
-        <Button variant={showArchived ? "secondary" : "ghost"} onClick={() => setShowArchived((v) => !v)}>
+        <Button
+          variant={showArchived ? "secondary" : "ghost"}
+          onClick={() => setShowArchived((v) => !v)}
+        >
           {showArchived ? "Hide archived" : "Show archived"}
         </Button>
       </div>
@@ -198,7 +219,9 @@ function TemplatesPage() {
               {visibleTemplates.map((t) => {
                 const tv = versions.filter((v) => v.template_id === t.id);
                 const published = tv.filter((v) => v.status === "published");
-                const latest = published.sort((a, b) => b.version - a.version)[0];
+                const latest = published.sort(
+                  (a, b) => b.version - a.version,
+                )[0];
                 return (
                   <li key={t.id}>
                     <button
@@ -218,11 +241,17 @@ function TemplatesPage() {
                       <span className="metric block text-[11px] uppercase tracking-widest text-muted-foreground">
                         {t.template_code ?? "—"}
                       </span>
-                      <span className="block text-sm font-medium text-foreground">{t.name}</span>
+                      <span className="block text-sm font-medium text-foreground">
+                        {t.name}
+                      </span>
                       <span className="mt-1 flex flex-wrap items-center gap-1.5">
                         {t.archived ? <Tag token="steel">Archived</Tag> : null}
-                        {latest ? <Tag token="success">v{latest.version} live</Tag> : null}
-                        {tv.some((v) => v.status === "draft") ? <Tag token="medium">Draft</Tag> : null}
+                        {latest ? (
+                          <Tag token="success">v{latest.version} live</Tag>
+                        ) : null}
+                        {tv.some((v) => v.status === "draft") ? (
+                          <Tag token="medium">Draft</Tag>
+                        ) : null}
                       </span>
                     </button>
                   </li>
@@ -238,14 +267,22 @@ function TemplatesPage() {
                 subtitle={template.description ?? undefined}
                 actions={
                   <div className="flex flex-wrap items-center justify-end gap-2">
-                    <Button variant="ghost" onClick={() => setPreview((v) => !v)}>
+                    <Button
+                      variant="ghost"
+                      onClick={() => setPreview((v) => !v)}
+                    >
                       {preview ? "Exit preview" : "Preview"}
                     </Button>
                     {perms.canEditDraft && isVersionEditable(version.status) ? (
                       <TemplateDialog
                         template={template}
                         organizations={organizations}
-                        trigger={<Button variant="secondary">Edit details</Button>}
+                        trigger={
+                          <Button variant="secondary">
+                            <Pencil className="size-3.5" aria-hidden /> Edit
+                            details
+                          </Button>
+                        }
                       />
                     ) : null}
                     {perms.canDuplicate ? (
@@ -258,7 +295,9 @@ function TemplatesPage() {
                             version,
                             categories: versionCategories,
                             questions: versionQuestions,
-                            ownerOrganizationId: roles.includes("customer_admin")
+                            ownerOrganizationId: roles.includes(
+                              "customer_admin",
+                            )
                               ? (organizations[0]?.id ?? null)
                               : template.owner_organization_id,
                           })
@@ -271,7 +310,10 @@ function TemplatesPage() {
                       <Button
                         variant="ghost"
                         onClick={() =>
-                          archiveTemplate.mutate({ id: template.id, archived: !template.archived })
+                          archiveTemplate.mutate({
+                            id: template.id,
+                            archived: !template.archived,
+                          })
                         }
                       >
                         {template.archived ? "Restore" : "Archive"}
@@ -282,17 +324,30 @@ function TemplatesPage() {
               >
                 <DefinitionList
                   items={[
-                    { label: "Template ID", value: template.template_code ?? "—" },
-                    { label: "Assessment type", value: template.assessment_type ?? "—" },
+                    {
+                      label: "Template ID",
+                      value: template.template_code ?? "—",
+                    },
+                    {
+                      label: "Assessment type",
+                      value: template.assessment_type ?? "—",
+                    },
                     { label: "Industry", value: template.industry ?? "—" },
                     {
                       label: "Owner",
                       value:
-                        organizations.find((o) => o.id === template.owner_organization_id)?.name ??
-                        "IronIQ (global library)",
+                        organizations.find(
+                          (o) => o.id === template.owner_organization_id,
+                        )?.name ?? "IronIQ (global library)",
                     },
-                    { label: "Intended use", value: template.intended_use ?? "—" },
-                    { label: "Created by", value: authorName(template.created_by) },
+                    {
+                      label: "Intended use",
+                      value: template.intended_use ?? "—",
+                    },
+                    {
+                      label: "Created by",
+                      value: authorName(template.created_by),
+                    },
                   ]}
                 />
               </Panel>
@@ -309,7 +364,10 @@ function TemplatesPage() {
                         setPreview(false);
                       }}
                     >
-                      <SelectTrigger className="w-44" aria-label="Select version">
+                      <SelectTrigger
+                        className="w-44"
+                        aria-label="Select version"
+                      >
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -326,7 +384,10 @@ function TemplatesPage() {
                         disabled={createVersion.isPending}
                         onClick={() =>
                           createVersion.mutate(
-                            { versionId: version.id, notes: `Copied from v${version.version}` },
+                            {
+                              versionId: version.id,
+                              notes: `Copied from v${version.version}`,
+                            },
                             { onSuccess: () => setSelectedVersionId(null) },
                           )
                         }
@@ -338,15 +399,21 @@ function TemplatesPage() {
                 }
               >
                 <div className="flex flex-wrap items-center gap-3">
-                  <Tag token={statusToken(version.status)}>{version.status}</Tag>
-                  <span className="metric text-sm text-foreground">Version {version.version}</span>
+                  <Tag token={statusToken(version.status)}>
+                    {version.status}
+                  </Tag>
+                  <span className="metric text-sm text-foreground">
+                    Version {version.version}
+                  </span>
                   <span className="text-xs text-muted-foreground">
                     {version.published_at
                       ? `Published ${version.published_at.slice(0, 10)} by ${authorName(version.published_by)}`
                       : "Not yet published"}
                   </span>
                   {version.notes ? (
-                    <span className="text-xs text-muted-foreground">· {version.notes}</span>
+                    <span className="text-xs text-muted-foreground">
+                      · {version.notes}
+                    </span>
                   ) : null}
                   {version.status === "draft" && perms.canEditDraft ? (
                     <AlertDialog>
@@ -357,10 +424,13 @@ function TemplatesPage() {
                       </AlertDialogTrigger>
                       <AlertDialogContent>
                         <AlertDialogHeader>
-                          <AlertDialogTitle>Delete draft v{version.version}?</AlertDialogTitle>
+                          <AlertDialogTitle>
+                            Delete draft v{version.version}?
+                          </AlertDialogTitle>
                           <AlertDialogDescription>
-                            This removes the draft and all of its categories and questions. Published
-                            versions and existing assessments are unaffected.
+                            This removes the draft and all of its categories and
+                            questions. Published versions and existing
+                            assessments are unaffected.
                           </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
@@ -398,7 +468,10 @@ function TemplatesPage() {
                 >
                   <ul className="space-y-2">
                     {validation.checks.map((check) => (
-                      <li key={check.label} className="flex items-center gap-3 text-sm">
+                      <li
+                        key={check.label}
+                        className="flex items-center gap-3 text-sm"
+                      >
                         <Tag token={check.passed ? "success" : "high"}>
                           {check.passed ? "Pass" : "Fail"}
                         </Tag>
@@ -483,12 +556,17 @@ function ContentEditor({
               .filter((q) => q.category_id === category.id)
               .sort((a, b) => a.sort_order - b.sort_order);
             return (
-              <div key={category.id} className="rounded-md border border-border">
+              <div
+                key={category.id}
+                className="rounded-md border border-border"
+              >
                 <div className="flex flex-wrap items-center gap-3 border-b border-border bg-muted/40 px-4 py-3">
                   <span className="metric text-xs uppercase tracking-widest text-muted-foreground">
                     {category.code}
                   </span>
-                  <span className="text-sm font-semibold text-foreground">{category.name}</span>
+                  <span className="text-sm font-semibold text-foreground">
+                    {category.name}
+                  </span>
                   <Tag token="primary">{Number(category.weight)}%</Tag>
                   {category.archived ? <Tag token="steel">Archived</Tag> : null}
                   {editable ? (
@@ -498,7 +576,11 @@ function ContentEditor({
                         variant="ghost"
                         disabled={index === 0}
                         onClick={() =>
-                          categoryAction.mutate({ category, action: "up", siblings: categories })
+                          categoryAction.mutate({
+                            category,
+                            action: "up",
+                            siblings: categories,
+                          })
                         }
                       >
                         ↑
@@ -508,7 +590,11 @@ function ContentEditor({
                         variant="ghost"
                         disabled={index === categories.length - 1}
                         onClick={() =>
-                          categoryAction.mutate({ category, action: "down", siblings: categories })
+                          categoryAction.mutate({
+                            category,
+                            action: "down",
+                            siblings: categories,
+                          })
                         }
                       >
                         ↓
@@ -544,10 +630,13 @@ function ContentEditor({
                         </AlertDialogTrigger>
                         <AlertDialogContent>
                           <AlertDialogHeader>
-                            <AlertDialogTitle>Delete category {category.code}?</AlertDialogTitle>
+                            <AlertDialogTitle>
+                              Delete category {category.code}?
+                            </AlertDialogTitle>
                             <AlertDialogDescription>
-                              Its {catQuestions.length} question(s) are deleted with it. Remaining
-                              weights will need to total 100% again before publishing.
+                              Its {catQuestions.length} question(s) are deleted
+                              with it. Remaining weights will need to total 100%
+                              again before publishing.
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
@@ -580,26 +669,42 @@ function ContentEditor({
                   ) : null}
                 </div>
                 {catQuestions.length === 0 ? (
-                  <p className="px-4 py-3 text-sm text-muted-foreground">No questions yet.</p>
+                  <p className="px-4 py-3 text-sm text-muted-foreground">
+                    No questions yet.
+                  </p>
                 ) : (
                   <ul className="divide-y divide-border">
                     {catQuestions.map((question, qIndex) => (
-                      <li key={question.id} className="flex flex-wrap items-start gap-3 px-4 py-3">
+                      <li
+                        key={question.id}
+                        className="flex flex-wrap items-start gap-3 px-4 py-3"
+                      >
                         <span className="metric w-16 shrink-0 text-xs text-muted-foreground">
                           {question.question_code}
                         </span>
                         <div className="min-w-0 flex-1">
-                          <p className="text-sm text-foreground">{question.question_text}</p>
+                          <p className="text-sm text-foreground">
+                            {question.question_text}
+                          </p>
                           <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
-                            <Tag token="steel">Weight {Number(question.weight)}</Tag>
-                            {question.is_critical ? <Tag token="critical">Critical</Tag> : null}
-                            {question.archived ? <Tag token="steel">Archived</Tag> : null}
+                            <Tag token="steel">
+                              Weight {Number(question.weight)}
+                            </Tag>
+                            {question.is_critical ? (
+                              <Tag token="critical">Critical</Tag>
+                            ) : null}
+                            {question.archived ? (
+                              <Tag token="steel">Archived</Tag>
+                            ) : null}
                             {question.required_evidence ? (
-                              <Tag token="steel">{EVIDENCE_LABELS[question.required_evidence]}</Tag>
+                              <Tag token="steel">
+                                {EVIDENCE_LABELS[question.required_evidence]}
+                              </Tag>
                             ) : null}
                             {question.auto_finding ? (
                               <Tag token="low">
-                                Auto finding · {SEVERITY_LABELS[question.default_severity]}
+                                Auto finding ·{" "}
+                                {SEVERITY_LABELS[question.default_severity]}
                               </Tag>
                             ) : null}
                           </div>
@@ -718,22 +823,33 @@ function PreviewPanel({
               <Tag token="primary">{Number(category.weight)}% of score</Tag>
             </div>
             {category.description ? (
-              <p className="mt-2 text-xs text-muted-foreground">{category.description}</p>
+              <p className="mt-2 text-xs text-muted-foreground">
+                {category.description}
+              </p>
             ) : null}
             <ul className="mt-3 space-y-4">
               {activeQuestions
                 .filter((q) => q.category_id === category.id)
                 .map((question) => (
-                  <li key={question.id} className="rounded-md border border-border p-4">
+                  <li
+                    key={question.id}
+                    className="rounded-md border border-border p-4"
+                  >
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="metric text-xs text-muted-foreground">
                         {question.question_code}
                       </span>
-                      {question.is_critical ? <Tag token="critical">Critical control</Tag> : null}
+                      {question.is_critical ? (
+                        <Tag token="critical">Critical control</Tag>
+                      ) : null}
                     </div>
-                    <p className="mt-1 text-sm text-foreground">{question.question_text}</p>
+                    <p className="mt-1 text-sm text-foreground">
+                      {question.question_text}
+                    </p>
                     {question.guidance_text ? (
-                      <p className="mt-1 text-xs text-muted-foreground">{question.guidance_text}</p>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        {question.guidance_text}
+                      </p>
                     ) : null}
                     <div className="mt-3 flex flex-wrap gap-1.5">
                       {[0, 1, 2, 3, 4, 5].map((score) => (
