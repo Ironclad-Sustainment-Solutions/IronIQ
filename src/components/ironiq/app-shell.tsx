@@ -114,7 +114,10 @@ const NAV: {
     // somewhere to live in the meantime, same as Bulk Intake got one
     // entry before the bigger reorg happened.
     section: "Intelligence",
-    items: [{ to: "/ask-ironiq", label: "Ask IronIQ", icon: Sparkles }],
+    items: [
+      { to: "/ask-ironiq", label: "Ask IronIQ", icon: Sparkles },
+      { to: "/executive-rollup", label: "Executive Rollup", icon: TrendingUp },
+    ],
   },
   {
     // A genuinely separate capability from the facility-assessment

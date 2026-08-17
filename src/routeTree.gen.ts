@@ -18,6 +18,7 @@ import { Route as AuthenticatedCadRouteImport } from './routes/_authenticated/ca
 import { Route as AuthenticatedCncRouteImport } from './routes/_authenticated/cnc'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedEstimatesRouteImport } from './routes/_authenticated/estimates'
+import { Route as AuthenticatedExecutiveRollupRouteImport } from './routes/_authenticated/executive-rollup'
 import { Route as AuthenticatedFacilitiesRouteImport } from './routes/_authenticated/facilities'
 import { Route as AuthenticatedFindingsRouteImport } from './routes/_authenticated/findings'
 import { Route as AuthenticatedIntakeRouteImport } from './routes/_authenticated/intake'
@@ -83,6 +84,12 @@ const AuthenticatedEstimatesRoute = AuthenticatedEstimatesRouteImport.update({
   path: '/estimates',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedExecutiveRollupRoute =
+  AuthenticatedExecutiveRollupRouteImport.update({
+    id: '/executive-rollup',
+    path: '/executive-rollup',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedFacilitiesRoute = AuthenticatedFacilitiesRouteImport.update({
   id: '/facilities',
   path: '/facilities',
@@ -199,6 +206,7 @@ export interface FileRoutesByFullPath {
   '/cnc': typeof AuthenticatedCncRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/estimates': typeof AuthenticatedEstimatesRoute
+  '/executive-rollup': typeof AuthenticatedExecutiveRollupRoute
   '/facilities': typeof AuthenticatedFacilitiesRoute
   '/findings': typeof AuthenticatedFindingsRoute
   '/intake': typeof AuthenticatedIntakeRoute
@@ -228,6 +236,7 @@ export interface FileRoutesByTo {
   '/cnc': typeof AuthenticatedCncRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/estimates': typeof AuthenticatedEstimatesRoute
+  '/executive-rollup': typeof AuthenticatedExecutiveRollupRoute
   '/facilities': typeof AuthenticatedFacilitiesRoute
   '/findings': typeof AuthenticatedFindingsRoute
   '/intake': typeof AuthenticatedIntakeRoute
@@ -258,6 +267,7 @@ export interface FileRoutesById {
   '/_authenticated/cnc': typeof AuthenticatedCncRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/estimates': typeof AuthenticatedEstimatesRoute
+  '/_authenticated/executive-rollup': typeof AuthenticatedExecutiveRollupRoute
   '/_authenticated/facilities': typeof AuthenticatedFacilitiesRoute
   '/_authenticated/findings': typeof AuthenticatedFindingsRoute
   '/_authenticated/intake': typeof AuthenticatedIntakeRoute
@@ -289,6 +299,7 @@ export interface FileRouteTypes {
     | '/cnc'
     | '/dashboard'
     | '/estimates'
+    | '/executive-rollup'
     | '/facilities'
     | '/findings'
     | '/intake'
@@ -318,6 +329,7 @@ export interface FileRouteTypes {
     | '/cnc'
     | '/dashboard'
     | '/estimates'
+    | '/executive-rollup'
     | '/facilities'
     | '/findings'
     | '/intake'
@@ -347,6 +359,7 @@ export interface FileRouteTypes {
     | '/_authenticated/cnc'
     | '/_authenticated/dashboard'
     | '/_authenticated/estimates'
+    | '/_authenticated/executive-rollup'
     | '/_authenticated/facilities'
     | '/_authenticated/findings'
     | '/_authenticated/intake'
@@ -437,6 +450,13 @@ declare module '@tanstack/react-router' {
       path: '/estimates'
       fullPath: '/estimates'
       preLoaderRoute: typeof AuthenticatedEstimatesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/executive-rollup': {
+      id: '/_authenticated/executive-rollup'
+      path: '/executive-rollup'
+      fullPath: '/executive-rollup'
+      preLoaderRoute: typeof AuthenticatedExecutiveRollupRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/facilities': {
@@ -604,6 +624,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedCncRoute: typeof AuthenticatedCncRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedEstimatesRoute: typeof AuthenticatedEstimatesRoute
+  AuthenticatedExecutiveRollupRoute: typeof AuthenticatedExecutiveRollupRoute
   AuthenticatedFacilitiesRoute: typeof AuthenticatedFacilitiesRoute
   AuthenticatedFindingsRoute: typeof AuthenticatedFindingsRoute
   AuthenticatedIntakeRoute: typeof AuthenticatedIntakeRoute
@@ -628,6 +649,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedCncRoute: AuthenticatedCncRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedEstimatesRoute: AuthenticatedEstimatesRoute,
+  AuthenticatedExecutiveRollupRoute: AuthenticatedExecutiveRollupRoute,
   AuthenticatedFacilitiesRoute: AuthenticatedFacilitiesRoute,
   AuthenticatedFindingsRoute: AuthenticatedFindingsRoute,
   AuthenticatedIntakeRoute: AuthenticatedIntakeRoute,
