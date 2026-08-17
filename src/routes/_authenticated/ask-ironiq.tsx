@@ -8,7 +8,12 @@ import {
 import { Tag } from "@/components/ironiq/badges";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { useAskIronIQ } from "@/lib/ask-ironiq-api";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import {
+  useAskIronIQ,
+  type IntelligenceProductFilter,
+} from "@/lib/ask-ironiq-api";
 
 export const Route = createFileRoute("/_authenticated/ask-ironiq")({
   head: () => ({
@@ -17,7 +22,7 @@ export const Route = createFileRoute("/_authenticated/ask-ironiq")({
       {
         name: "description",
         content:
-          "Ask a question and get an answer grounded in anonymized precedent from resolved problems across engagements.",
+          "Ask a question and get an answer grounded in anonymized precedent from resolved problems across engagements and products.",
       },
       { property: "og:title", content: "Ask IronIQ — IronIQ" },
       {
@@ -31,16 +36,41 @@ export const Route = createFileRoute("/_authenticated/ask-ironiq")({
   component: AskIronIQPage,
 });
 
+const PRODUCT_LABELS: Record<IntelligenceProductFilter, string> = {
+  assessment: "Assessment",
+  cad: "CAD Conversion",
+  cnc: "CNC Coding",
+};
+
+const PRODUCT_TAG_TOKEN: Record<
+  IntelligenceProductFilter,
+  "primary" | "steel" | "success"
+> = {
+  assessment: "primary",
+  cad: "steel",
+  cnc: "success",
+};
+
+const ALL_PRODUCTS: IntelligenceProductFilter[] = ["assessment", "cad", "cnc"];
+
 function AskIronIQPage() {
   const [question, setQuestion] = useState("");
+  const [selectedProducts, setSelectedProducts] =
+    useState<IntelligenceProductFilter[]>(ALL_PRODUCTS);
   const ask = useAskIronIQ();
+
+  const toggleProduct = (p: IntelligenceProductFilter) => {
+    setSelectedProducts((current) =>
+      current.includes(p) ? current.filter((x) => x !== p) : [...current, p],
+    );
+  };
 
   return (
     <div className="mx-auto max-w-4xl space-y-8">
       <PageHeader
         eyebrow="Intelligence Layer"
         title="Ask IronIQ"
-        description="Answers are grounded only in anonymized, human-reviewed precedent from problems other engagements have actually resolved — this is precedent, not a guaranteed fix, and it's currently scoped to the Assessment product only."
+        description="Answers are grounded only in anonymized, human-reviewed precedent from problems other engagements have actually resolved — this is precedent, not a guaranteed fix. Searches across every product that has approved patterns."
       />
 
       <Panel title="Ask a question">
@@ -51,9 +81,28 @@ function AskIronIQPage() {
             value={question}
             onChange={(e) => setQuestion(e.target.value)}
           />
+          <div className="flex flex-wrap items-center gap-4">
+            <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              Search in:
+            </span>
+            {ALL_PRODUCTS.map((p) => (
+              <div key={p} className="flex items-center gap-1.5">
+                <Checkbox
+                  id={`product-${p}`}
+                  checked={selectedProducts.includes(p)}
+                  onCheckedChange={() => toggleProduct(p)}
+                />
+                <Label htmlFor={`product-${p}`} className="text-sm font-normal">
+                  {PRODUCT_LABELS[p]}
+                </Label>
+              </div>
+            ))}
+          </div>
           <Button
-            onClick={() => ask.mutate(question)}
-            disabled={ask.isPending || !question.trim()}
+            onClick={() => ask.mutate({ question, products: selectedProducts })}
+            disabled={
+              ask.isPending || !question.trim() || selectedProducts.length === 0
+            }
           >
             {ask.isPending ? "Searching precedent…" : "Ask"}
           </Button>
@@ -84,6 +133,9 @@ function AskIronIQPage() {
                         <span className="metric text-xs text-muted-foreground">
                           Pattern {i + 1}
                         </span>
+                        <Tag token={PRODUCT_TAG_TOKEN[p.product]}>
+                          {PRODUCT_LABELS[p.product]}
+                        </Tag>
                         <Tag token="steel">
                           {p.category_label ?? "unspecified industry"}
                         </Tag>

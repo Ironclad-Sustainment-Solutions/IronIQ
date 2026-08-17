@@ -1,8 +1,12 @@
 /**
- * "Ask IronIQ" v1 — Assessment product only, per the phased plan (a
- * cross-product version, querying CAD/CNC patterns too, is Phase G, once
- * those products exist and are writing into intelligence_events the same
- * way Assessment now does).
+ * "Ask IronIQ" v2 — cross-product, per Phase G. Now that CNC (Phase F)
+ * writes into intelligence_events the same way Assessment (Phase C)
+ * does, this searches approved patterns across every product by
+ * default, optionally scoped to one if the caller wants that (e.g. "only
+ * search CNC precedent"). CAD (Phase E) doesn't feed intelligence_events
+ * yet — a known, not-yet-closed gap from that phase — so in practice
+ * this currently searches assessment + cnc patterns; it'll pick up CAD
+ * patterns automatically once that gap is closed, no change needed here.
  *
  * This only ever searches APPROVED patterns — the anonymized, reviewed
  * layer, never raw intelligence_events. Same guardrail discipline as
@@ -35,10 +39,21 @@ already reviewed and approved for sharing. Rules:
 - Cite which pattern(s) informed your answer by their number (e.g. "per pattern 2").
 - If none of the retrieved patterns are actually relevant to the question, say so plainly —
   do not stretch a loosely-related pattern into an answer it doesn't support.
+- These patterns may come from different products (Assessment, CAD, CNC) — if you draw on
+  patterns from more than one, be clear about which product each came from rather than
+  blending them into one undifferentiated answer.
 - This is precedent, not certainty — phrase the answer as "here's how a similar problem was
   resolved elsewhere," not as a guaranteed fix for the asker's own situation.`;
 
-const AskInput = z.object({ question: z.string().min(1) });
+const PRODUCTS = ["assessment", "cad", "cnc"] as const;
+
+const AskInput = z.object({
+  question: z.string().min(1),
+  // Undefined/omitted searches across all products — this is the actual
+  // Phase G behavior. Passing one narrows to just that product, for a UI
+  // that wants to let someone search "just CNC precedent," for example.
+  products: z.array(z.enum(PRODUCTS)).optional(),
+});
 
 const TOP_K = 5;
 
@@ -48,19 +63,24 @@ export const askIronIQ = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const queryEmbedding = await embedText(data.question);
     const queryLiteral = toVectorLiteral(queryEmbedding);
+    const productFilter =
+      data.products && data.products.length > 0 ? data.products : null;
 
     const patterns = await withUser(context.userId, async (client) => {
       const { rows } = await client.query(
-        `SELECT id, category_label, pattern_summary, pattern_resolution, pattern_outcome,
+        `SELECT id, product, category_label, pattern_summary, pattern_resolution, pattern_outcome,
                 embedding <=> $1 AS distance
            FROM public.intelligence_patterns
-          WHERE status = 'approved' AND product = 'assessment' AND embedding IS NOT NULL
+          WHERE status = 'approved'
+            AND embedding IS NOT NULL
+            AND ($3::public.intelligence_product[] IS NULL OR product = ANY($3))
           ORDER BY distance ASC
           LIMIT $2`,
-        [queryLiteral, TOP_K],
+        [queryLiteral, TOP_K, productFilter],
       );
       return rows as {
         id: string;
+        product: "assessment" | "cad" | "cnc";
         category_label: string | null;
         pattern_summary: string;
         pattern_resolution: string | null;
@@ -72,7 +92,7 @@ export const askIronIQ = createServerFn({ method: "POST" })
     if (patterns.length === 0) {
       return {
         answer:
-          "No relevant precedent found yet in the Intelligence Layer for this question. This is expected early on — it grows as more engagements close out findings with sharing enabled.",
+          "No relevant precedent found yet in the Intelligence Layer for this question. This is expected early on — it grows as more engagements close out findings, corrective actions, projects, and CNC changes with sharing enabled.",
         patterns: [],
       };
     }
@@ -80,7 +100,7 @@ export const askIronIQ = createServerFn({ method: "POST" })
     const context_block = patterns
       .map(
         (p, i) =>
-          `Pattern ${i + 1} (${p.category_label ?? "unspecified industry"}):\nProblem: ${p.pattern_summary}\nResolution: ${p.pattern_resolution ?? "(not recorded)"}\nOutcome: ${p.pattern_outcome ?? "(not recorded)"}`,
+          `Pattern ${i + 1} [${p.product}] (${p.category_label ?? "unspecified industry"}):\nProblem: ${p.pattern_summary}\nResolution: ${p.pattern_resolution ?? "(not recorded)"}\nOutcome: ${p.pattern_outcome ?? "(not recorded)"}`,
       )
       .join("\n\n");
 
