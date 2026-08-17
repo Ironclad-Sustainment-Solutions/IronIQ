@@ -283,8 +283,8 @@ const UpsertResponseInput = z.object({
 export const upsertAssessmentResponse = createServerFn({ method: "POST" })
   .middleware([requireAuth])
   .inputValidator((d: unknown) => UpsertResponseInput.parse(d))
-  .handler(({ data, context }) =>
-    withUser(context.userId, (client) =>
+  .handler(async ({ data, context }) => {
+    await withUser(context.userId, (client) =>
       client.query(
         `INSERT INTO public.assessment_responses
            (assessment_id, question_id, score, not_applicable, comments, evidence_type, answered_at, answered_by)
@@ -303,8 +303,8 @@ export const upsertAssessmentResponse = createServerFn({ method: "POST" })
           data.answered_by,
         ],
       ),
-    ),
-  );
+    );
+  });
 
 const CreateAssessmentInput = z.object({
   organization_id: z.string().uuid(),
@@ -359,8 +359,8 @@ const logAuditInput = z.object({
 export const logAudit = createServerFn({ method: "POST" })
   .middleware([requireAuth])
   .inputValidator((d: unknown) => logAuditInput.parse(d))
-  .handler(({ data, context }) =>
-    withUser(context.userId, (client) =>
+  .handler(async ({ data, context }) => {
+    await withUser(context.userId, (client) =>
       client.query(
         `INSERT INTO public.audit_logs
            (organization_id, facility_id, actor_id, actor_name, action, entity_type, entity_id, details)
@@ -376,5 +376,5 @@ export const logAudit = createServerFn({ method: "POST" })
           JSON.stringify(data.details ?? {}),
         ],
       ),
-    ),
-  );
+    );
+  });

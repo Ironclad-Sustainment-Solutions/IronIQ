@@ -16,24 +16,24 @@ const PersistAggregatesInput = z.object({
 export const persistAssessmentAggregates = createServerFn({ method: "POST" })
   .middleware([requireAuth])
   .inputValidator((d: unknown) => PersistAggregatesInput.parse(d))
-  .handler(({ data, context }) =>
-    withUser(context.userId, (client) => {
-      const values = {
-        overall_score: data.overallScore,
-        confidence_score: data.confidenceScore,
-        completion_pct: data.completionPct,
-        readiness_level: data.readinessLevel,
-        has_critical_failure: data.hasCriticalFailure,
-        ...(data.extra ?? {}),
-      };
-      const cols = Object.keys(values);
-      const setClause = cols.map((c, i) => `${c} = $${i + 1}`).join(", ");
-      return client.query(
+  .handler(async ({ data, context }) => {
+    const values = {
+      overall_score: data.overallScore,
+      confidence_score: data.confidenceScore,
+      completion_pct: data.completionPct,
+      readiness_level: data.readinessLevel,
+      has_critical_failure: data.hasCriticalFailure,
+      ...(data.extra ?? {}),
+    };
+    const cols = Object.keys(values);
+    const setClause = cols.map((c, i) => `${c} = $${i + 1}`).join(", ");
+    await withUser(context.userId, (client) =>
+      client.query(
         `UPDATE public.assessments SET ${setClause} WHERE id = $${cols.length + 1}`,
         [...Object.values(values), data.assessmentId],
-      );
-    }),
-  );
+      ),
+    );
+  });
 
 const SyncCriticalFindingsInput = z.object({
   assessment: z.record(z.any()),
@@ -67,13 +67,19 @@ export const syncCriticalFindings = createServerFn({ method: "POST" })
         [assessment.id],
       );
       const existingByQuestion = new Map(
-        existing.filter((f) => f.question_id).map((f) => [f.question_id as string, f]),
+        existing
+          .filter((f) => f.question_id)
+          .map((f) => [f.question_id as string, f]),
       );
-      const missing = data.failing.filter((q) => !existingByQuestion.has(q.questionId));
+      const missing = data.failing.filter(
+        (q) => !existingByQuestion.has(q.questionId),
+      );
 
       let created = 0;
       for (const q of missing) {
-        const { rows: codeRows } = await client.query("SELECT public.next_finding_code() AS code");
+        const { rows: codeRows } = await client.query(
+          "SELECT public.next_finding_code() AS code",
+        );
         await client.query(
           `INSERT INTO public.findings
              (finding_code, organization_id, facility_id, assessment_id, question_id, category_name,
@@ -88,7 +94,8 @@ export const syncCriticalFindings = createServerFn({ method: "POST" })
             q.categoryName,
             q.questionText,
             "Critical control scored at or below 1 — the facility cannot be rated Production Ready until this is closed.",
-            q.guidanceText ?? "Define, document and verify this critical control.",
+            q.guidanceText ??
+              "Define, document and verify this critical control.",
             q.comments,
             data.actorId ?? null,
           ],
@@ -98,13 +105,16 @@ export const syncCriticalFindings = createServerFn({ method: "POST" })
 
       const failingIds = new Set(data.failing.map((q) => q.questionId));
       const retirable = existing.filter(
-        (f) => f.severity === "critical" && f.status === "open" && f.question_id && !failingIds.has(f.question_id),
+        (f) =>
+          f.severity === "critical" &&
+          f.status === "open" &&
+          f.question_id &&
+          !failingIds.has(f.question_id),
       );
       if (retirable.length > 0) {
-        await client.query(
-          "DELETE FROM public.findings WHERE id = ANY($1)",
-          [retirable.map((f) => f.id)],
-        );
+        await client.query("DELETE FROM public.findings WHERE id = ANY($1)", [
+          retirable.map((f) => f.id),
+        ]);
       }
 
       return { created, retired: retirable.length };

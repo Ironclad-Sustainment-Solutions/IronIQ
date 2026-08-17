@@ -108,13 +108,13 @@ const DeleteCncLogInput = z.object({ id: z.string().uuid() });
 export const deleteCncChangeLogEntry = createServerFn({ method: "POST" })
   .middleware([requireAuth])
   .inputValidator((d: unknown) => DeleteCncLogInput.parse(d))
-  .handler(({ data, context }) =>
-    withUser(context.userId, (client) =>
+  .handler(async ({ data, context }) => {
+    await withUser(context.userId, (client) =>
       client.query(`DELETE FROM public.cnc_change_log WHERE id = $1`, [
         data.id,
       ]),
-    ),
-  );
+    );
+  });
 
 // Previously no way to fix a typo or correct the original log entry at
 // all after creation — only the outcome could ever be set, once, via
@@ -131,8 +131,8 @@ const UpdateCncLogInput = z.object({
 export const updateCncChangeLogEntry = createServerFn({ method: "POST" })
   .middleware([requireAuth])
   .inputValidator((d: unknown) => UpdateCncLogInput.parse(d))
-  .handler(({ data, context }) =>
-    withUser(context.userId, (client) =>
+  .handler(async ({ data, context }) => {
+    await withUser(context.userId, (client) =>
       client.query(
         `UPDATE public.cnc_change_log
             SET machine_name = $2, program_identifier = $3, change_category = $4,
@@ -147,5 +147,5 @@ export const updateCncChangeLogEntry = createServerFn({ method: "POST" })
           data.reason,
         ],
       ),
-    ),
-  );
+    );
+  });
