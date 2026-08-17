@@ -1,10 +1,17 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { PageHeader, Panel, EmptyState } from "@/components/ironiq/layout-primitives";
+import {
+  PageHeader,
+  Panel,
+  EmptyState,
+} from "@/components/ironiq/layout-primitives";
 import { SeverityBadge, FindingStatusBadge } from "@/components/ironiq/badges";
 import { useApp } from "@/context/app-context";
 import { useCorrectiveActions, useFindings } from "@/lib/api";
 import { SEVERITY_ORDER } from "@/lib/domain";
-import { FindingDialog } from "@/components/ironiq/entity-dialogs";
+import {
+  FindingDialog,
+  CorrectiveActionDialog,
+} from "@/components/ironiq/entity-dialogs";
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/_authenticated/findings")({
@@ -16,8 +23,14 @@ export const Route = createFileRoute("/_authenticated/findings")({
         content:
           "Severity-ranked readiness findings with business impact, root cause, recommended action, owner, due date and verification status.",
       },
-      { property: "og:title", content: "Findings & Corrective Actions — IronIQ" },
-      { property: "og:description", content: "Track and close manufacturing readiness findings." },
+      {
+        property: "og:title",
+        content: "Findings & Corrective Actions — IronIQ",
+      },
+      {
+        property: "og:description",
+        content: "Track and close manufacturing readiness findings.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
@@ -31,7 +44,8 @@ function FindingsPage() {
   const actions = useCorrectiveActions(facility?.id).data ?? [];
 
   const sorted = [...findings].sort(
-    (a, b) => SEVERITY_ORDER.indexOf(a.severity) - SEVERITY_ORDER.indexOf(b.severity),
+    (a, b) =>
+      SEVERITY_ORDER.indexOf(a.severity) - SEVERITY_ORDER.indexOf(b.severity),
   );
 
   return (
@@ -54,15 +68,23 @@ function FindingsPage() {
                   <div className="flex flex-wrap items-center gap-2">
                     <SeverityBadge severity={f.severity} />
                     <FindingStatusBadge status={f.status} />
-                    <span className="metric text-xs text-muted-foreground">{f.finding_code}</span>
+                    <span className="metric text-xs text-muted-foreground">
+                      {f.finding_code}
+                    </span>
                     {f.category_name ? (
-                      <span className="text-xs text-muted-foreground">· {f.category_name}</span>
+                      <span className="text-xs text-muted-foreground">
+                        · {f.category_name}
+                      </span>
                     ) : null}
                     {can("manage_findings") ? (
                       <FindingDialog
                         finding={f}
                         trigger={
-                          <Button variant="outline" size="sm" className="ml-auto">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="ml-auto"
+                          >
                             Manage
                           </Button>
                         }
@@ -70,50 +92,95 @@ function FindingsPage() {
                     ) : null}
                   </div>
 
-                  <p className="text-sm font-medium text-foreground">{f.description}</p>
+                  <p className="text-sm font-medium text-foreground">
+                    {f.description}
+                  </p>
 
                   <dl className="grid gap-4 text-sm md:grid-cols-2">
                     <div>
                       <dt className="eyebrow">Business impact</dt>
-                      <dd className="mt-0.5 text-muted-foreground">{f.business_impact ?? "—"}</dd>
+                      <dd className="mt-0.5 text-muted-foreground">
+                        {f.business_impact ?? "—"}
+                      </dd>
                     </div>
                     <div>
                       <dt className="eyebrow">Root cause</dt>
-                      <dd className="mt-0.5 text-muted-foreground">{f.root_cause ?? "—"}</dd>
+                      <dd className="mt-0.5 text-muted-foreground">
+                        {f.root_cause ?? "—"}
+                      </dd>
                     </div>
                     <div>
                       <dt className="eyebrow">Recommended action</dt>
-                      <dd className="mt-0.5 text-muted-foreground">{f.recommended_action ?? "—"}</dd>
+                      <dd className="mt-0.5 text-muted-foreground">
+                        {f.recommended_action ?? "—"}
+                      </dd>
                     </div>
                     <div>
                       <dt className="eyebrow">Owner / target</dt>
                       <dd className="mt-0.5 text-muted-foreground">
-                        {f.assigned_owner ?? "Unassigned"} · {f.target_date ?? "no date"}
+                        {f.assigned_owner ?? "Unassigned"} ·{" "}
+                        {f.target_date ?? "no date"}
                       </dd>
                     </div>
                   </dl>
 
-                  {related.length > 0 ? (
+                  {related.length > 0 || can("manage_findings") ? (
                     <div className="border-t border-border pt-4">
-                      <p className="eyebrow">Corrective actions</p>
-                      <ul className="mt-2 space-y-2">
-                        {related.map((a) => (
-                          <li key={a.id} className="flex flex-wrap items-center gap-3 text-sm">
-                            <FindingStatusBadge status={a.status} />
-                            <span className="min-w-0 flex-1 text-foreground">{a.action_description}</span>
-                            <span className="metric text-xs text-muted-foreground">
-                              {a.owner ?? "—"} · {a.completed_date ?? a.target_date ?? "—"}
-                            </span>
-                          </li>
-                        ))}
-                      </ul>
+                      <div className="flex items-center justify-between">
+                        <p className="eyebrow">Corrective actions</p>
+                        {can("manage_findings") && facility ? (
+                          <CorrectiveActionDialog
+                            findingId={f.id}
+                            facilityId={facility.id}
+                            trigger={
+                              <Button variant="ghost" size="sm">
+                                + Add corrective action
+                              </Button>
+                            }
+                          />
+                        ) : null}
+                      </div>
+                      {related.length > 0 ? (
+                        <ul className="mt-2 space-y-2">
+                          {related.map((a) => (
+                            <li
+                              key={a.id}
+                              className="flex flex-wrap items-center gap-3 text-sm"
+                            >
+                              <FindingStatusBadge status={a.status} />
+                              <span className="min-w-0 flex-1 text-foreground">
+                                {a.action_description}
+                              </span>
+                              <span className="metric text-xs text-muted-foreground">
+                                {a.owner ?? "—"} ·{" "}
+                                {a.completed_date ?? a.target_date ?? "—"}
+                              </span>
+                              {can("manage_findings") && facility ? (
+                                <CorrectiveActionDialog
+                                  action={a}
+                                  findingId={f.id}
+                                  facilityId={facility.id}
+                                  trigger={
+                                    <Button variant="outline" size="sm">
+                                      Manage
+                                    </Button>
+                                  }
+                                />
+                              ) : null}
+                            </li>
+                          ))}
+                        </ul>
+                      ) : null}
                     </div>
                   ) : null}
 
                   {f.closure_evidence ? (
                     <p className="border-t border-border pt-4 text-xs text-muted-foreground">
-                      <span className="font-semibold text-foreground/80">Closure evidence: </span>
-                      {f.closure_evidence} — verified by {f.verified_by ?? "—"} on {f.verification_date ?? "—"}
+                      <span className="font-semibold text-foreground/80">
+                        Closure evidence:{" "}
+                      </span>
+                      {f.closure_evidence} — verified by {f.verified_by ?? "—"}{" "}
+                      on {f.verification_date ?? "—"}
                     </p>
                   ) : null}
                 </div>
