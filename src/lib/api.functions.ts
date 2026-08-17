@@ -9,7 +9,9 @@ export const fetchOrganizations = createServerFn({ method: "GET" })
   .middleware([requireAuth])
   .handler(({ context }) =>
     withUser(context.userId, async (client) => {
-      const { rows } = await client.query("SELECT * FROM public.organizations ORDER BY name");
+      const { rows } = await client.query(
+        "SELECT * FROM public.organizations ORDER BY name",
+      );
       return rows;
     }),
   );
@@ -53,9 +55,10 @@ export const fetchAssessment = createServerFn({ method: "GET" })
   .inputValidator((d: unknown) => assessmentIdInput.parse(d))
   .handler(({ data, context }) =>
     withUser(context.userId, async (client) => {
-      const { rows } = await client.query("SELECT * FROM public.assessments WHERE id = $1", [
-        data.assessmentId,
-      ]);
+      const { rows } = await client.query(
+        "SELECT * FROM public.assessments WHERE id = $1",
+        [data.assessmentId],
+      );
       return rows[0] ?? null;
     }),
   );
@@ -106,8 +109,53 @@ export const fetchFindings = createServerFn({ method: "GET" })
             "SELECT * FROM public.findings WHERE facility_id = $1 ORDER BY created_at",
             [data.id],
           )
-        : await client.query("SELECT * FROM public.findings ORDER BY created_at");
+        : await client.query(
+            "SELECT * FROM public.findings ORDER BY created_at",
+          );
       return rows;
+    }),
+  );
+
+/**
+ * Replaces what used to be three hardcoded, fake notification items in
+ * app-shell.tsx's bell dropdown ("2 critical findings remain open",
+ * specific made-up dates and plant names) with real queries. Scoped to
+ * facility when one is selected, matching every other facility-scoped
+ * query in this file.
+ */
+export const fetchNotifications = createServerFn({ method: "GET" })
+  .middleware([requireAuth])
+  .inputValidator((d: unknown) => optionalId.parse(d))
+  .handler(({ data, context }) =>
+    withUser(context.userId, async (client) => {
+      const facilityFilter = data.id ? "AND facility_id = $1" : "";
+      const params = data.id ? [data.id] : [];
+
+      const criticalFindings = await client.query(
+        `SELECT count(*)::int AS count FROM public.findings
+          WHERE severity = 'critical' AND status NOT IN ('closed', 'accepted_risk') AND archived = false ${facilityFilter}`,
+        params,
+      );
+
+      const upcomingActions = await client.query(
+        `SELECT id, action_description, target_date FROM public.corrective_actions
+          WHERE status NOT IN ('closed', 'accepted_risk') AND target_date IS NOT NULL AND target_date >= CURRENT_DATE ${facilityFilter}
+          ORDER BY target_date ASC LIMIT 3`,
+        params,
+      );
+
+      const inProgressAssessments = await client.query(
+        `SELECT id, name FROM public.assessments
+          WHERE status = 'in_progress' ${facilityFilter}
+          ORDER BY assessment_date DESC LIMIT 3`,
+        params,
+      );
+
+      return {
+        criticalFindingsCount: criticalFindings.rows[0]?.count ?? 0,
+        upcomingActions: upcomingActions.rows,
+        inProgressAssessments: inProgressAssessments.rows,
+      };
     }),
   );
 
@@ -121,7 +169,9 @@ export const fetchCorrectiveActions = createServerFn({ method: "GET" })
             "SELECT * FROM public.corrective_actions WHERE facility_id = $1 ORDER BY target_date",
             [data.id],
           )
-        : await client.query("SELECT * FROM public.corrective_actions ORDER BY target_date");
+        : await client.query(
+            "SELECT * FROM public.corrective_actions ORDER BY target_date",
+          );
       return rows;
     }),
   );
@@ -136,14 +186,18 @@ export const fetchProjects = createServerFn({ method: "GET" })
             "SELECT * FROM public.improvement_projects WHERE facility_id = $1 ORDER BY planned_start",
             [data.id],
           )
-        : await client.query("SELECT * FROM public.improvement_projects ORDER BY planned_start");
+        : await client.query(
+            "SELECT * FROM public.improvement_projects ORDER BY planned_start",
+          );
       return rows;
     }),
   );
 
 export const fetchReadinessHistory = createServerFn({ method: "GET" })
   .middleware([requireAuth])
-  .inputValidator((d: unknown) => z.object({ facilityId: z.string().uuid() }).parse(d))
+  .inputValidator((d: unknown) =>
+    z.object({ facilityId: z.string().uuid() }).parse(d),
+  )
   .handler(({ data, context }) =>
     withUser(context.userId, async (client) => {
       const { rows } = await client.query(
@@ -174,9 +228,15 @@ export const fetchTemplateLibrary = createServerFn({ method: "GET" })
     withUser(context.userId, async (client) => {
       const [templates, versions, categories, questions] = await Promise.all([
         client.query("SELECT * FROM public.assessment_templates ORDER BY name"),
-        client.query("SELECT * FROM public.assessment_template_versions ORDER BY version"),
-        client.query("SELECT * FROM public.assessment_categories ORDER BY sort_order"),
-        client.query("SELECT * FROM public.assessment_questions ORDER BY sort_order"),
+        client.query(
+          "SELECT * FROM public.assessment_template_versions ORDER BY version",
+        ),
+        client.query(
+          "SELECT * FROM public.assessment_categories ORDER BY sort_order",
+        ),
+        client.query(
+          "SELECT * FROM public.assessment_questions ORDER BY sort_order",
+        ),
       ]);
       return {
         templates: templates.rows,
