@@ -13,6 +13,7 @@ import {
   deleteObject,
 } from "@/lib/storage.server";
 import { extractCadFields } from "@/lib/cad-vision-ai.server";
+import { assertProductAllowed } from "@/lib/product-access-check.server";
 
 export const CAD_BUCKET = "cad-drawings";
 const MAX_FILE_BYTES = 25 * 1024 * 1024; // 25MB, same cap as Bulk Intake
@@ -29,6 +30,8 @@ export const createCadJob = createServerFn({ method: "POST" })
   .middleware([requireAuth])
   .inputValidator((d: unknown) => CreateCadJobInput.parse(d))
   .handler(async ({ data, context }) => {
+    await assertProductAllowed(context.userId, data.organizationId, "cad");
+
     const buffer = Buffer.from(data.fileBase64, "base64");
     if (buffer.byteLength > MAX_FILE_BYTES) {
       const mb = (n: number) => (n / (1024 * 1024)).toFixed(1);

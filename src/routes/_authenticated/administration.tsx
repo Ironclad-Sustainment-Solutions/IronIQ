@@ -32,6 +32,11 @@ import {
   useApprovePattern,
   useRejectPattern,
 } from "@/lib/ask-ironiq-api";
+import {
+  useProductRestrictions,
+  useSetProductRestriction,
+  type RestrictableProduct,
+} from "@/lib/product-access-api";
 
 export const Route = createFileRoute("/_authenticated/administration")({
   head: () => ({
@@ -111,10 +116,91 @@ function AdministrationPage() {
       </Panel>
 
       {roles.includes("ironiq_admin") ? <UserManagement /> : null}
+      {roles.includes("ironiq_admin") ? <ProductAccessManagement /> : null}
       {roles.includes("ironiq_admin") || roles.includes("consultant") ? (
         <PatternReviewQueue />
       ) : null}
     </div>
+  );
+}
+
+const PRODUCT_LABELS: Record<RestrictableProduct, string> = {
+  assessment: "Assessment",
+  cad: "CAD Conversion",
+  cnc: "CNC Coding",
+};
+
+function ProductAccessManagement() {
+  const organizations = useOrganizations().data ?? [];
+  const [selectedOrgId, setSelectedOrgId] = useState<string | null>(
+    organizations[0]?.id ?? null,
+  );
+  const restrictions = useProductRestrictions(selectedOrgId);
+  const setRestriction = useSetProductRestriction(selectedOrgId);
+
+  return (
+    <Panel
+      title="Product access"
+      subtitle="Restrict specific organizations from specific products — open by default, matching how every org behaves today, until restricted here."
+    >
+      <div className="space-y-4">
+        <Select
+          value={selectedOrgId ?? undefined}
+          onValueChange={setSelectedOrgId}
+        >
+          <SelectTrigger className="max-w-sm">
+            <SelectValue placeholder="Select an organization" />
+          </SelectTrigger>
+          <SelectContent>
+            {organizations.map((org) => (
+              <SelectItem key={org.id} value={org.id}>
+                {org.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        {selectedOrgId ? (
+          <div className="flex flex-wrap gap-3">
+            {(Object.keys(PRODUCT_LABELS) as RestrictableProduct[]).map(
+              (product) => {
+                const isRestricted =
+                  restrictions.data?.includes(product) ?? false;
+                return (
+                  <div
+                    key={product}
+                    className="flex items-center justify-between gap-4 rounded-md border border-border px-4 py-3"
+                  >
+                    <span className="text-sm text-foreground">
+                      {PRODUCT_LABELS[product]}
+                    </span>
+                    <Button
+                      size="sm"
+                      variant={isRestricted ? "outline" : "ghost"}
+                      disabled={
+                        setRestriction.isPending || restrictions.isLoading
+                      }
+                      onClick={() =>
+                        setRestriction.mutate({
+                          product,
+                          restricted: !isRestricted,
+                        })
+                      }
+                    >
+                      {isRestricted
+                        ? "Restricted — click to allow"
+                        : "Allowed — click to restrict"}
+                    </Button>
+                  </div>
+                );
+              },
+            )}
+          </div>
+        ) : (
+          <EmptyState message="No organizations yet." />
+        )}
+      </div>
+    </Panel>
   );
 }
 
