@@ -99,23 +99,41 @@ export const getCurrentUser = createServerFn({ method: "GET" }).handler(
     const userId = await getSessionUserId();
     if (!userId) return null;
 
-    return withUser(userId, async (client) => {
-      const [{ rows: profileRows }, { rows: roleRows }] = await Promise.all([
-        client.query(
-          "SELECT id, email, full_name, job_title, phone, status, approved, avatar_url FROM public.profiles WHERE id = $1",
-          [userId],
-        ),
-        client.query("SELECT role FROM public.user_roles WHERE user_id = $1", [
-          userId,
-        ]),
-      ]);
-      const profile = profileRows[0] ?? null;
-      return {
-        id: userId,
-        email: profile?.email ?? null,
-        profile,
-        roles: roleRows.map((r) => r.role as string),
-      };
-    });
+    // This function's own docstring promises it's "safe to call from a
+    // route guard" — but the database call below previously wasn't
+    // actually wrapped in anything, so a transient failure here (which
+    // runs before EVERY authenticated page load, no exceptions) would
+    // crash the whole page render instead of the graceful degradation
+    // the docstring implies. A failed auth check degrading to "treat as
+    // logged out" (redirect to sign in) is a far better failure mode
+    // than an opaque error page, and is honest — we genuinely couldn't
+    // verify the session, so it's correct not to assume it's valid.
+    try {
+      return await withUser(userId, async (client) => {
+        const [{ rows: profileRows }, { rows: roleRows }] = await Promise.all([
+          client.query(
+            "SELECT id, email, full_name, job_title, phone, status, approved, avatar_url FROM public.profiles WHERE id = $1",
+            [userId],
+          ),
+          client.query(
+            "SELECT role FROM public.user_roles WHERE user_id = $1",
+            [userId],
+          ),
+        ]);
+        const profile = profileRows[0] ?? null;
+        return {
+          id: userId,
+          email: profile?.email ?? null,
+          profile,
+          roles: roleRows.map((r) => r.role as string),
+        };
+      });
+    } catch (error) {
+      console.error(
+        "getCurrentUser: database error, treating as logged out",
+        error,
+      );
+      return null;
+    }
   },
 );
