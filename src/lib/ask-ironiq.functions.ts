@@ -13,6 +13,14 @@
  * every other AI feature in this app: answer only from what was actually
  * retrieved, cite it, and say plainly when nothing relevant was found
  * rather than filling the gap with a plausible-sounding guess.
+ *
+ * When nothing internal matches at all, this falls back to Claude's own
+ * general knowledge rather than a dead end — but the response always
+ * carries usedExternalKnowledge so the UI can render an unmistakably
+ * different treatment for that case. An answer grounded in this app's
+ * own reviewed client history and a generic AI answer with no connection
+ * to it are fundamentally different kinds of trust, and conflating them
+ * would be actively misleading.
  */
 
 import { createServerFn } from "@tanstack/react-start";
@@ -90,10 +98,28 @@ export const askIronIQ = createServerFn({ method: "POST" })
     });
 
     if (patterns.length === 0) {
+      // Fallback: nothing in IronIQ's own reviewed precedent matched, so
+      // answer from Claude's general knowledge instead of returning
+      // nothing — but this MUST be clearly distinguishable from a
+      // grounded-in-our-own-data answer, since one is verified internal
+      // precedent and the other is generic AI knowledge with no
+      // connection to this app's actual client history. Mixing those
+      // two without a clear signal would let a generic-sounding answer
+      // get mistaken for validated precedent.
+      const fallback = await generateText({
+        model: gateway()(MODEL),
+        system: `No internal IronIQ precedent matched this question. Answer from your own
+general knowledge instead, as a knowledgeable manufacturing/engineering assistant would.
+Be genuinely helpful, but do not claim or imply this is based on IronIQ's own client
+engagement history — it is not. If you're not confident in an accurate answer, say so
+rather than guess.`,
+        prompt: data.question,
+      });
+
       return {
-        answer:
-          "No relevant precedent found yet in the Intelligence Layer for this question. This is expected early on — it grows as more engagements close out findings, corrective actions, projects, and CNC changes with sharing enabled.",
+        answer: fallback.text,
         patterns: [],
+        usedExternalKnowledge: true,
       };
     }
 
@@ -110,5 +136,5 @@ export const askIronIQ = createServerFn({ method: "POST" })
       prompt: `Question: ${data.question}\n\nRetrieved patterns:\n\n${context_block}`,
     });
 
-    return { answer: result.text, patterns };
+    return { answer: result.text, patterns, usedExternalKnowledge: false };
   });

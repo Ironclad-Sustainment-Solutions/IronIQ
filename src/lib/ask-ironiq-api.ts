@@ -29,6 +29,7 @@ export interface AskIronIQPattern {
 export interface AskIronIQResult {
   answer: string;
   patterns: AskIronIQPattern[];
+  usedExternalKnowledge: boolean;
 }
 
 export function useAskIronIQ() {
