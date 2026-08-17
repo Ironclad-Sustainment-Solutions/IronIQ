@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedAdministrationRouteImport } from './routes/_authenticated/administration'
+import { Route as AuthenticatedAskIroniqRouteImport } from './routes/_authenticated/ask-ironiq'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedEstimatesRouteImport } from './routes/_authenticated/estimates'
 import { Route as AuthenticatedFacilitiesRouteImport } from './routes/_authenticated/facilities'
@@ -55,6 +56,11 @@ const AuthenticatedAdministrationRoute =
     path: '/administration',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedAskIroniqRoute = AuthenticatedAskIroniqRouteImport.update({
+  id: '/ask-ironiq',
+  path: '/ask-ironiq',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
@@ -176,6 +182,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/administration': typeof AuthenticatedAdministrationRoute
+  '/ask-ironiq': typeof AuthenticatedAskIroniqRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/estimates': typeof AuthenticatedEstimatesRoute
   '/facilities': typeof AuthenticatedFacilitiesRoute
@@ -202,6 +209,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/administration': typeof AuthenticatedAdministrationRoute
+  '/ask-ironiq': typeof AuthenticatedAskIroniqRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/estimates': typeof AuthenticatedEstimatesRoute
   '/facilities': typeof AuthenticatedFacilitiesRoute
@@ -229,6 +237,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/_authenticated/administration': typeof AuthenticatedAdministrationRoute
+  '/_authenticated/ask-ironiq': typeof AuthenticatedAskIroniqRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/estimates': typeof AuthenticatedEstimatesRoute
   '/_authenticated/facilities': typeof AuthenticatedFacilitiesRoute
@@ -257,6 +266,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/administration'
+    | '/ask-ironiq'
     | '/dashboard'
     | '/estimates'
     | '/facilities'
@@ -283,6 +293,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/administration'
+    | '/ask-ironiq'
     | '/dashboard'
     | '/estimates'
     | '/facilities'
@@ -309,6 +320,7 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/auth'
     | '/_authenticated/administration'
+    | '/_authenticated/ask-ironiq'
     | '/_authenticated/dashboard'
     | '/_authenticated/estimates'
     | '/_authenticated/facilities'
@@ -366,6 +378,13 @@ declare module '@tanstack/react-router' {
       path: '/administration'
       fullPath: '/administration'
       preLoaderRoute: typeof AuthenticatedAdministrationRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/ask-ironiq': {
+      id: '/_authenticated/ask-ironiq'
+      path: '/ask-ironiq'
+      fullPath: '/ask-ironiq'
+      preLoaderRoute: typeof AuthenticatedAskIroniqRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/dashboard': {
@@ -542,6 +561,7 @@ const AuthenticatedProductionRouteWithChildren =
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedAdministrationRoute: typeof AuthenticatedAdministrationRoute
+  AuthenticatedAskIroniqRoute: typeof AuthenticatedAskIroniqRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedEstimatesRoute: typeof AuthenticatedEstimatesRoute
   AuthenticatedFacilitiesRoute: typeof AuthenticatedFacilitiesRoute
@@ -563,6 +583,7 @@ interface AuthenticatedRouteRouteChildren {
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAdministrationRoute: AuthenticatedAdministrationRoute,
+  AuthenticatedAskIroniqRoute: AuthenticatedAskIroniqRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedEstimatesRoute: AuthenticatedEstimatesRoute,
   AuthenticatedFacilitiesRoute: AuthenticatedFacilitiesRoute,

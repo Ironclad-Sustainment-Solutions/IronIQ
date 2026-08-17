@@ -21,6 +21,7 @@ import {
   Menu,
   ClipboardList,
   UploadCloud,
+  Sparkles,
 } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { IronIQMark } from "@/components/ironiq/ironiq-mark";
@@ -89,6 +90,15 @@ const NAV: {
   {
     section: "Reporting",
     items: [{ to: "/reports", label: "Reports", icon: FileBarChart }],
+  },
+  {
+    // A single entry for now, deliberately — the full product-family nav
+    // restructuring (Assessment / CAD / CNC streams + a proper
+    // Intelligence section) is Phase H, still later. This just needs
+    // somewhere to live in the meantime, same as Bulk Intake got one
+    // entry before the bigger reorg happened.
+    section: "Intelligence",
+    items: [{ to: "/ask-ironiq", label: "Ask IronIQ", icon: Sparkles }],
   },
   {
     // A genuinely separate capability from the facility-assessment

@@ -17,6 +17,7 @@
  */
 
 import { withUser } from "@/lib/db.server";
+import { generatePatternFromEvent } from "@/lib/intelligence-pattern-ai.server";
 
 async function insertEvent(
   userId: string,
@@ -31,12 +32,14 @@ async function insertEvent(
   },
 ): Promise<void> {
   if (!row.problem_summary?.trim()) return; // nothing meaningful to capture
-  await withUser(userId, (client) =>
-    client.query(
+
+  const { rows } = await withUser(userId, (client) =>
+    client.query<{ id: string }>(
       `INSERT INTO public.intelligence_events
          (organization_id, facility_id, product, problem_summary, resolution_summary,
           outcome_summary, source_table, source_id, contribute_consent, created_by)
-       VALUES ($1,$2,'assessment',$3,$4,$5,$6,$7,true,$8)`,
+       VALUES ($1,$2,'assessment',$3,$4,$5,$6,$7,true,$8)
+       RETURNING id`,
       [
         row.organization_id,
         row.facility_id,
@@ -49,6 +52,36 @@ async function insertEvent(
       ],
     ),
   );
+  const eventId = rows[0].id;
+
+  // Best-effort: draft the anonymized pattern right away. Never let an AI
+  // failure here fail the close-out action the user actually asked for —
+  // the raw event is already safely saved regardless of what happens next.
+  try {
+    const orgIndustry = await withUser(userId, async (client) => {
+      const { rows: orgRows } = await client.query<{ industry: string | null }>(
+        `SELECT industry FROM public.organizations WHERE id = $1`,
+        [row.organization_id],
+      );
+      return orgRows[0]?.industry ?? null;
+    });
+    await generatePatternFromEvent({
+      eventId,
+      organizationIndustry: orgIndustry,
+      problemSummary: row.problem_summary,
+      resolutionSummary: row.resolution_summary,
+      outcomeSummary: row.outcome_summary,
+    });
+  } catch (error) {
+    // Swallowed deliberately — the event itself is saved either way, and
+    // pattern generation can be retried later (e.g. from a review queue)
+    // without needing to re-close the finding/action/project.
+    console.error(
+      "Pattern generation failed for intelligence_event",
+      eventId,
+      error,
+    );
+  }
 }
 
 /** Call after a finding's status has just been updated to 'closed' or 'accepted_risk'. */

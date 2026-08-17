@@ -27,6 +27,11 @@ import {
   useRemoveOrgMembership,
   type AdminUserRow,
 } from "@/lib/admin-users-api";
+import {
+  usePendingPatterns,
+  useApprovePattern,
+  useRejectPattern,
+} from "@/lib/ask-ironiq-api";
 
 export const Route = createFileRoute("/_authenticated/administration")({
   head: () => ({
@@ -106,7 +111,77 @@ function AdministrationPage() {
       </Panel>
 
       {roles.includes("ironiq_admin") ? <UserManagement /> : null}
+      {roles.includes("ironiq_admin") || roles.includes("consultant") ? (
+        <PatternReviewQueue />
+      ) : null}
     </div>
+  );
+}
+
+function PatternReviewQueue() {
+  const pending = usePendingPatterns().data ?? [];
+  const approve = useApprovePattern();
+  const reject = useRejectPattern();
+
+  return (
+    <Panel
+      title="Intelligence Layer — pending patterns"
+      subtitle="Anonymized precedent drafted from closed findings, corrective actions and projects — nothing here is visible to any other organization until approved."
+    >
+      {pending.length === 0 ? (
+        <EmptyState message="No patterns waiting for review." />
+      ) : (
+        <ul className="divide-y divide-border">
+          {pending.map((p) => (
+            <li key={p.id} className="space-y-3 py-4 first:pt-0 last:pb-0">
+              <div className="flex flex-wrap items-center gap-2">
+                <Tag token="steel">
+                  {p.category_label ?? "unspecified industry"}
+                </Tag>
+                <span className="text-xs text-muted-foreground">
+                  drafted {new Date(p.created_at).toLocaleString()}
+                </span>
+              </div>
+              <div className="grid gap-2 text-sm md:grid-cols-3">
+                <div>
+                  <p className="eyebrow">Problem</p>
+                  <p className="mt-0.5 text-foreground">{p.pattern_summary}</p>
+                </div>
+                <div>
+                  <p className="eyebrow">Resolution</p>
+                  <p className="mt-0.5 text-muted-foreground">
+                    {p.pattern_resolution ?? "—"}
+                  </p>
+                </div>
+                <div>
+                  <p className="eyebrow">Outcome</p>
+                  <p className="mt-0.5 text-muted-foreground">
+                    {p.pattern_outcome ?? "—"}
+                  </p>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  onClick={() => approve.mutate(p.id)}
+                  disabled={approve.isPending}
+                >
+                  Approve &amp; share
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => reject.mutate({ id: p.id })}
+                  disabled={reject.isPending}
+                >
+                  Reject
+                </Button>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+    </Panel>
   );
 }
 
