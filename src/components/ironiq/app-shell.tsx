@@ -31,6 +31,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
 import { useApp } from "@/context/app-context";
 import { ROLE_LABELS } from "@/lib/domain";
+import { useNotifications } from "@/lib/api";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -276,6 +277,7 @@ function TopBar() {
   } = useApp();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const notifications = useNotifications(facility?.id);
 
   async function signOut() {
     await queryClient.cancelQueries();
@@ -326,27 +328,77 @@ function TopBar() {
           <DropdownMenuContent align="end" className="w-80">
             <DropdownMenuLabel>Notifications</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="flex-col items-start gap-0.5 whitespace-normal">
-              <span className="text-sm text-critical">
-                2 critical findings remain open
-              </span>
-              <span className="text-xs text-muted-foreground">
-                CNC program control and machine connectivity are gating
-                production readiness.
-              </span>
-            </DropdownMenuItem>
-            <DropdownMenuItem className="flex-col items-start gap-0.5 whitespace-normal">
-              <span className="text-sm">Corrective action due 15 Sep 2026</span>
-              <span className="text-xs text-muted-foreground">
-                Ring-fence PM labor capacity — awaiting verification.
-              </span>
-            </DropdownMenuItem>
-            <DropdownMenuItem className="flex-col items-start gap-0.5 whitespace-normal">
-              <span className="text-sm">Follow-up assessment in progress</span>
-              <span className="text-xs text-muted-foreground">
-                Plant 4 Q3 Follow-Up — Engineering and Tooling complete.
-              </span>
-            </DropdownMenuItem>
+            {notifications.isLoading ? (
+              <DropdownMenuItem
+                disabled
+                className="text-xs text-muted-foreground"
+              >
+                Loading…
+              </DropdownMenuItem>
+            ) : null}
+            {notifications.data &&
+            notifications.data.criticalFindingsCount > 0 ? (
+              <DropdownMenuItem
+                asChild
+                className="flex-col items-start gap-0.5 whitespace-normal"
+              >
+                <Link to="/findings">
+                  <span className="text-sm text-critical">
+                    {notifications.data.criticalFindingsCount} critical finding
+                    {notifications.data.criticalFindingsCount === 1
+                      ? ""
+                      : "s"}{" "}
+                    remain open
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    {facility ? facility.name : "Across all facilities"} — not
+                    yet closed or accepted as risk.
+                  </span>
+                </Link>
+              </DropdownMenuItem>
+            ) : null}
+            {(notifications.data?.upcomingActions ?? []).map((a) => (
+              <DropdownMenuItem
+                key={a.id}
+                asChild
+                className="flex-col items-start gap-0.5 whitespace-normal"
+              >
+                <Link to="/findings">
+                  <span className="text-sm">
+                    Corrective action due{" "}
+                    {new Date(a.target_date).toLocaleDateString()}
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    {a.action_description}
+                  </span>
+                </Link>
+              </DropdownMenuItem>
+            ))}
+            {(notifications.data?.inProgressAssessments ?? []).map((a) => (
+              <DropdownMenuItem
+                key={a.id}
+                asChild
+                className="flex-col items-start gap-0.5 whitespace-normal"
+              >
+                <Link to="/assessments">
+                  <span className="text-sm">Assessment in progress</span>
+                  <span className="text-xs text-muted-foreground">
+                    {a.name}
+                  </span>
+                </Link>
+              </DropdownMenuItem>
+            ))}
+            {notifications.data &&
+            notifications.data.criticalFindingsCount === 0 &&
+            notifications.data.upcomingActions.length === 0 &&
+            notifications.data.inProgressAssessments.length === 0 ? (
+              <DropdownMenuItem
+                disabled
+                className="text-xs text-muted-foreground"
+              >
+                Nothing needs attention right now.
+              </DropdownMenuItem>
+            ) : null}
           </DropdownMenuContent>
         </DropdownMenu>
 
