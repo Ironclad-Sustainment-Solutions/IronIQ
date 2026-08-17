@@ -50,43 +50,32 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 
-const NAV: {
+// The three co-equal product pipelines — rendered with prominent styling,
+// always at the top of the nav, visually distinct from every supporting
+// section below. This is the actual fix for products reading as "blended
+// in with everything else": size, weight, and position now signal these
+// are THE three things this app does, not three more entries in one flat
+// list of equal-looking sections.
+const PRODUCT_NAV: {
   section: string;
   items: { to: string; label: string; icon: typeof LayoutDashboard }[];
 }[] = [
   {
-    section: "Overview",
-    items: [
-      { to: "/dashboard", label: "Executive Dashboard", icon: LayoutDashboard },
-    ],
-  },
-  {
-    // Prerequisite for everything below: an assessment can't be scoped
-    // without an organization and (for most systems) a facility. See
-    // PrerequisiteGate in layout-primitives.tsx, which points back here.
-    // Assessment Templates lives here too, not in the Assessment pipeline
-    // itself — it's org-wide configuration an admin sets up occasionally,
-    // not a step an assessor walks through while evaluating one client.
-    section: "Setup",
-    items: [
-      { to: "/organizations", label: "Organizations", icon: Building2 },
-      { to: "/facilities", label: "Facilities", icon: Factory },
-      { to: "/templates", label: "Assessment Templates", icon: FileStack },
-    ],
-  },
-  {
-    // One of three co-equal product pipelines (Assessment / CAD
-    // Conversion / CNC Coding) — deliberately visually equal-weighted
-    // with the other two, not treated as the "main" product with the
-    // others bolted on. "Assessment Hub" is first and is the actual
-    // entry point: it presents Template/Capability/Field Assessment as
-    // parallel alternatives with a "use this when" one-liner each,
-    // rather than a flat list with no indication of sequence. Findings
-    // and Improvement Projects live here too now, not in a separate
-    // section — a finding comes FROM an assessment, closing it is the
-    // next step, and splitting them apart was actively misleading.
+    // The only product with enough sub-pages to need a real accordion —
+    // collapsed by default unless the current route is inside it. See
+    // "Assessment Hub" note in assessment.tsx for why these are grouped
+    // as one pipeline rather than split across sections.
+    //
+    // Readiness Dashboard lives here, not as a separate top-level
+    // "Overview" — checked the actual page's data sources directly
+    // (useFacilityResult, findings, projects, readiness scores) and every
+    // one of them is Assessment-specific; nothing about CAD or CNC
+    // appears anywhere in it. Renamed from "Executive Dashboard" to
+    // "Readiness Dashboard" for the same reason — the old name implied
+    // portfolio-wide, cross-product coverage it never actually had.
     section: "Assessment",
     items: [
+      { to: "/dashboard", label: "Readiness Dashboard", icon: LayoutDashboard },
       { to: "/assessment", label: "Assessment Hub", icon: Compass },
       { to: "/intake", label: "Bulk Intake", icon: UploadCloud },
       { to: "/assessments", label: "Assessments", icon: ClipboardCheck },
@@ -97,56 +86,72 @@ const NAV: {
     ],
   },
   {
+    // Single-item pipelines render as a direct link, not a dropdown with
+    // nothing to expand into — same prominent tier as Assessment, just no
+    // chevron since there's only one destination.
     section: "CAD Conversion",
     items: [{ to: "/cad", label: "CAD Conversion", icon: FileImage }],
   },
   {
-    section: "CNC Coding Enhancement",
+    section: "CNC Coding",
     items: [{ to: "/cnc", label: "CNC Coding Enhancement", icon: Code2 }],
+  },
+];
+
+// Everything that supports the three products but isn't one of them —
+// compact, collapsed by default, one tier down visually from PRODUCT_NAV.
+const SUPPORT_NAV: {
+  section: string;
+  items: { to: string; label: string; icon: typeof LayoutDashboard }[];
+}[] = [
+  {
+    section: "Setup",
+    items: [
+      { to: "/organizations", label: "Organizations", icon: Building2 },
+      { to: "/facilities", label: "Facilities", icon: Factory },
+      { to: "/templates", label: "Assessment Templates", icon: FileStack },
+    ],
   },
   {
     section: "Reporting",
     items: [{ to: "/reports", label: "Reports", icon: FileBarChart }],
   },
   {
-    // A single entry for now, deliberately — the full product-family nav
-    // restructuring (Assessment / CAD / CNC streams + a proper
-    // Intelligence section) is Phase H, still later. This just needs
-    // somewhere to live in the meantime, same as Bulk Intake got one
-    // entry before the bigger reorg happened.
     section: "Intelligence",
     items: [{ to: "/ask-ironiq", label: "Ask IronIQ", icon: Sparkles }],
-  },
-  {
-    // A genuinely separate capability from the facility-assessment
-    // workflow above (RFQ/manufacturing-job estimating) — previously
-    // interleaved into one flat list with no visual distinction from the
-    // assessment tools, which was a real part of the "jumbled" feeling.
-    section: "Manufacturing Estimating",
-    items: [
-      { to: "/estimates", label: "Estimating", icon: Calculator },
-      { to: "/production", label: "Production Flow", icon: Cpu },
-      { to: "/production/libraries", label: "Machine & Tooling", icon: Wrench },
-    ],
-  },
-  {
-    // Home for features that are built but deliberately not activated
-    // yet — right now just Executive Rollup, held back because it
-    // answers a question about Ironclad's own internal RFQ/estimating
-    // performance rather than customer-facing value from the three
-    // product streams or the Intelligence Layer. Add future not-yet-
-    // prioritized features here rather than either hiding them entirely
-    // or shipping them live before they're actually the priority.
-    section: "Coming Soon",
-    items: [
-      { to: "/executive-rollup", label: "Executive Rollup", icon: TrendingUp },
-    ],
   },
   {
     section: "Administration",
     items: [{ to: "/administration", label: "Administration", icon: Settings }],
   },
 ];
+
+// Deliberately grouped together, de-emphasized: Manufacturing Estimating
+// (RFQ/quoting) answers a question about Ironclad's own internal
+// operations, same reasoning Executive Rollup was held back for — neither
+// is one of the three customer-facing product pipelines or proven
+// priority yet, so both live in the same quiet, collapsed-by-default
+// section rather than competing visually with the real products above.
+const LATER_NAV: {
+  section: string;
+  items: { to: string; label: string; icon: typeof LayoutDashboard }[];
+}[] = [
+  {
+    section: "Coming Soon",
+    items: [
+      { to: "/executive-rollup", label: "Executive Rollup", icon: TrendingUp },
+      { to: "/estimates", label: "Estimating", icon: Calculator },
+      { to: "/production", label: "Production Flow", icon: Cpu },
+      { to: "/production/libraries", label: "Machine & Tooling", icon: Wrench },
+    ],
+  },
+];
+
+const ALL_NAV_GROUPS = [...PRODUCT_NAV, ...SUPPORT_NAV, ...LATER_NAV];
+
+function isItemActive(pathname: string, to: string): boolean {
+  return pathname === to || pathname.startsWith(`${to}/`);
+}
 
 export function AppShell({ children }: { children: ReactNode }) {
   const [collapsed, setCollapsed] = useState(false);
@@ -211,25 +216,169 @@ function NavLinks({
   pathname: string;
   onNavigate?: () => void;
 }) {
+  // Computed unconditionally, before any early return — hooks must run in
+  // the same order every render, and collapsed genuinely toggles at
+  // runtime via the sidebar's own collapse button, so this can't live
+  // inside the icon-only branch below.
+  const activeSection =
+    ALL_NAV_GROUPS.find((g) =>
+      g.items.some((item) => isItemActive(pathname, item.to)),
+    )?.section ?? PRODUCT_NAV[0].section;
+  const [expanded, setExpanded] = useState(activeSection);
+  const toggle = (section: string) =>
+    setExpanded((current) => (current === section ? "" : section));
+
+  // Icon-only sidebar (desktop collapsed to w-16): accordion headers have
+  // nowhere to put their label text anyway, so this keeps the original
+  // flat-icon-list behavior exactly as it was — no behavior change for
+  // this mode, only for the full-width expanded sidebar below.
+  if (collapsed) {
+    return (
+      <>
+        {ALL_NAV_GROUPS.flatMap((g) => g.items).map((item) => {
+          const active = isItemActive(pathname, item.to);
+          return (
+            <Link
+              key={item.to}
+              to={item.to}
+              title={item.label}
+              onClick={onNavigate}
+              className={cn(
+                "flex items-center gap-3 rounded-sm px-3 py-2.5 text-sm transition-colors",
+                active
+                  ? "bg-sidebar-accent font-medium text-sidebar-accent-foreground shadow-[inset_3px_0_0_0_var(--sidebar-primary)]"
+                  : "text-sidebar-foreground/70 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground",
+              )}
+            >
+              <item.icon className="size-4 shrink-0" aria-hidden />
+            </Link>
+          );
+        })}
+      </>
+    );
+  }
+
   return (
     <>
-      {NAV.map((group, groupIndex) => (
-        <div
+      {PRODUCT_NAV.map((group) => (
+        <NavSection
           key={group.section}
-          className={
-            groupIndex > 0
-              ? "mt-4 border-t border-sidebar-border pt-4"
-              : undefined
-          }
-        >
-          {!collapsed && (
-            <p className="mb-1.5 px-3 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/70">
-              {group.section}
-            </p>
+          group={group}
+          pathname={pathname}
+          isExpanded={expanded === group.section}
+          onToggle={() => toggle(group.section)}
+          onNavigate={onNavigate}
+          tier="product"
+        />
+      ))}
+
+      <div className="my-3 border-t border-sidebar-border" />
+      {SUPPORT_NAV.map((group) => (
+        <NavSection
+          key={group.section}
+          group={group}
+          pathname={pathname}
+          isExpanded={expanded === group.section}
+          onToggle={() => toggle(group.section)}
+          onNavigate={onNavigate}
+          tier="support"
+        />
+      ))}
+
+      <div className="my-3 border-t border-sidebar-border" />
+      {LATER_NAV.map((group) => (
+        <NavSection
+          key={group.section}
+          group={group}
+          pathname={pathname}
+          isExpanded={expanded === group.section}
+          onToggle={() => toggle(group.section)}
+          onNavigate={onNavigate}
+          tier="later"
+        />
+      ))}
+    </>
+  );
+}
+
+function NavSection({
+  group,
+  pathname,
+  isExpanded,
+  onToggle,
+  onNavigate,
+  tier,
+}: {
+  group: {
+    section: string;
+    items: { to: string; label: string; icon: typeof LayoutDashboard }[];
+  };
+  pathname: string;
+  isExpanded: boolean;
+  onToggle: () => void;
+  onNavigate?: () => void;
+  tier: "product" | "support" | "later";
+}) {
+  const hasActive = group.items.some((item) => isItemActive(pathname, item.to));
+
+  // A single-item group is a direct link, not a dropdown with nothing to
+  // expand into — still styled at the same tier as its siblings so, e.g.,
+  // CAD Conversion and CNC Coding read as visually equal to Assessment
+  // even though only Assessment has a chevron.
+  if (group.items.length === 1) {
+    const item = group.items[0];
+    const active = isItemActive(pathname, item.to);
+    return (
+      <Link
+        to={item.to}
+        title={group.section}
+        onClick={onNavigate}
+        className={cn(
+          "mb-0.5 flex items-center gap-3 rounded-sm px-3 py-2.5 transition-colors",
+          tier === "product"
+            ? "text-sm font-bold uppercase tracking-wide"
+            : "text-sm",
+          tier === "later" && "opacity-70",
+          active
+            ? "bg-sidebar-accent text-sidebar-accent-foreground shadow-[inset_3px_0_0_0_var(--sidebar-primary)]"
+            : "text-sidebar-foreground/70 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground",
+        )}
+      >
+        <item.icon className="size-4 shrink-0" aria-hidden />
+        <span className="truncate">{group.section}</span>
+      </Link>
+    );
+  }
+
+  return (
+    <div className="mb-0.5">
+      <button
+        type="button"
+        onClick={onToggle}
+        className={cn(
+          "flex w-full items-center justify-between gap-2 rounded-sm px-3 py-2.5 text-left transition-colors",
+          tier === "product"
+            ? "text-sm font-bold uppercase tracking-wide"
+            : "text-[11px] font-semibold uppercase tracking-widest",
+          tier === "later" && "opacity-70",
+          hasActive
+            ? "text-primary"
+            : "text-sidebar-foreground/70 hover:text-sidebar-foreground",
+        )}
+      >
+        <span className="truncate">{group.section}</span>
+        <ChevronDown
+          className={cn(
+            "size-3.5 shrink-0 transition-transform",
+            isExpanded && "rotate-180",
           )}
+          aria-hidden
+        />
+      </button>
+      {isExpanded ? (
+        <div className="mt-0.5 space-y-0.5 border-l border-sidebar-border pl-2">
           {group.items.map((item) => {
-            const active =
-              pathname === item.to || pathname.startsWith(`${item.to}/`);
+            const active = isItemActive(pathname, item.to);
             return (
               <Link
                 key={item.to}
@@ -237,20 +386,20 @@ function NavLinks({
                 title={item.label}
                 onClick={onNavigate}
                 className={cn(
-                  "flex items-center gap-3 rounded-sm px-3 py-2.5 text-sm transition-colors",
+                  "flex items-center gap-3 rounded-sm px-3 py-2 text-sm transition-colors",
                   active
                     ? "bg-sidebar-accent font-medium text-sidebar-accent-foreground shadow-[inset_3px_0_0_0_var(--sidebar-primary)]"
                     : "text-sidebar-foreground/70 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground",
                 )}
               >
                 <item.icon className="size-4 shrink-0" aria-hidden />
-                {!collapsed && <span className="truncate">{item.label}</span>}
+                <span className="truncate">{item.label}</span>
               </Link>
             );
           })}
         </div>
-      ))}
-    </>
+      ) : null}
+    </div>
   );
 }
 
