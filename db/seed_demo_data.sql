@@ -351,3 +351,169 @@ BEGIN
 
   RAISE NOTICE 'Demo data expansion complete: CAD jobs, CNC log entries, capability assessment, field assessment.';
 END $$;
+
+-- =====================================================================
+-- Expansion 2: real Template Assessment runs, responses, readiness
+-- history, and Capability Assessment findings — direct feedback that
+-- "there are no assessments" and the facilities section reads as hollow
+-- without real historical trend data behind the scores already shown.
+--
+-- Same safety construction as every block above: direct SQL, no server
+-- functions touched.
+-- =====================================================================
+
+DO $$
+DECLARE
+  v_org_aero uuid;
+  v_org_auto uuid;
+  v_org_tool uuid;
+  v_fac_aero uuid;
+  v_fac_auto uuid;
+  v_fac_tool uuid;
+  v_cap_assessment uuid;
+  v_template uuid;
+  v_version uuid;
+  v_cat_connectivity uuid;
+  v_cat_quality uuid;
+  v_cat_workforce uuid;
+  v_q1 uuid; v_q2 uuid; v_q3 uuid; v_q4 uuid; v_q5 uuid; v_q6 uuid;
+  v_assessment uuid;
+BEGIN
+  SELECT id INTO v_org_aero FROM organizations WHERE name = '[DEMO] Meridian Aerostructures';
+  SELECT id INTO v_org_auto FROM organizations WHERE name = '[DEMO] Ridgeline Powertrain Components';
+  SELECT id INTO v_org_tool FROM organizations WHERE name = '[DEMO] Blackstone Tool & Die';
+  IF v_org_aero IS NULL THEN
+    RAISE EXCEPTION 'Demo organizations not found — run the seed blocks above this one first.';
+  END IF;
+
+  SELECT id INTO v_fac_aero FROM facilities WHERE organization_id = v_org_aero LIMIT 1;
+  SELECT id INTO v_fac_auto FROM facilities WHERE organization_id = v_org_auto LIMIT 1;
+  SELECT id INTO v_fac_tool FROM facilities WHERE organization_id = v_org_tool LIMIT 1;
+  SELECT id INTO v_cap_assessment FROM cap_assessments WHERE facility_id = v_fac_tool LIMIT 1;
+
+  -- ---------------------------------------------------------------
+  -- One shared, published template — assessment_templates isn't
+  -- org-scoped in this schema, so every demo org's assessments use the
+  -- same real template rather than needing three duplicates.
+  -- ---------------------------------------------------------------
+  INSERT INTO assessment_templates (name, description, status)
+  VALUES ('[DEMO] IronIQ Standard Readiness Assessment', 'Baseline readiness scorecard used across demo engagements.', 'draft')
+  RETURNING id INTO v_template;
+
+  INSERT INTO assessment_template_versions (template_id, version, status)
+  VALUES (v_template, 1, 'draft')
+  RETURNING id INTO v_version;
+
+  INSERT INTO assessment_categories (template_version_id, code, name, weight, sort_order)
+  VALUES (v_version, 'CONN', 'Machine Connectivity', 30, 1) RETURNING id INTO v_cat_connectivity;
+  INSERT INTO assessment_categories (template_version_id, code, name, weight, sort_order)
+  VALUES (v_version, 'QUAL', 'Quality Systems', 40, 2) RETURNING id INTO v_cat_quality;
+  INSERT INTO assessment_categories (template_version_id, code, name, weight, sort_order)
+  VALUES (v_version, 'WORK', 'Workforce Readiness', 30, 3) RETURNING id INTO v_cat_workforce;
+
+  INSERT INTO assessment_questions (category_id, question_code, question_text, weight, is_critical, sort_order)
+  VALUES (v_cat_connectivity, 'CONN-1', 'Are all production machines networked for real-time data collection?', 2, true, 1) RETURNING id INTO v_q1;
+  INSERT INTO assessment_questions (category_id, question_code, question_text, weight, sort_order)
+  VALUES (v_cat_connectivity, 'CONN-2', 'Is OEE tracked automatically rather than manually transcribed?', 1, 2) RETURNING id INTO v_q2;
+  INSERT INTO assessment_questions (category_id, question_code, question_text, weight, is_critical, sort_order)
+  VALUES (v_cat_quality, 'QUAL-1', 'Are work instructions under formal revision control?', 2, true, 1) RETURNING id INTO v_q3;
+  INSERT INTO assessment_questions (category_id, question_code, question_text, weight, sort_order)
+  VALUES (v_cat_quality, 'QUAL-2', 'Is a preventive maintenance schedule documented and followed?', 1, 2) RETURNING id INTO v_q4;
+  INSERT INTO assessment_questions (category_id, question_code, question_text, weight, sort_order)
+  VALUES (v_cat_workforce, 'WORK-1', 'Are critical operations cross-trained across at least 2 people per shift?', 1, 1) RETURNING id INTO v_q5;
+  INSERT INTO assessment_questions (category_id, question_code, question_text, weight, sort_order)
+  VALUES (v_cat_workforce, 'WORK-2', 'Is die/tooling design estimating based on tracked historical data?', 1, 2) RETURNING id INTO v_q6;
+
+  -- Publish only after all categories/questions exist — the version's
+  -- own trigger blocks any further content changes once published, so
+  -- this order is required, not just tidier.
+  UPDATE assessment_template_versions
+     SET status = 'published', published_at = now() - interval '90 days'
+   WHERE id = v_version;
+  UPDATE assessment_templates SET status = 'published' WHERE id = v_template;
+
+  -- ---------------------------------------------------------------
+  -- Meridian (aerospace, mid-engagement): one finalized assessment with
+  -- real scored responses matching the facility's existing 68.5 score
+  -- and the finding/project narrative already seeded above.
+  -- ---------------------------------------------------------------
+  INSERT INTO assessments
+    (organization_id, facility_id, template_version_id, name, assessment_date, lead_assessor, scope,
+     status, overall_score, confidence_score, completion_pct, readiness_level)
+  VALUES
+    (v_org_aero, v_fac_aero, v_version, 'Q2 2026 Readiness Assessment', CURRENT_DATE - 15, 'J. Alvarez',
+     'Plant 1 — Wichita, full facility', 'in_progress', 68.5, 80.0, 100.0, 'developing')
+  RETURNING id INTO v_assessment;
+
+  INSERT INTO assessment_responses (assessment_id, question_id, score, comments, answered_at)
+  VALUES
+    (v_assessment, v_q1, 2, 'Mill 4 networked; Mills 6/7/8 still manual — see MER-F-001.', now() - interval '15 days'),
+    (v_assessment, v_q2, 2, 'Partial OEE via MES on connected machines only.', now() - interval '15 days'),
+    (v_assessment, v_q3, 4, 'Work instructions now under MES revision control post-remediation.', now() - interval '15 days'),
+    (v_assessment, v_q4, 5, 'PM scheduling hardened this quarter — 100% on-schedule sustained.', now() - interval '15 days'),
+    (v_assessment, v_q5, 3, 'Reasonable cross-training on primary lines.', now() - interval '15 days'),
+    (v_assessment, v_q6, 3, 'Not directly applicable to this facility.', now() - interval '15 days');
+
+  -- Finalize only after responses exist — this table has the same
+  -- editable-only-before-finalized protection the template versions did.
+  UPDATE assessments SET status = 'finalized', finalized_at = now() - interval '15 days' WHERE id = v_assessment;
+
+  -- ---------------------------------------------------------------
+  -- Ridgeline (automotive, earlier in engagement): in-progress
+  -- assessment, no responses yet — a real partially-done state, not
+  -- everything either finished or not started.
+  -- ---------------------------------------------------------------
+  INSERT INTO assessments
+    (organization_id, facility_id, template_version_id, name, assessment_date, lead_assessor, scope, status, completion_pct)
+  VALUES
+    (v_org_auto, v_fac_auto, v_version, 'Initial Readiness Assessment', CURRENT_DATE - 4, 'T. Brooks',
+     'Toledo Machining Center', 'in_progress', 33.0);
+
+  -- ---------------------------------------------------------------
+  -- Blackstone (tool & die, earliest stage): draft, not yet started in
+  -- earnest — matches the "mostly open findings, nothing wrapped up" story.
+  -- ---------------------------------------------------------------
+  INSERT INTO assessments
+    (organization_id, facility_id, template_version_id, name, assessment_date, lead_assessor, scope, status, completion_pct)
+  VALUES
+    (v_org_tool, v_fac_tool, v_version, 'Initial Readiness Assessment', CURRENT_DATE - 1, 'A. Petrov',
+     'Rockford Shop', 'draft', 0.0);
+
+  -- ---------------------------------------------------------------
+  -- Readiness history: 3 periods per facility, trending consistent with
+  -- the scores/narrative already established, so the Dashboard's trend
+  -- chart and the facilities' "current score" both have real history
+  -- behind them instead of a lone snapshot.
+  -- ---------------------------------------------------------------
+  INSERT INTO readiness_history (facility_id, period_label, recorded_on, overall_score, confidence_score) VALUES
+    (v_fac_aero, 'Q4 2025', CURRENT_DATE - 195, 48.0, 60.0),
+    (v_fac_aero, 'Q1 2026', CURRENT_DATE - 105, 54.0, 70.0),
+    (v_fac_aero, 'Q2 2026', CURRENT_DATE - 15, 68.5, 80.0);
+
+  INSERT INTO readiness_history (facility_id, period_label, recorded_on, overall_score, confidence_score) VALUES
+    (v_fac_auto, 'Q1 2026', CURRENT_DATE - 100, 46.0, 55.0),
+    (v_fac_auto, 'Q2 2026', CURRENT_DATE - 9, 54.0, 62.0);
+
+  INSERT INTO readiness_history (facility_id, period_label, recorded_on, overall_score, confidence_score) VALUES
+    (v_fac_tool, 'Q2 2026', CURRENT_DATE - 3, 41.5, 50.0);
+
+  -- ---------------------------------------------------------------
+  -- cap_findings for Blackstone's capability assessment — the specific
+  -- table diagnosed as genuinely empty (not broken) after checking the
+  -- real code: a fully-built 545-line Add/Edit/Approve/Delete system
+  -- with zero demo data ever seeded into it.
+  -- ---------------------------------------------------------------
+  IF v_cap_assessment IS NOT NULL THEN
+    INSERT INTO cap_findings
+      (assessment_id, title, finding_text, classification, severity, confidence, source, approved)
+    VALUES
+      (v_cap_assessment, 'No historical basis for die design hour estimates',
+       'Die design hours are estimated from the lead toolmaker''s memory of similar past jobs rather than any tracked historical data, leading to systematic underestimation on complex progressive dies.',
+       'risk', 'high', 'high', 'ironclad_validated', true),
+      (v_cap_assessment, 'Wire EDM has no documented PM schedule',
+       'The shop''s only wire EDM machine is maintained reactively with no documented preventive maintenance schedule, creating single-point-of-failure risk for the shop''s only EDM capability.',
+       'risk', 'critical', 'moderate', 'ironclad_validated', false);
+  END IF;
+
+  RAISE NOTICE 'Demo data expansion 2 complete: template assessments (finalized/in_progress/draft), responses, readiness history, cap_findings.';
+END $$;
