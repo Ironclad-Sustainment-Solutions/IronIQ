@@ -1,8 +1,17 @@
 import { useMemo, useState } from "react";
 import { Link, createFileRoute } from "@tanstack/react-router";
-import { Building2, Plus } from "lucide-react";
-import { PageHeader, EmptyState } from "@/components/ironiq/layout-primitives";
-import { Tag } from "@/components/ironiq/badges";
+import {
+  ArrowUp,
+  ArrowDown,
+  ArrowUpDown,
+  ChevronRight,
+  Plus,
+} from "lucide-react";
+import {
+  PageHeader,
+  Panel,
+  EmptyState,
+} from "@/components/ironiq/layout-primitives";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -29,6 +38,13 @@ import {
   type ProspectStage,
 } from "@/lib/business-development-api";
 
+export const Route = createFileRoute("/_authenticated/business-development/")({
+  head: () => ({
+    meta: [{ title: "Business Development — IronIQ" }],
+  }),
+  component: BusinessDevelopmentPage,
+});
+
 function Field({
   label,
   children,
@@ -46,13 +62,6 @@ function Field({
   );
 }
 
-export const Route = createFileRoute("/_authenticated/business-development/")({
-  head: () => ({
-    meta: [{ title: "Business Development — IronIQ" }],
-  }),
-  component: BusinessDevelopmentPage,
-});
-
 function formatValue(v: string | null): string | null {
   if (v === null) return null;
   const n = Number(v);
@@ -60,19 +69,80 @@ function formatValue(v: string | null): string | null {
   return n >= 1000 ? `$${(n / 1000).toFixed(0)}k` : `$${n.toFixed(0)}`;
 }
 
+function formatDate(d: string | null): string {
+  if (!d) return "—";
+  return new Date(d).toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
+type SortKey =
+  | "company_name"
+  | "estimated_value"
+  | "expected_close_date"
+  | "last_interaction_at"
+  | "updated_at";
+
+const COLUMNS: { key: SortKey; label: string; align?: "right" }[] = [
+  { key: "company_name", label: "Company" },
+  { key: "estimated_value", label: "Value", align: "right" },
+  { key: "expected_close_date", label: "Expected Close" },
+  { key: "last_interaction_at", label: "Last Interaction" },
+  { key: "updated_at", label: "Updated" },
+];
+
 function BusinessDevelopmentPage() {
   const prospects = useProspects();
-  const byStage = useMemo(() => {
-    const map = new Map<ProspectStage, Prospect[]>();
-    for (const s of STAGES) map.set(s.key, []);
+  const [selectedStage, setSelectedStage] = useState<ProspectStage>("lead");
+  const [sortKey, setSortKey] = useState<SortKey>("updated_at");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
+
+  const counts = useMemo(() => {
+    const map = new Map<ProspectStage, number>();
+    for (const s of STAGES) map.set(s.key, 0);
     for (const p of prospects.data ?? []) {
-      map.get(p.stage)?.push(p);
+      map.set(p.stage, (map.get(p.stage) ?? 0) + 1);
     }
     return map;
   }, [prospects.data]);
 
+  const rows = useMemo(() => {
+    const filtered = (prospects.data ?? []).filter(
+      (p) => p.stage === selectedStage,
+    );
+    const dir = sortDir === "asc" ? 1 : -1;
+    return [...filtered].sort((a, b) => {
+      if (sortKey === "estimated_value") {
+        const av = a.estimated_value ? Number(a.estimated_value) : -Infinity;
+        const bv = b.estimated_value ? Number(b.estimated_value) : -Infinity;
+        return (av - bv) * dir;
+      }
+      if (sortKey === "company_name") {
+        return a.company_name.localeCompare(b.company_name) * dir;
+      }
+      // Date-shaped columns (expected_close_date, last_interaction_at, updated_at) — nulls sort last regardless of direction.
+      const av = a[sortKey];
+      const bv = b[sortKey];
+      if (!av && !bv) return 0;
+      if (!av) return 1;
+      if (!bv) return -1;
+      return (new Date(av).getTime() - new Date(bv).getTime()) * dir;
+    });
+  }, [prospects.data, selectedStage, sortKey, sortDir]);
+
+  function toggleSort(key: SortKey) {
+    if (key === sortKey) {
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortKey(key);
+      setSortDir(key === "company_name" ? "asc" : "desc");
+    }
+  }
+
   return (
-    <div className="mx-auto max-w-7xl space-y-6">
+    <div className="mx-auto max-w-6xl space-y-6">
       <PageHeader
         eyebrow="Internal — IronIQ staff only"
         title="Business Development"
@@ -80,105 +150,181 @@ function BusinessDevelopmentPage() {
         actions={<NewProspectDialog />}
       />
 
+      {/* Stage selector — one stage in view at a time, not a wall of
+          scrolling columns. Counts make the whole pipeline's shape
+          scannable at a glance without needing every stage on screen
+          simultaneously. */}
+      <div className="flex gap-1 border-b border-border">
+        {STAGES.map((s) => {
+          const active = s.key === selectedStage;
+          return (
+            <button
+              key={s.key}
+              type="button"
+              onClick={() => setSelectedStage(s.key)}
+              className={cnTab(active)}
+            >
+              {s.label}
+              <span
+                className={
+                  active
+                    ? "ml-2 rounded-full bg-primary/20 px-2 py-0.5 text-xs font-semibold text-primary"
+                    : "ml-2 rounded-full bg-muted px-2 py-0.5 text-xs font-semibold text-muted-foreground"
+                }
+              >
+                {counts.get(s.key) ?? 0}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
       {prospects.isLoading ? (
         <EmptyState message="Loading…" />
-      ) : (prospects.data ?? []).length === 0 ? (
-        <EmptyState message="No prospects yet — add the first one to start tracking the pipeline." />
+      ) : rows.length === 0 ? (
+        <EmptyState
+          message={
+            (prospects.data ?? []).length === 0
+              ? "No prospects yet — add the first one to start tracking the pipeline."
+              : `No prospects in ${STAGES.find((s) => s.key === selectedStage)?.label}.`
+          }
+        />
       ) : (
-        <div className="flex gap-4 overflow-x-auto pb-2">
-          {STAGES.map((s) => (
-            <div key={s.key} className="w-64 shrink-0 space-y-3">
-              <div className="flex items-center justify-between px-1">
-                <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
-                  {s.label}
-                </p>
-                <span className="text-xs text-muted-foreground">
-                  {byStage.get(s.key)?.length ?? 0}
-                </span>
-              </div>
-              <div className="space-y-2">
-                {(byStage.get(s.key) ?? []).map((p) => (
-                  <ProspectCard key={p.id} prospect={p} />
+        <Panel>
+          <div className="-mx-5 -my-5 overflow-x-auto">
+            <table className="w-full min-w-[52rem] text-sm">
+              <thead>
+                <tr className="border-b border-border text-left">
+                  {COLUMNS.map((col) => (
+                    <th
+                      key={col.key}
+                      className={
+                        col.align === "right"
+                          ? "px-5 py-3 text-right"
+                          : "px-5 py-3"
+                      }
+                    >
+                      <button
+                        type="button"
+                        onClick={() => toggleSort(col.key)}
+                        className={
+                          "eyebrow inline-flex items-center gap-1 font-semibold hover:text-foreground" +
+                          (col.align === "right" ? " flex-row-reverse" : "")
+                        }
+                      >
+                        {col.label}
+                        {sortKey === col.key ? (
+                          sortDir === "asc" ? (
+                            <ArrowUp className="size-3" aria-hidden />
+                          ) : (
+                            <ArrowDown className="size-3" aria-hidden />
+                          )
+                        ) : (
+                          <ArrowUpDown
+                            className="size-3 opacity-40"
+                            aria-hidden
+                          />
+                        )}
+                      </button>
+                    </th>
+                  ))}
+                  <th className="px-5 py-3" />
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {rows.map((p) => (
+                  <ProspectRow key={p.id} prospect={p} />
                 ))}
-                {(byStage.get(s.key) ?? []).length === 0 ? (
-                  <p className="rounded-md border border-dashed border-border p-3 text-center text-xs text-muted-foreground">
-                    Empty
-                  </p>
-                ) : null}
-              </div>
-            </div>
-          ))}
-        </div>
+              </tbody>
+            </table>
+          </div>
+        </Panel>
       )}
     </div>
   );
 }
 
-function ProspectCard({ prospect: p }: { prospect: Prospect }) {
+function cnTab(active: boolean): string {
+  return (
+    "relative px-4 py-3 text-sm font-semibold uppercase tracking-wide transition-colors " +
+    (active
+      ? "text-primary after:absolute after:inset-x-0 after:-bottom-px after:h-0.5 after:bg-primary"
+      : "text-muted-foreground hover:text-foreground")
+  );
+}
+
+function ProspectRow({ prospect: p }: { prospect: Prospect }) {
   const save = useSaveProspect();
 
   return (
-    <div className="rounded-md border border-border p-3 transition-colors hover:border-primary/50 hover:bg-muted/20">
-      <Link
-        to="/business-development/$prospectId"
-        params={{ prospectId: p.id }}
-        className="block"
-      >
-        <div className="flex items-start gap-2">
-          <Building2
-            className="mt-0.5 size-3.5 shrink-0 text-muted-foreground"
-            aria-hidden
-          />
-          <div className="min-w-0">
-            <p className="truncate text-sm font-medium text-foreground">
-              {p.company_name}
-            </p>
-            {p.industry ? (
-              <p className="truncate text-xs text-muted-foreground">
-                {p.industry}
-              </p>
-            ) : null}
-          </div>
+    <tr className="transition-colors hover:bg-accent/40">
+      <td className="px-5 py-4">
+        <Link
+          to="/business-development/$prospectId"
+          params={{ prospectId: p.id }}
+          className="font-medium text-foreground underline-offset-4 hover:text-primary hover:underline"
+        >
+          {p.company_name}
+        </Link>
+        <p className="mt-0.5 text-xs text-muted-foreground">
+          {p.industry ?? "No industry set"} · {p.note_count} note
+          {p.note_count === "1" ? "" : "s"} · {p.interaction_count} interaction
+          {p.interaction_count === "1" ? "" : "s"}
+        </p>
+      </td>
+      <td className="metric px-5 py-4 text-right font-semibold">
+        {formatValue(p.estimated_value) ?? "—"}
+      </td>
+      <td className="metric px-5 py-4 text-muted-foreground">
+        {formatDate(p.expected_close_date)}
+      </td>
+      <td className="metric px-5 py-4 text-muted-foreground">
+        {formatDate(p.last_interaction_at)}
+      </td>
+      <td className="metric px-5 py-4 text-muted-foreground">
+        {formatDate(p.updated_at)}
+      </td>
+      <td className="px-5 py-4">
+        <div className="flex items-center justify-end gap-2">
+          <Select
+            value={p.stage}
+            onValueChange={(v) =>
+              save.mutate({
+                id: p.id,
+                company_name: p.company_name,
+                industry: p.industry,
+                stage: v as ProspectStage,
+                estimated_value: p.estimated_value
+                  ? Number(p.estimated_value)
+                  : null,
+                expected_close_date: p.expected_close_date,
+                lost_reason: p.lost_reason,
+              })
+            }
+          >
+            <SelectTrigger className="h-8 w-40 text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {STAGES.map((s) => (
+                <SelectItem key={s.key} value={s.key}>
+                  {s.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Link
+            to="/business-development/$prospectId"
+            params={{ prospectId: p.id }}
+          >
+            <ChevronRight
+              className="size-4 text-muted-foreground"
+              aria-hidden
+            />
+          </Link>
         </div>
-        {formatValue(p.estimated_value) ? (
-          <p className="mt-2 text-xs font-medium text-primary">
-            {formatValue(p.estimated_value)}
-          </p>
-        ) : null}
-      </Link>
-      {/* Sibling to the Link above, not nested inside it — a Select
-          trigger inside an anchor risks the click bubbling into
-          navigation instead of opening the dropdown. This is what
-          actually makes stage editable straight from the pipeline,
-          not just from the full edit dialog. */}
-      <Select
-        value={p.stage}
-        onValueChange={(v) =>
-          save.mutate({
-            id: p.id,
-            company_name: p.company_name,
-            industry: p.industry,
-            stage: v as ProspectStage,
-            estimated_value: p.estimated_value
-              ? Number(p.estimated_value)
-              : null,
-            expected_close_date: p.expected_close_date,
-            lost_reason: p.lost_reason,
-          })
-        }
-      >
-        <SelectTrigger className="mt-2 h-7 text-xs">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          {STAGES.map((s) => (
-            <SelectItem key={s.key} value={s.key}>
-              {s.label}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-    </div>
+      </td>
+    </tr>
   );
 }
 
@@ -203,7 +349,7 @@ function NewProspectDialog() {
           <DialogTitle>New prospect</DialogTitle>
           <DialogDescription>
             Start tracking a potential customer — you can add contacts, notes,
-            and meetings from its page.
+            and interactions from its page.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">

@@ -39,7 +39,12 @@ export const fetchProspects = createServerFn({ method: "GET" })
     await requirePlatformStaff(context.userId);
     return withUser(context.userId, async (client) => {
       const { rows } = await client.query(
-        "SELECT * FROM public.prospects ORDER BY updated_at DESC",
+        `SELECT p.*,
+                (SELECT count(*) FROM public.prospect_notes n WHERE n.prospect_id = p.id) AS note_count,
+                (SELECT count(*) FROM public.prospect_meetings m WHERE m.prospect_id = p.id) AS interaction_count,
+                (SELECT max(m.meeting_date) FROM public.prospect_meetings m WHERE m.prospect_id = p.id) AS last_interaction_at
+           FROM public.prospects p
+          ORDER BY p.updated_at DESC`,
       );
       return rows;
     });
