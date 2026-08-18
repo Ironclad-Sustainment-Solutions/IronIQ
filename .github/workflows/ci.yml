@@ -1,0 +1,77 @@
+name: CI
+
+# Runs on every PR and push to main: typecheck, unit tests, production
+# build, and a full schema-application check against a real Postgres
+# instance. Nothing enforced tsc/build/tests on PRs before this -- several
+# real bugs fixed this session (a pilot_id regression in a column
+# allowlist, a broken production build under certain environments, a
+# schema-loading tool that never worked against a fresh database) were
+# only caught by manual review, not automated checks. This closes that gap
+# going forward for the categories of mistakes that ARE automatable.
+#
+# Deliberately does NOT run `eslint .` yet -- the existing codebase has
+# ~8500 pre-existing Prettier-only formatting findings unrelated to any
+# given PR's diff. Gating CI on that right now would fail every PR for
+# reasons that have nothing to do with what changed, which trains people
+# to ignore red CI checks rather than trust them. Run a dedicated
+# `eslint --fix` cleanup pass first, then add lint as its own required
+# check in a follow-up.
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  typecheck-test-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Unit tests
+        run: npm run test
+
+      - name: Production build
+        # No DATABASE_URL/SESSION_SECRET/etc. needed here -- `vite build`
+        # is a static build step. Those are only read lazily at request
+        # time (see src/lib/db.server.ts's getPool(), src/lib/auth/
+        # session.ts's sessionConfig()), never at build time.
+        run: npm run build
+
+  schema-check:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - run: npm install pg
+
+      - name: Apply db/schema.sql + every db/schema_additions_*.sql against a fresh database
+        run: node run-schema.mjs "postgresql://postgres:postgres@localhost:5432/postgres"
