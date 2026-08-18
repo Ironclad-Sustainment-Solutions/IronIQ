@@ -48,10 +48,13 @@ export interface ProspectNote {
   created_at: string;
 }
 
+export type InteractionType = "meeting" | "call" | "email" | "other";
+
 export interface ProspectMeeting {
   id: string;
   prospect_id: string;
   meeting_date: string;
+  interaction_type: InteractionType;
   attendees: string | null;
   summary: string | null;
   next_steps: string | null;
@@ -198,10 +201,11 @@ export function useSaveMeeting() {
     id?: string;
     prospectId: string;
     meeting_date: string;
+    interaction_type: InteractionType;
     attendees?: string | null;
     summary?: string | null;
     next_steps?: string | null;
-  }>(fn.saveMeeting, "Meeting saved");
+  }>(fn.saveMeeting, "Interaction logged");
 }
 
 export function useDeleteMeeting(prospectId: string) {

@@ -85,9 +85,9 @@ function BusinessDevelopmentPage() {
       ) : (prospects.data ?? []).length === 0 ? (
         <EmptyState message="No prospects yet — add the first one to start tracking the pipeline." />
       ) : (
-        <div className="grid gap-4 overflow-x-auto pb-2 md:grid-cols-6">
+        <div className="flex gap-4 overflow-x-auto pb-2">
           {STAGES.map((s) => (
-            <div key={s.key} className="min-w-[220px] space-y-3">
+            <div key={s.key} className="w-64 shrink-0 space-y-3">
               <div className="flex items-center justify-between px-1">
                 <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
                   {s.label}
@@ -98,34 +98,7 @@ function BusinessDevelopmentPage() {
               </div>
               <div className="space-y-2">
                 {(byStage.get(s.key) ?? []).map((p) => (
-                  <Link
-                    key={p.id}
-                    to="/business-development/$prospectId"
-                    params={{ prospectId: p.id }}
-                    className="block rounded-md border border-border p-3 transition-colors hover:border-primary/50 hover:bg-muted/20"
-                  >
-                    <div className="flex items-start gap-2">
-                      <Building2
-                        className="mt-0.5 size-3.5 shrink-0 text-muted-foreground"
-                        aria-hidden
-                      />
-                      <div className="min-w-0">
-                        <p className="truncate text-sm font-medium text-foreground">
-                          {p.company_name}
-                        </p>
-                        {p.industry ? (
-                          <p className="truncate text-xs text-muted-foreground">
-                            {p.industry}
-                          </p>
-                        ) : null}
-                      </div>
-                    </div>
-                    {formatValue(p.estimated_value) ? (
-                      <p className="mt-2 text-xs font-medium text-primary">
-                        {formatValue(p.estimated_value)}
-                      </p>
-                    ) : null}
-                  </Link>
+                  <ProspectCard key={p.id} prospect={p} />
                 ))}
                 {(byStage.get(s.key) ?? []).length === 0 ? (
                   <p className="rounded-md border border-dashed border-border p-3 text-center text-xs text-muted-foreground">
@@ -137,6 +110,74 @@ function BusinessDevelopmentPage() {
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+function ProspectCard({ prospect: p }: { prospect: Prospect }) {
+  const save = useSaveProspect();
+
+  return (
+    <div className="rounded-md border border-border p-3 transition-colors hover:border-primary/50 hover:bg-muted/20">
+      <Link
+        to="/business-development/$prospectId"
+        params={{ prospectId: p.id }}
+        className="block"
+      >
+        <div className="flex items-start gap-2">
+          <Building2
+            className="mt-0.5 size-3.5 shrink-0 text-muted-foreground"
+            aria-hidden
+          />
+          <div className="min-w-0">
+            <p className="truncate text-sm font-medium text-foreground">
+              {p.company_name}
+            </p>
+            {p.industry ? (
+              <p className="truncate text-xs text-muted-foreground">
+                {p.industry}
+              </p>
+            ) : null}
+          </div>
+        </div>
+        {formatValue(p.estimated_value) ? (
+          <p className="mt-2 text-xs font-medium text-primary">
+            {formatValue(p.estimated_value)}
+          </p>
+        ) : null}
+      </Link>
+      {/* Sibling to the Link above, not nested inside it — a Select
+          trigger inside an anchor risks the click bubbling into
+          navigation instead of opening the dropdown. This is what
+          actually makes stage editable straight from the pipeline,
+          not just from the full edit dialog. */}
+      <Select
+        value={p.stage}
+        onValueChange={(v) =>
+          save.mutate({
+            id: p.id,
+            company_name: p.company_name,
+            industry: p.industry,
+            stage: v as ProspectStage,
+            estimated_value: p.estimated_value
+              ? Number(p.estimated_value)
+              : null,
+            expected_close_date: p.expected_close_date,
+            lost_reason: p.lost_reason,
+          })
+        }
+      >
+        <SelectTrigger className="mt-2 h-7 text-xs">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {STAGES.map((s) => (
+            <SelectItem key={s.key} value={s.key}>
+              {s.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
     </div>
   );
 }

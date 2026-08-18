@@ -255,6 +255,9 @@ const SaveMeetingInput = z.object({
   id: z.string().uuid().optional(),
   prospectId: z.string().uuid(),
   meeting_date: z.string(),
+  interaction_type: z
+    .enum(["meeting", "call", "email", "other"])
+    .default("meeting"),
   attendees: z.string().nullable().optional(),
   summary: z.string().nullable().optional(),
   next_steps: z.string().nullable().optional(),
@@ -269,11 +272,12 @@ export const saveMeeting = createServerFn({ method: "POST" })
       if (data.id) {
         await client.query(
           `UPDATE public.prospect_meetings
-              SET meeting_date = $2, attendees = $3, summary = $4, next_steps = $5
+              SET meeting_date = $2, interaction_type = $3, attendees = $4, summary = $5, next_steps = $6
             WHERE id = $1`,
           [
             data.id,
             data.meeting_date,
+            data.interaction_type,
             data.attendees ?? null,
             data.summary ?? null,
             data.next_steps ?? null,
@@ -282,11 +286,13 @@ export const saveMeeting = createServerFn({ method: "POST" })
         return;
       }
       await client.query(
-        `INSERT INTO public.prospect_meetings (prospect_id, meeting_date, attendees, summary, next_steps, created_by)
-         VALUES ($1,$2,$3,$4,$5,$6)`,
+        `INSERT INTO public.prospect_meetings
+           (prospect_id, meeting_date, interaction_type, attendees, summary, next_steps, created_by)
+         VALUES ($1,$2,$3,$4,$5,$6,$7)`,
         [
           data.prospectId,
           data.meeting_date,
+          data.interaction_type,
           data.attendees ?? null,
           data.summary ?? null,
           data.next_steps ?? null,
