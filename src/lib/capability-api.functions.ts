@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireAuth } from "@/lib/auth/auth-middleware";
 import { withUser } from "@/lib/db.server";
 import { assertColumnsAllowed } from "@/lib/column-allowlist";
+import { assertProductAllowed } from "@/lib/product-access-check.server";
 
 // Every table name reachable through the generic upsert/delete helpers below.
 // This allowlist is the only thing standing between client-supplied table
@@ -205,8 +206,9 @@ const CreateCapAssessmentInput = z.object({
 export const createCapAssessment = createServerFn({ method: "POST" })
   .middleware([requireAuth])
   .inputValidator((d: unknown) => CreateCapAssessmentInput.parse(d))
-  .handler(({ data, context }) =>
-    withUser(context.userId, async (client) => {
+  .handler(async ({ data, context }) => {
+    await assertProductAllowed(context.userId, data.organization_id, "assessment");
+    return withUser(context.userId, async (client) => {
       const { rows } = await client.query(
         `INSERT INTO public.cap_assessments
            (organization_id, facility_id, name, lead_assessor, scope, status, created_by, modified_by)
@@ -226,8 +228,8 @@ export const createCapAssessment = createServerFn({ method: "POST" })
         [id, context.userId],
       );
       return id;
-    }),
-  );
+    });
+  });
 
 const SaveCapScoreInput = z.object({
   assessmentId: z.string().uuid(),

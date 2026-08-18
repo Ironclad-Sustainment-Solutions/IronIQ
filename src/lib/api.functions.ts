@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireAuth } from "@/lib/auth/auth-middleware";
 import { withUser } from "@/lib/db.server";
+import { assertProductAllowed } from "@/lib/product-access-check.server";
 
 const optionalId = z.object({ id: z.string().uuid().optional() });
 
@@ -322,8 +323,9 @@ const CreateAssessmentInput = z.object({
 export const createAssessment = createServerFn({ method: "POST" })
   .middleware([requireAuth])
   .inputValidator((d: unknown) => CreateAssessmentInput.parse(d))
-  .handler(({ data, context }) =>
-    withUser(context.userId, async (client) => {
+  .handler(async ({ data, context }) => {
+    await assertProductAllowed(context.userId, data.organization_id, "assessment");
+    return withUser(context.userId, async (client) => {
       const { rows } = await client.query(
         `INSERT INTO public.assessments
            (organization_id, facility_id, template_version_id, name, assessment_type, assessment_date,
@@ -343,8 +345,8 @@ export const createAssessment = createServerFn({ method: "POST" })
         ],
       );
       return rows[0] as { id: string };
-    }),
-  );
+    });
+  });
 
 const logAuditInput = z.object({
   organization_id: z.string().uuid().nullable().optional(),
