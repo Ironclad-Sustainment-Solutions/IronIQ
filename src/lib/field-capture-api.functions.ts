@@ -311,7 +311,35 @@ const EvidenceUrlInput = z.object({ path: z.string() });
 export const getEvidenceUrl = createServerFn({ method: "GET" })
   .middleware([requireAuth])
   .inputValidator((d: unknown) => EvidenceUrlInput.parse(d))
-  .handler(async ({ data }) => getSignedDownloadUrl(EVIDENCE_BUCKET, data.path, 60 * 60));
+  .handler(async ({ data, context }) => {
+    // Previously minted a signed download URL for ANY client-supplied
+    // storage path with no ownership check at all -- RLS protects
+    // Postgres rows, not S3 object keys, so this endpoint's only
+    // "authorization" was whether the caller happened to know the path
+    // string. field_attachments' own RLS policy already prevents a user
+    // from ever *seeing* another org's storage_path through legitimate
+    // app usage (verified), so this wasn't exploitable via normal app
+    // reads -- but it's still real defense-in-depth to close: anyone who
+    // learned a path out-of-band (a leaked screenshot, a log line, a
+    // browser history entry, a former staff session) could mint a fresh
+    // signed URL for it indefinitely, from any account, with no
+    // ownership check at all. Mirrors the same
+    // resolve-then-check pattern used for CAD/CNC's product-restriction
+    // fix: look the path up in field_attachments under the caller's own
+    // RLS-scoped role first -- if RLS wouldn't let them see this row,
+    // the query returns nothing and access is correctly denied.
+    const owned = await withUser(context.userId, async (client) => {
+      const { rows } = await client.query(
+        "SELECT 1 FROM public.field_attachments WHERE storage_path = $1",
+        [data.path],
+      );
+      return rows.length > 0;
+    });
+    if (!owned) {
+      throw new Error("Evidence file not found or not accessible.");
+    }
+    return getSignedDownloadUrl(EVIDENCE_BUCKET, data.path, 60 * 60);
+  });
 
 const DeleteEvidenceInput = z.object({ id: z.string().uuid(), storagePath: z.string() });
 
