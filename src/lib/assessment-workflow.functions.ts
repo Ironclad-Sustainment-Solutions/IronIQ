@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireAuth } from "@/lib/auth/auth-middleware";
 import { withUser } from "@/lib/db.server";
+import { assertColumnsAllowed } from "@/lib/column-allowlist";
 
 const PersistAggregatesInput = z.object({
   assessmentId: z.string().uuid(),
@@ -26,6 +27,7 @@ export const persistAssessmentAggregates = createServerFn({ method: "POST" })
       ...(data.extra ?? {}),
     };
     const cols = Object.keys(values);
+    assertColumnsAllowed("assessments", cols);
     const setClause = cols.map((c, i) => `${c} = $${i + 1}`).join(", ");
     await withUser(context.userId, (client) =>
       client.query(

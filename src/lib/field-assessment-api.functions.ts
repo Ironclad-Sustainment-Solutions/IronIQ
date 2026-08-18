@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireAuth } from "@/lib/auth/auth-middleware";
 import { withUser } from "@/lib/db.server";
+import { assertColumnsAllowed } from "@/lib/column-allowlist";
 
 const ChildTable = z.enum([
   "field_gaps",
@@ -128,6 +129,7 @@ export const updateFieldAssessment = createServerFn({ method: "POST" })
     withUser(context.userId, async (client) => {
       const cols = Object.keys(data.values);
       if (cols.length === 0) return;
+      assertColumnsAllowed("field_assessments", cols);
       const setClause = cols.map((c, i) => `${c} = $${i + 1}`).join(", ");
       await client.query(
         `UPDATE public.field_assessments SET ${setClause} WHERE id = $${cols.length + 1}`,
@@ -226,7 +228,9 @@ export const childAdd = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => ChildAddInput.parse(d))
   .handler(({ data, context }) =>
     withUser(context.userId, async (client) => {
-      const cols = ["field_assessment_id", ...Object.keys(data.values)];
+      const valueCols = Object.keys(data.values);
+      assertColumnsAllowed(data.table, valueCols);
+      const cols = ["field_assessment_id", ...valueCols];
       const vals = [data.fieldId, ...Object.values(data.values)];
       const placeholders = vals.map((_, i) => `$${i + 1}`).join(", ");
       const { rows } = await client.query(
@@ -250,6 +254,7 @@ export const childUpdate = createServerFn({ method: "POST" })
     withUser(context.userId, async (client) => {
       const cols = Object.keys(data.values);
       if (cols.length === 0) return;
+      assertColumnsAllowed(data.table, cols);
       const setClause = cols.map((c, i) => `${c} = $${i + 1}`).join(", ");
       await client.query(
         `UPDATE public.${data.table} SET ${setClause} WHERE id = $${cols.length + 1}`,

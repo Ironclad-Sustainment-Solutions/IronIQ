@@ -9,6 +9,7 @@ import { z } from "zod";
 import { requireAuth } from "@/lib/auth/auth-middleware";
 import { withUser } from "@/lib/db.server";
 import { getSignedDownloadUrl, uploadObject, deleteObject } from "@/lib/storage.server";
+import { assertColumnsAllowed } from "@/lib/column-allowlist";
 
 export const EVIDENCE_BUCKET = "field-evidence";
 
@@ -55,7 +56,9 @@ export const addObservation = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => AddObservationInput.parse(d))
   .handler(async ({ data, context }) =>
     withUser(context.userId, async (client) => {
-      const cols = ["field_assessment_id", ...Object.keys(data.values), "created_by"];
+      const valueCols = Object.keys(data.values);
+      assertColumnsAllowed("field_capture_observations", valueCols);
+      const cols = ["field_assessment_id", ...valueCols, "created_by"];
       const vals = [data.fieldId, ...Object.values(data.values), context.userId];
       const placeholders = vals.map((_, i) => `$${i + 1}`).join(", ");
       const { rows } = await client.query(
@@ -75,6 +78,7 @@ export const updateObservation = createServerFn({ method: "POST" })
     withUser(context.userId, async (client) => {
       const cols = Object.keys(data.values);
       if (cols.length === 0) return;
+      assertColumnsAllowed("field_capture_observations", cols);
       const setClause = cols.map((c, i) => `${c} = $${i + 1}`).join(", ");
       await client.query(
         `UPDATE public.field_capture_observations SET ${setClause} WHERE id = $${cols.length + 1}`,
@@ -101,7 +105,9 @@ export const addQuickCapture = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => AddQuickCaptureInput.parse(d))
   .handler(async ({ data, context }) =>
     withUser(context.userId, async (client) => {
-      const cols = ["field_assessment_id", ...Object.keys(data.values), "created_by"];
+      const valueCols = Object.keys(data.values);
+      assertColumnsAllowed("field_quick_captures", valueCols);
+      const cols = ["field_assessment_id", ...valueCols, "created_by"];
       const vals = [data.fieldId, ...Object.values(data.values), context.userId];
       const placeholders = vals.map((_, i) => `$${i + 1}`).join(", ");
       const { rows } = await client.query(
@@ -168,7 +174,9 @@ export const addGap = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => AddGapInput.parse(d))
   .handler(async ({ data, context }) =>
     withUser(context.userId, async (client) => {
-      const cols = ["field_assessment_id", ...Object.keys(data.values)];
+      const valueCols = Object.keys(data.values);
+      assertColumnsAllowed("field_gaps", valueCols);
+      const cols = ["field_assessment_id", ...valueCols];
       const vals = [data.fieldId, ...Object.values(data.values)];
       const placeholders = vals.map((_, i) => `$${i + 1}`).join(", ");
       const { rows } = await client.query(
@@ -186,6 +194,7 @@ export const updateGap = createServerFn({ method: "POST" })
     withUser(context.userId, async (client) => {
       const cols = Object.keys(data.values);
       if (cols.length === 0) return;
+      assertColumnsAllowed("field_gaps", cols);
       const setClause = cols.map((c, i) => `${c} = $${i + 1}`).join(", ");
       await client.query(`UPDATE public.field_gaps SET ${setClause} WHERE id = $${cols.length + 1}`, [
         ...Object.values(data.values),

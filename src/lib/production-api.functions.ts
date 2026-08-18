@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireAuth } from "@/lib/auth/auth-middleware";
 import { withUser } from "@/lib/db.server";
+import { assertColumnsAllowed } from "@/lib/column-allowlist";
 
 const optionalId = z.object({ id: z.string().uuid().optional() });
 
@@ -175,6 +176,7 @@ export const advanceStatus = createServerFn({ method: "POST" })
     withUser(context.userId, async (client) => {
       const patch = { status: data.status, ...(data.patch ?? {}) };
       const cols = Object.keys(patch);
+      assertColumnsAllowed("jobs", cols);
       const setClause = cols.map((c, i) => `${c} = $${i + 1}`).join(", ");
       await client.query(`UPDATE public.jobs SET ${setClause} WHERE id = $${cols.length + 1}`, [
         ...Object.values(patch),
