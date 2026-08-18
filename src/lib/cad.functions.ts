@@ -13,7 +13,7 @@ import {
   deleteObject,
 } from "@/lib/storage.server";
 import { extractCadFields } from "@/lib/cad-vision-ai.server";
-import { assertProductAllowed } from "@/lib/product-access-check.server";
+import { assertProductAllowed, assertProductAllowedForCadJob, assertProductAllowedForCadField } from "@/lib/product-access-check.server";
 
 export const CAD_BUCKET = "cad-drawings";
 const MAX_FILE_BYTES = 25 * 1024 * 1024; // 25MB, same cap as Bulk Intake
@@ -71,8 +71,9 @@ const ListCadJobsInput = z.object({ organizationId: z.string().uuid() });
 export const listCadJobs = createServerFn({ method: "GET" })
   .middleware([requireAuth])
   .inputValidator((d: unknown) => ListCadJobsInput.parse(d))
-  .handler(({ data, context }) =>
-    withUser(context.userId, async (client) => {
+  .handler(async ({ data, context }) => {
+    await assertProductAllowed(context.userId, data.organizationId, "cad");
+    return withUser(context.userId, async (client) => {
       const { rows } = await client.query(
         `SELECT id, original_filename, mime_type, byte_size, source_type, status, failure_reason,
                 storage_path, created_at
@@ -82,8 +83,8 @@ export const listCadJobs = createServerFn({ method: "GET" })
         [data.organizationId],
       );
       return rows;
-    }),
-  );
+    });
+  });
 
 const ExtractCadJobInput = z.object({ jobId: z.string().uuid() });
 
@@ -91,6 +92,7 @@ export const extractCadJob = createServerFn({ method: "POST" })
   .middleware([requireAuth])
   .inputValidator((d: unknown) => ExtractCadJobInput.parse(d))
   .handler(async ({ data, context }) => {
+    await assertProductAllowedForCadJob(context.userId, data.jobId, "cad");
     const job = await withUser(context.userId, async (client) => {
       const { rows } = await client.query<{
         storage_path: string;
@@ -165,8 +167,9 @@ const ListCadFieldsInput = z.object({ jobId: z.string().uuid() });
 export const listCadFields = createServerFn({ method: "GET" })
   .middleware([requireAuth])
   .inputValidator((d: unknown) => ListCadFieldsInput.parse(d))
-  .handler(({ data, context }) =>
-    withUser(context.userId, async (client) => {
+  .handler(async ({ data, context }) => {
+    await assertProductAllowedForCadJob(context.userId, data.jobId, "cad");
+    return withUser(context.userId, async (client) => {
       const { rows } = await client.query(
         `SELECT id, field_type, field_name, field_value, location_hint, confidence, status, created_at
            FROM public.cad_extracted_fields
@@ -175,8 +178,8 @@ export const listCadFields = createServerFn({ method: "GET" })
         [data.jobId],
       );
       return rows;
-    }),
-  );
+    });
+  });
 
 const UpdateCadFieldInput = z.object({
   id: z.string().uuid(),
@@ -201,6 +204,7 @@ export const updateCadFieldStatus = createServerFn({ method: "POST" })
   .middleware([requireAuth])
   .inputValidator((d: unknown) => UpdateCadFieldInput.parse(d))
   .handler(async ({ data, context }) => {
+    await assertProductAllowedForCadField(context.userId, data.id, "cad");
     await withUser(context.userId, (client) =>
       data.status === "edited" && data.editedValue !== undefined
         ? client.query(
@@ -235,6 +239,7 @@ export const deleteCadJob = createServerFn({ method: "POST" })
   .middleware([requireAuth])
   .inputValidator((d: unknown) => DeleteCadJobInput.parse(d))
   .handler(async ({ data, context }) => {
+    await assertProductAllowedForCadJob(context.userId, data.id, "cad");
     await deleteObject(CAD_BUCKET, data.storagePath);
     await withUser(context.userId, (client) =>
       client.query(`DELETE FROM public.cad_jobs WHERE id = $1`, [data.id]),
