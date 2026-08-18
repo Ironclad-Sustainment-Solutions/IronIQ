@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireAuth } from "@/lib/auth/auth-middleware";
 import { withUser } from "@/lib/db.server";
+import { assertColumnsAllowed } from "@/lib/column-allowlist";
 
 const ALLOWED_TABLES = new Set([
   "field_production_events",
@@ -19,6 +20,18 @@ const ALLOWED_TABLES = new Set([
 function assertAllowed(table: string) {
   if (!ALLOWED_TABLES.has(table))
     throw new Error(`Table "${table}" is not allowed here.`);
+}
+
+// The only foreign-key columns rowAdd() is ever legitimately used to stamp
+// onto a child row -- restricting this closes the same column-injection
+// channel as `values` (parentColumn was previously just as
+// attacker-controlled as any values key, and was spliced into the INSERT
+// column list unchecked too).
+const ALLOWED_PARENT_COLUMNS = new Set(["field_assessment_id", "pilot_id"]);
+
+function assertParentColumnAllowed(column: string) {
+  if (!ALLOWED_PARENT_COLUMNS.has(column))
+    throw new Error(`Parent column "${column}" is not allowed here.`);
 }
 
 const fieldIdInput = z.object({ fieldId: z.string().uuid() });
@@ -116,6 +129,7 @@ export const rowAdd = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => RowAddInput.parse(d))
   .handler(({ data, context }) => {
     assertAllowed(data.table);
+    assertParentColumnAllowed(data.parentColumn);
     return withUser(context.userId, async (client) => {
       const payload: Record<string, unknown> = {
         [data.parentColumn]: data.parentId,
@@ -123,6 +137,7 @@ export const rowAdd = createServerFn({ method: "POST" })
       };
       if (data.stampCreatedBy) payload.created_by = context.userId;
       const cols = Object.keys(payload);
+      assertColumnsAllowed(data.table, cols);
       const placeholders = cols.map((_, i) => `$${i + 1}`).join(", ");
       const { rows } = await client.query(
         `INSERT INTO public.${data.table} (${cols.join(", ")}) VALUES (${placeholders}) RETURNING *`,
@@ -146,6 +161,7 @@ export const rowUpdate = createServerFn({ method: "POST" })
     return withUser(context.userId, async (client) => {
       const cols = Object.keys(data.values);
       if (cols.length === 0) return;
+      assertColumnsAllowed(data.table, cols);
       const setClause = cols.map((c, i) => `${c} = $${i + 1}`).join(", ");
       await client.query(
         `UPDATE public.${data.table} SET ${setClause} WHERE id = $${cols.length + 1}`,

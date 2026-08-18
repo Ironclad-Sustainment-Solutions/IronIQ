@@ -7,6 +7,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireAuth } from "@/lib/auth/auth-middleware";
 import { withUser } from "@/lib/db.server";
+import { assertColumnsAllowed } from "@/lib/column-allowlist";
 
 const ALLOWED_TABLES = new Set([
   "jobs",
@@ -42,6 +43,7 @@ export const productionUpsert = createServerFn({ method: "POST" })
     return withUser(context.userId, async (client) => {
       if (data.id) {
         const cols = Object.keys(data.values);
+        assertColumnsAllowed(data.table, cols);
         const setClause = cols.map((c, i) => `${c} = $${i + 1}`).join(", ");
         await client.query(`UPDATE public.${data.table} SET ${setClause} WHERE id = $${cols.length + 1}`, [
           ...Object.values(data.values),
@@ -50,6 +52,7 @@ export const productionUpsert = createServerFn({ method: "POST" })
         return data.id;
       }
       const cols = Object.keys(data.values);
+      assertColumnsAllowed(data.table, cols);
       const placeholders = cols.map((_, i) => `$${i + 1}`).join(", ");
       const { rows } = await client.query(
         `INSERT INTO public.${data.table} (${cols.join(", ")}) VALUES (${placeholders}) RETURNING id`,
@@ -67,6 +70,7 @@ export const createJob = createServerFn({ method: "POST" })
   .handler(({ data, context }) =>
     withUser(context.userId, async (client) => {
       const cols = Object.keys(data.values);
+      assertColumnsAllowed("jobs", cols);
       const placeholders = cols.map((_, i) => `$${i + 1}`).join(", ");
       const { rows } = await client.query(
         `INSERT INTO public.jobs (${cols.join(", ")}) VALUES (${placeholders}) RETURNING id`,
@@ -90,6 +94,7 @@ export const replaceAutomatedChecks = createServerFn({ method: "POST" })
       await client.query("DELETE FROM public.automated_checks WHERE job_id = $1", [data.jobId]);
       for (const row of data.rows) {
         const cols = Object.keys(row);
+        assertColumnsAllowed("automated_checks", cols);
         const placeholders = cols.map((_, i) => `$${i + 1}`).join(", ");
         await client.query(
           `INSERT INTO public.automated_checks (${cols.join(", ")}) VALUES (${placeholders})`,

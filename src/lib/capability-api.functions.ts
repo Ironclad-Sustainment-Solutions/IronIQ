@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireAuth } from "@/lib/auth/auth-middleware";
 import { withUser } from "@/lib/db.server";
+import { assertColumnsAllowed } from "@/lib/column-allowlist";
 
 // Every table name reachable through the generic upsert/delete helpers below.
 // This allowlist is the only thing standing between client-supplied table
@@ -161,6 +162,7 @@ export const capUpsert = createServerFn({ method: "POST" })
       const payload = { ...data.values, modified_by: context.userId };
       if (data.id) {
         const cols = Object.keys(payload);
+        assertColumnsAllowed(data.table, cols);
         const setClause = cols.map((c, i) => `${c} = $${i + 1}`).join(", ");
         await client.query(
           `UPDATE public.${data.table} SET ${setClause} WHERE id = $${cols.length + 1}`,
@@ -170,6 +172,7 @@ export const capUpsert = createServerFn({ method: "POST" })
       }
       const insertPayload = { ...payload, created_by: context.userId };
       const cols = Object.keys(insertPayload);
+      assertColumnsAllowed(data.table, cols);
       const placeholders = cols.map((_, i) => `$${i + 1}`).join(", ");
       const { rows } = await client.query(
         `INSERT INTO public.${data.table} (${cols.join(", ")}) VALUES (${placeholders}) RETURNING id`,

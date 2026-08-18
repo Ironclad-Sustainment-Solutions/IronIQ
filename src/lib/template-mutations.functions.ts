@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireAuth } from "@/lib/auth/auth-middleware";
 import { withUser } from "@/lib/db.server";
+import { assertColumnsAllowed } from "@/lib/column-allowlist";
 import type { PoolClient } from "pg";
 
 function insertReturningId(
@@ -10,6 +11,7 @@ function insertReturningId(
   values: Record<string, unknown>,
 ) {
   const cols = Object.keys(values);
+  assertColumnsAllowed(table, cols);
   const placeholders = cols.map((_, i) => `$${i + 1}`).join(", ");
   return client.query(
     `INSERT INTO public.${table} (${cols.join(", ")}) VALUES (${placeholders}) RETURNING id`,
@@ -24,6 +26,7 @@ function updateById(
   values: Record<string, unknown>,
 ) {
   const cols = Object.keys(values);
+  assertColumnsAllowed(table, cols);
   const setClause = cols.map((c, i) => `${c} = $${i + 1}`).join(", ");
   return client.query(
     `UPDATE public.${table} SET ${setClause} WHERE id = $${cols.length + 1}`,

@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireAuth } from "@/lib/auth/auth-middleware";
 import { withUser } from "@/lib/db.server";
+import { assertColumnsAllowed } from "@/lib/column-allowlist";
 import {
   captureFromFinding,
   captureFromCorrectiveAction,
@@ -15,6 +16,13 @@ async function upsert(
   values: Record<string, unknown>,
 ): Promise<void> {
   const cols = Object.keys(values);
+  // Security boundary: `table` here is always a fixed literal the caller
+  // passes in (never client input), but `cols` comes straight from a
+  // client-supplied JSON object's keys and was previously spliced
+  // unescaped into the SQL text below as column identifiers -- a real,
+  // exploitable SQL injection. assertColumnsAllowed enforces that every
+  // key is a real, known column of `table` before it ever reaches SQL.
+  assertColumnsAllowed(table, cols);
   if (id) {
     const setClause = cols.map((c, i) => `${c} = $${i + 1}`).join(", ");
     await client.query(
@@ -173,6 +181,7 @@ export const saveCorrectiveAction = createServerFn({ method: "POST" })
         return { rows: [{ id: data.id }] };
       }
       const cols = Object.keys(data.values);
+      assertColumnsAllowed("corrective_actions", cols);
       const placeholders = cols.map((_, i) => `$${i + 1}`).join(", ");
       return client.query(
         `INSERT INTO public.corrective_actions (${cols.join(", ")}) VALUES (${placeholders}) RETURNING id`,
@@ -220,6 +229,7 @@ export const saveImprovementProject = createServerFn({ method: "POST" })
         return { rows: [{ id: data.id }] };
       }
       const cols = Object.keys(data.values);
+      assertColumnsAllowed("improvement_projects", cols);
       const placeholders = cols.map((_, i) => `$${i + 1}`).join(", ");
       return client.query(
         `INSERT INTO public.improvement_projects (${cols.join(", ")}) VALUES (${placeholders}) RETURNING id`,
