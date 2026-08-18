@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireAuth } from "@/lib/auth/auth-middleware";
 import { withUser } from "@/lib/db.server";
 import { assertColumnsAllowed } from "@/lib/column-allowlist";
+import { assertProductAllowed } from "@/lib/product-access-check.server";
 
 const ChildTable = z.enum([
   "field_gaps",
@@ -65,8 +66,9 @@ const CreateFieldAssessmentInput = z.object({
 export const createFieldAssessment = createServerFn({ method: "POST" })
   .middleware([requireAuth])
   .inputValidator((d: unknown) => CreateFieldAssessmentInput.parse(d))
-  .handler(({ data, context }) =>
-    withUser(context.userId, async (client) => {
+  .handler(async ({ data, context }) => {
+    await assertProductAllowed(context.userId, data.organization_id, "assessment");
+    return withUser(context.userId, async (client) => {
       const { rows } = await client.query(
         `INSERT INTO public.field_assessments
            (organization_id, facility_id, area, work_center, shift, observer_name, created_by)
@@ -82,8 +84,8 @@ export const createFieldAssessment = createServerFn({ method: "POST" })
         ],
       );
       return rows[0].id as string;
-    }),
-  );
+    });
+  });
 
 const SaveFieldRatingInput = z.object({
   fieldAssessmentId: z.string().uuid(),
