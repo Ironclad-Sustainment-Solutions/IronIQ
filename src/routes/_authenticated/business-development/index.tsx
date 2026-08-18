@@ -185,7 +185,7 @@ function BusinessDevelopmentPage() {
         <EmptyState
           message={
             (prospects.data ?? []).length === 0
-              ? "No prospects yet — add the first one to start tracking the pipeline."
+              ? "No prospects yet — add the first one to start tracking business leads."
               : `No prospects in ${STAGES.find((s) => s.key === selectedStage)?.label}.`
           }
         />
