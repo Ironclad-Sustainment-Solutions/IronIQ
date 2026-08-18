@@ -7,7 +7,27 @@ import { randomUUID } from "node:crypto";
 import { withAdmin } from "@/lib/db.server";
 
 const SESSION_COOKIE_NAME = "ironiq_session";
-const SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 30; // 30 days
+
+// Absolute ceiling: a session is invalid past this point no matter how
+// recently it was used. Previously 30 days with no idle timeout at all --
+// a stolen cookie stayed valid for a full month of continuous attacker
+// use. 14 days is still generous for a workday tool people don't want to
+// re-login to constantly, but halves the worst case.
+const SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 14; // 14 days
+
+// Idle timeout: a session that hasn't been used in this long is treated
+// as expired even if it's well within its absolute ceiling. This is the
+// part that actually matters for a stolen-cookie scenario -- an attacker
+// who grabs a cookie and doesn't use it immediately (or stops using it)
+// loses access within a day instead of having a month-long window.
+const IDLE_TIMEOUT_SECONDS = 60 * 60 * 24; // 24 hours
+
+// How often last_seen_at is actually written. Updating it on every single
+// authenticated request (which is most requests) would mean an extra
+// UPDATE per page load; throttling to once per this interval keeps the
+// idle-timeout accuracy well within a reasonable margin while avoiding
+// that write amplification.
+const LAST_SEEN_UPDATE_THROTTLE_SECONDS = 5 * 60; // 5 minutes
 
 type SessionData = { sessionId?: string };
 
@@ -36,8 +56,8 @@ export async function createUserSession(userId: string, userAgent?: string | nul
   const expiresAt = new Date(Date.now() + SESSION_MAX_AGE_SECONDS * 1000);
   const sessionId = await withAdmin(async (client) => {
     const { rows } = await client.query<{ id: string }>(
-      `INSERT INTO public.app_sessions (user_id, token_hash, user_agent, expires_at)
-       VALUES ($1, $2, $3, $4) RETURNING id`,
+      `INSERT INTO public.app_sessions (user_id, token_hash, user_agent, expires_at, last_seen_at)
+       VALUES ($1, $2, $3, $4, now()) RETURNING id`,
       [userId, randomUUID(), userAgent ?? null, expiresAt],
     );
     return rows[0].id;
@@ -58,10 +78,28 @@ export async function getSessionUserId(): Promise<string | null> {
 
   return withAdmin(async (client) => {
     const { rows } = await client.query<{ user_id: string }>(
-      `SELECT user_id FROM public.app_sessions WHERE id = $1 AND expires_at > now()`,
-      [sessionId],
+      `SELECT user_id FROM public.app_sessions
+        WHERE id = $1
+          AND expires_at > now()
+          AND last_seen_at > now() - make_interval(secs => $2)`,
+      [sessionId, IDLE_TIMEOUT_SECONDS],
     );
-    return rows[0]?.user_id ?? null;
+    const userId = rows[0]?.user_id;
+    if (!userId) return null;
+
+    // Throttled write: only bump last_seen_at if it's stale enough to be
+    // worth the write. This still keeps the idle timeout accurate to
+    // within LAST_SEEN_UPDATE_THROTTLE_SECONDS, which is a small fraction
+    // of IDLE_TIMEOUT_SECONDS.
+    await client.query(
+      `UPDATE public.app_sessions
+          SET last_seen_at = now()
+        WHERE id = $1
+          AND last_seen_at < now() - make_interval(secs => $2)`,
+      [sessionId, LAST_SEEN_UPDATE_THROTTLE_SECONDS],
+    );
+
+    return userId;
   });
 }
 
