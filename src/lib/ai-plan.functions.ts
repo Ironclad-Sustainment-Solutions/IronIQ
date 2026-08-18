@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireAuth } from "@/lib/auth/auth-middleware";
 import { withUser } from "@/lib/db.server";
+import { checkAndRecordAiUsage } from "@/lib/auth/rate-limit.server";
 import { z } from "zod";
 
 const Input = z.object({ jobId: z.string().uuid() });
@@ -66,6 +67,7 @@ export const generateManufacturingPlan = createServerFn({ method: "POST" })
     if (!apiKey) throw new Error("AI is not configured for this project.");
 
     const { userId } = context;
+    await checkAndRecordAiUsage(userId);
 
     const plan = await withUser(userId, async (client) => {
       const { rows: jobRows } = await client.query("SELECT * FROM public.jobs WHERE id = $1", [

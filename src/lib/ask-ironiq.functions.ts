@@ -28,6 +28,7 @@ import { generateText, Output } from "ai";
 import { z } from "zod";
 import { createAnthropicProvider } from "@/lib/ai-gateway.server";
 import { requireAuth } from "@/lib/auth/auth-middleware";
+import { checkAndRecordAiUsage } from "@/lib/auth/rate-limit.server";
 import { withUser } from "@/lib/db.server";
 import { embedText, toVectorLiteral } from "@/lib/embeddings.server";
 
@@ -69,6 +70,7 @@ export const askIronIQ = createServerFn({ method: "POST" })
   .middleware([requireAuth])
   .inputValidator((d: unknown) => AskInput.parse(d))
   .handler(async ({ data, context }) => {
+    await checkAndRecordAiUsage(context.userId);
     const queryEmbedding = await embedText(data.question);
     const queryLiteral = toVectorLiteral(queryEmbedding);
     const productFilter =

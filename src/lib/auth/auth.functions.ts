@@ -10,7 +10,7 @@ import {
 } from "@/lib/auth/session";
 import {
   assertNotRateLimited,
-  recordFailedAttempt,
+  recordAttempt,
   clearRateLimit,
   LOGIN_IP_LIMIT,
   LOGIN_EMAIL_LIMIT,
@@ -80,7 +80,7 @@ export const signup = createServerFn({ method: "POST" })
       // enumeration/spam surface, not a credential guess, so unlike login
       // there's no "only count failures" distinction. `finally` so a
       // thrown "already exists" error can't skip the count.
-      await recordFailedAttempt(ipKey, SIGNUP_IP_LIMIT);
+      await recordAttempt(ipKey, SIGNUP_IP_LIMIT);
     }
   });
 
@@ -116,8 +116,8 @@ export const login = createServerFn({ method: "POST" })
     // wrong — don't leak which one it was.
     if (!user || !(await verifyPassword(data.password, user.password_hash))) {
       await Promise.all([
-        recordFailedAttempt(ipKey, LOGIN_IP_LIMIT),
-        recordFailedAttempt(emailKey, LOGIN_EMAIL_LIMIT),
+        recordAttempt(ipKey, LOGIN_IP_LIMIT),
+        recordAttempt(emailKey, LOGIN_EMAIL_LIMIT),
       ]);
       throw new Error("Invalid email or password.");
     }

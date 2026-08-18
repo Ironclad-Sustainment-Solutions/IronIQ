@@ -22,6 +22,7 @@ import { generateText } from "ai";
 import { z } from "zod";
 import { createAnthropicProvider } from "@/lib/ai-gateway.server";
 import { requireAuth } from "@/lib/auth/auth-middleware";
+import { checkAndRecordAiUsage } from "@/lib/auth/rate-limit.server";
 import { withUser } from "@/lib/db.server";
 import { embedText, toVectorLiteral } from "@/lib/embeddings.server";
 
@@ -61,6 +62,7 @@ export const draftFromPrecedent = createServerFn({ method: "POST" })
   .middleware([requireAuth])
   .inputValidator((d: unknown) => DraftInput.parse(d))
   .handler(async ({ data, context }) => {
+    await checkAndRecordAiUsage(context.userId);
     const queryEmbedding = await embedText(data.problemDescription);
     const queryLiteral = toVectorLiteral(queryEmbedding);
     const productFilter =
