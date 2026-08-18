@@ -58,6 +58,7 @@ const IntakeInput = z.object({
 });
 
 export const summarizeIntake = createServerFn({ method: "POST" })
+  .middleware([requireAuth])
   .inputValidator((input: unknown) => IntakeInput.parse(input))
   .handler(async ({ data }) => {
     const result = await generateText({
@@ -93,6 +94,7 @@ const ConstraintInput = z.object({
 });
 
 export const suggestConstraints = createServerFn({ method: "POST" })
+  .middleware([requireAuth])
   .inputValidator((input: unknown) => ConstraintInput.parse(input))
   .handler(async ({ data }) => {
     const result = await generateText({
@@ -140,6 +142,7 @@ const ActionInput = z.object({
 });
 
 export const suggestRestorationActions = createServerFn({ method: "POST" })
+  .middleware([requireAuth])
   .inputValidator((input: unknown) => ActionInput.parse(input))
   .handler(async ({ data }) => {
     const result = await generateText({
@@ -176,6 +179,7 @@ const NarrativeInput = z.object({
 });
 
 export const draftReportNarrative = createServerFn({ method: "POST" })
+  .middleware([requireAuth])
   .inputValidator((input: unknown) => NarrativeInput.parse(input))
   .handler(async ({ data }) => {
     const result = await generateText({
