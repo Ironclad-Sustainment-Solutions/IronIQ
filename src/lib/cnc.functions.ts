@@ -12,7 +12,7 @@ import { z } from "zod";
 import { requireAuth } from "@/lib/auth/auth-middleware";
 import { withUser } from "@/lib/db.server";
 import { captureFromCncChangeLog } from "@/lib/intelligence-capture.server";
-import { assertProductAllowed } from "@/lib/product-access-check.server";
+import { assertProductAllowed, assertProductAllowedForCncLogEntry } from "@/lib/product-access-check.server";
 
 const CHANGE_CATEGORIES = [
   "feed_speed",
@@ -65,8 +65,9 @@ const ListCncLogInput = z.object({ organizationId: z.string().uuid() });
 export const listCncChangeLog = createServerFn({ method: "GET" })
   .middleware([requireAuth])
   .inputValidator((d: unknown) => ListCncLogInput.parse(d))
-  .handler(({ data, context }) =>
-    withUser(context.userId, async (client) => {
+  .handler(async ({ data, context }) => {
+    await assertProductAllowed(context.userId, data.organizationId, "cnc");
+    return withUser(context.userId, async (client) => {
       const { rows } = await client.query(
         `SELECT id, machine_name, program_identifier, change_category, change_description, reason,
                 outcome_description, status, created_at
@@ -76,8 +77,8 @@ export const listCncChangeLog = createServerFn({ method: "GET" })
         [data.organizationId],
       );
       return rows;
-    }),
-  );
+    });
+  });
 
 const VerifyCncLogInput = z.object({
   id: z.string().uuid(),
@@ -89,6 +90,7 @@ export const verifyCncChangeLogEntry = createServerFn({ method: "POST" })
   .middleware([requireAuth])
   .inputValidator((d: unknown) => VerifyCncLogInput.parse(d))
   .handler(async ({ data, context }) => {
+    await assertProductAllowedForCncLogEntry(context.userId, data.id, "cnc");
     await withUser(context.userId, (client) =>
       client.query(
         `UPDATE public.cnc_change_log
@@ -109,6 +111,7 @@ export const deleteCncChangeLogEntry = createServerFn({ method: "POST" })
   .middleware([requireAuth])
   .inputValidator((d: unknown) => DeleteCncLogInput.parse(d))
   .handler(async ({ data, context }) => {
+    await assertProductAllowedForCncLogEntry(context.userId, data.id, "cnc");
     await withUser(context.userId, (client) =>
       client.query(`DELETE FROM public.cnc_change_log WHERE id = $1`, [
         data.id,
@@ -132,6 +135,7 @@ export const updateCncChangeLogEntry = createServerFn({ method: "POST" })
   .middleware([requireAuth])
   .inputValidator((d: unknown) => UpdateCncLogInput.parse(d))
   .handler(async ({ data, context }) => {
+    await assertProductAllowedForCncLogEntry(context.userId, data.id, "cnc");
     await withUser(context.userId, (client) =>
       client.query(
         `UPDATE public.cnc_change_log

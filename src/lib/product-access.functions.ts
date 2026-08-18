@@ -4,22 +4,27 @@
  * how every existing organization already behaves. A row's mere
  * existence is the restriction.
  *
- * The actual enforcement helper (assertProductAllowed) lives in
+ * The actual enforcement helpers (assertProductAllowed and its
+ * assertProductAllowedFor*() lookup variants) live in
  * product-access-check.server.ts, not here — see that file's own note
  * on why. This file only exports createServerFn results.
  *
- * Worth being explicit about what's NOT covered by the enforcement
- * check wired into CAD's and CNC's creation entry points: the
- * Assessment product has many separate write paths (template
- * assessment scoring, cap_assessments, field_assessments, Bulk Intake,
- * corrective actions, improvement projects) accumulated across this
- * whole build, and this pass does not add an enforcement check to every
- * one of them — client-side nav hiding covers the visible, day-to-day
+ * As of a later review pass, every CAD and CNC read/write path checks
+ * the restriction (previously only the two "create new" entry points
+ * did — an org whose access was revoked after creating records could
+ * still fully read/re-process/edit/delete every one of them; see
+ * product-access-check.server.ts's assertProductAllowedForCadJob /
+ * assertProductAllowedForCadField / assertProductAllowedForCncLogEntry).
+ *
+ * Still not covered: the Assessment product has many separate write
+ * paths (template assessment scoring, cap_assessments, field_assessments,
+ * Bulk Intake, corrective actions, improvement projects) accumulated
+ * across this whole build, and no enforcement check has been added to
+ * any of them — client-side nav hiding covers the visible, day-to-day
  * case (a restricted org's users don't see Assessment in their sidebar
  * at all), but a determined user hitting an Assessment-product API
- * endpoint directly today would not be blocked server-side the way
- * CAD/CNC now are. Flagging this honestly rather than claiming complete
- * coverage.
+ * endpoint directly today would not be blocked server-side. Flagging
+ * this honestly rather than claiming complete coverage.
  */
 
 import { createServerFn } from "@tanstack/react-start";
