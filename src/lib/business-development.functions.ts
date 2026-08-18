@@ -40,11 +40,32 @@ export const fetchProspects = createServerFn({ method: "GET" })
     return withUser(context.userId, async (client) => {
       const { rows } = await client.query(
         `SELECT p.*,
+                pr.full_name AS assigned_to_name,
                 (SELECT count(*) FROM public.prospect_notes n WHERE n.prospect_id = p.id) AS note_count,
                 (SELECT count(*) FROM public.prospect_meetings m WHERE m.prospect_id = p.id) AS interaction_count,
                 (SELECT max(m.meeting_date) FROM public.prospect_meetings m WHERE m.prospect_id = p.id) AS last_interaction_at
            FROM public.prospects p
+           LEFT JOIN public.profiles pr ON pr.id = p.assigned_to
           ORDER BY p.updated_at DESC`,
+      );
+      return rows;
+    });
+  });
+
+// For the assignee picker — only platform staff can ever be assigned a
+// lead, matching who this whole section is restricted to in the first
+// place.
+export const fetchStaffMembers = createServerFn({ method: "GET" })
+  .middleware([requireAuth])
+  .handler(async ({ context }) => {
+    await requirePlatformStaff(context.userId);
+    return withUser(context.userId, async (client) => {
+      const { rows } = await client.query(
+        `SELECT pr.id, pr.full_name, pr.email
+           FROM public.profiles pr
+           JOIN public.user_roles ur ON ur.user_id = pr.id
+          WHERE ur.role IN ('ironiq_admin', 'consultant')
+          ORDER BY pr.full_name NULLS LAST, pr.email`,
       );
       return rows;
     });
@@ -59,7 +80,13 @@ export const fetchProspectWorkspace = createServerFn({ method: "GET" })
     await requirePlatformStaff(context.userId);
     return withUser(context.userId, async (client) => {
       const [prospect, contacts, notes, meetings] = await Promise.all([
-        client.query("SELECT * FROM public.prospects WHERE id = $1", [data.id]),
+        client.query(
+          `SELECT p.*, pr.full_name AS assigned_to_name
+             FROM public.prospects p
+             LEFT JOIN public.profiles pr ON pr.id = p.assigned_to
+            WHERE p.id = $1`,
+          [data.id],
+        ),
         client.query(
           "SELECT * FROM public.prospect_contacts WHERE prospect_id = $1 ORDER BY created_at",
           [data.id],

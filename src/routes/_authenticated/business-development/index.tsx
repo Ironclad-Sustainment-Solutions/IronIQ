@@ -6,12 +6,15 @@ import {
   ArrowUpDown,
   ChevronRight,
   Plus,
+  Search,
 } from "lucide-react";
 import {
   PageHeader,
   Panel,
   EmptyState,
 } from "@/components/ironiq/layout-primitives";
+import { Tag } from "@/components/ironiq/badges";
+import { useApp } from "@/context/app-context";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -94,10 +97,14 @@ const COLUMNS: { key: SortKey; label: string; align?: "right" }[] = [
 ];
 
 function BusinessDevelopmentPage() {
+  const { profile } = useApp();
   const prospects = useProspects();
   const [selectedStage, setSelectedStage] = useState<ProspectStage>("lead");
   const [sortKey, setSortKey] = useState<SortKey>("updated_at");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
+  const [search, setSearch] = useState("");
+  const [onlyMine, setOnlyMine] = useState(false);
+  const isSearching = search.trim().length > 0;
 
   const counts = useMemo(() => {
     const map = new Map<ProspectStage, number>();
@@ -109,9 +116,20 @@ function BusinessDevelopmentPage() {
   }, [prospects.data]);
 
   const rows = useMemo(() => {
-    const filtered = (prospects.data ?? []).filter(
-      (p) => p.stage === selectedStage,
+    const q = search.trim().toLowerCase();
+    // Search deliberately bypasses the stage filter — the whole point is
+    // finding a lead without first knowing which stage it's sitting in.
+    // "My Leads" applies either way, since it's a different, orthogonal
+    // kind of filter (who owns it, not where it is).
+    let filtered = (prospects.data ?? []).filter((p) =>
+      isSearching
+        ? p.company_name.toLowerCase().includes(q) ||
+          (p.industry ?? "").toLowerCase().includes(q)
+        : p.stage === selectedStage,
     );
+    if (onlyMine && profile?.id) {
+      filtered = filtered.filter((p) => p.assigned_to === profile.id);
+    }
     const dir = sortDir === "asc" ? 1 : -1;
     return [...filtered].sort((a, b) => {
       if (sortKey === "estimated_value") {
@@ -130,7 +148,16 @@ function BusinessDevelopmentPage() {
       if (!bv) return -1;
       return (new Date(av).getTime() - new Date(bv).getTime()) * dir;
     });
-  }, [prospects.data, selectedStage, sortKey, sortDir]);
+  }, [
+    prospects.data,
+    selectedStage,
+    sortKey,
+    sortDir,
+    search,
+    isSearching,
+    onlyMine,
+    profile?.id,
+  ]);
 
   function toggleSort(key: SortKey) {
     if (key === sortKey) {
@@ -150,43 +177,72 @@ function BusinessDevelopmentPage() {
         actions={<NewProspectDialog />}
       />
 
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="relative max-w-xs flex-1">
+          <Search
+            className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+            aria-hidden
+          />
+          <Input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search all leads by company or industry…"
+            className="pl-9"
+          />
+        </div>
+        <Button
+          type="button"
+          variant={onlyMine ? "default" : "outline"}
+          size="sm"
+          onClick={() => setOnlyMine((v) => !v)}
+        >
+          {onlyMine ? "My Leads" : "All Leads"}
+        </Button>
+      </div>
+
       {/* Stage selector — one stage in view at a time, not a wall of
           scrolling columns. Counts make the whole pipeline's shape
           scannable at a glance without needing every stage on screen
-          simultaneously. */}
-      <div className="flex gap-1 border-b border-border">
-        {STAGES.map((s) => {
-          const active = s.key === selectedStage;
-          return (
-            <button
-              key={s.key}
-              type="button"
-              onClick={() => setSelectedStage(s.key)}
-              className={cnTab(active)}
-            >
-              {s.label}
-              <span
-                className={
-                  active
-                    ? "ml-2 rounded-full bg-primary/20 px-2 py-0.5 text-xs font-semibold text-primary"
-                    : "ml-2 rounded-full bg-muted px-2 py-0.5 text-xs font-semibold text-muted-foreground"
-                }
+          simultaneously. Hidden while searching, since search
+          deliberately bypasses stage filtering — showing tabs that
+          aren't actually being applied would just be confusing. */}
+      {!isSearching ? (
+        <div className="flex gap-1 border-b border-border">
+          {STAGES.map((s) => {
+            const active = s.key === selectedStage;
+            return (
+              <button
+                key={s.key}
+                type="button"
+                onClick={() => setSelectedStage(s.key)}
+                className={cnTab(active)}
               >
-                {counts.get(s.key) ?? 0}
-              </span>
-            </button>
-          );
-        })}
-      </div>
+                {s.label}
+                <span
+                  className={
+                    active
+                      ? "ml-2 rounded-full bg-primary/20 px-2 py-0.5 text-xs font-semibold text-primary"
+                      : "ml-2 rounded-full bg-muted px-2 py-0.5 text-xs font-semibold text-muted-foreground"
+                  }
+                >
+                  {counts.get(s.key) ?? 0}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      ) : null}
 
       {prospects.isLoading ? (
         <EmptyState message="Loading…" />
       ) : rows.length === 0 ? (
         <EmptyState
           message={
-            (prospects.data ?? []).length === 0
-              ? "No prospects yet — add the first one to start tracking business leads."
-              : `No prospects in ${STAGES.find((s) => s.key === selectedStage)?.label}.`
+            isSearching
+              ? `No leads match "${search.trim()}".`
+              : (prospects.data ?? []).length === 0
+                ? "No prospects yet — add the first one to start tracking business leads."
+                : `No prospects in ${STAGES.find((s) => s.key === selectedStage)?.label}.`
           }
         />
       ) : (
@@ -195,6 +251,7 @@ function BusinessDevelopmentPage() {
             <table className="w-full min-w-[52rem] text-sm">
               <thead>
                 <tr className="border-b border-border text-left">
+                  {isSearching ? <th className="px-5 py-3">Stage</th> : null}
                   {COLUMNS.map((col) => (
                     <th
                       key={col.key}
@@ -228,12 +285,19 @@ function BusinessDevelopmentPage() {
                       </button>
                     </th>
                   ))}
+                  <th className="px-5 py-3">
+                    <span className="eyebrow font-semibold">Assigned</span>
+                  </th>
                   <th className="px-5 py-3" />
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
                 {rows.map((p) => (
-                  <ProspectRow key={p.id} prospect={p} />
+                  <ProspectRow
+                    key={p.id}
+                    prospect={p}
+                    showStage={isSearching}
+                  />
                 ))}
               </tbody>
             </table>
@@ -253,11 +317,25 @@ function cnTab(active: boolean): string {
   );
 }
 
-function ProspectRow({ prospect: p }: { prospect: Prospect }) {
+function ProspectRow({
+  prospect: p,
+  showStage,
+}: {
+  prospect: Prospect;
+  showStage: boolean;
+}) {
   const save = useSaveProspect();
+  const stageInfo = STAGES.find((s) => s.key === p.stage);
 
   return (
     <tr className="transition-colors hover:bg-accent/40">
+      {showStage ? (
+        <td className="px-5 py-4">
+          <Tag token={stageInfo?.tagToken ?? "steel"}>
+            {stageInfo?.label ?? p.stage}
+          </Tag>
+        </td>
+      ) : null}
       <td className="px-5 py-4">
         <Link
           to="/business-development/$prospectId"
@@ -283,6 +361,9 @@ function ProspectRow({ prospect: p }: { prospect: Prospect }) {
       </td>
       <td className="metric px-5 py-4 text-muted-foreground">
         {formatDate(p.updated_at)}
+      </td>
+      <td className="px-5 py-4 text-xs text-muted-foreground">
+        {p.assigned_to_name ?? "Unassigned"}
       </td>
       <td className="px-5 py-4">
         <div className="flex items-center justify-end gap-2">
