@@ -10,6 +10,7 @@ import { StatCard } from "@/components/ironiq/score-visuals";
 import { useApp } from "@/context/app-context";
 import { useFindings, useProjects } from "@/lib/api";
 import { useProjectFindings } from "@/lib/mutations";
+import { formatDate } from "@/lib/utils";
 import {
   ProjectFindingsDialog,
   ImprovementProjectDialog,
@@ -155,7 +156,8 @@ function ProjectsPage() {
                   <div>
                     <dt className="eyebrow">Window</dt>
                     <dd className="metric mt-0.5 text-muted-foreground">
-                      {p.planned_start ?? "—"} → {p.planned_completion ?? "—"}
+                      {formatDate(p.planned_start)} →{" "}
+                      {formatDate(p.planned_completion)}
                     </dd>
                   </div>
                   <div className="md:col-span-2">

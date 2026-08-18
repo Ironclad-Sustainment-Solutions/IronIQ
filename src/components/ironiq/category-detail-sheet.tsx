@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { SeverityBadge, FindingStatusBadge } from "@/components/ironiq/badges";
 import { EmptyState } from "@/components/ironiq/layout-primitives";
 import { formatScore } from "@/lib/scoring";
+import { formatDate } from "@/lib/utils";
 import type { CategoryResult } from "@/lib/scoring";
 import type {
   AssessmentQuestion,
@@ -76,7 +77,10 @@ export function CategoryDetailSheet({
         {detail ? (
           <>
             <SheetHeader className="text-left">
-              <p className="eyebrow">{detail.category.code} · weight {Number(detail.category.weight)}%</p>
+              <p className="eyebrow">
+                {detail.category.code} · weight {Number(detail.category.weight)}
+                %
+              </p>
               <SheetTitle>{detail.category.name}</SheetTitle>
               <SheetDescription>
                 {detail.category.description ??
@@ -87,13 +91,17 @@ export function CategoryDetailSheet({
             <div className="mt-4 grid grid-cols-3 gap-3">
               <div className="panel px-4 py-3">
                 <p className="eyebrow">Score</p>
-                <p className="metric mt-1 text-2xl font-semibold">{formatScore(detail.score)}</p>
+                <p className="metric mt-1 text-2xl font-semibold">
+                  {formatScore(detail.score)}
+                </p>
               </div>
               <div className="panel px-4 py-3">
                 <p className="eyebrow">Answered</p>
                 <p className="metric mt-1 text-2xl font-semibold">
                   {detail.answered}
-                  <span className="text-base text-muted-foreground">/{detail.applicable}</span>
+                  <span className="text-base text-muted-foreground">
+                    /{detail.applicable}
+                  </span>
                 </p>
               </div>
               <div className="panel px-4 py-3">
@@ -131,12 +139,15 @@ export function CategoryDetailSheet({
                             </p>
                             <p className="mt-1 text-xs text-muted-foreground">
                               Weight {Number(q.weight)} ·{" "}
-                              {EVIDENCE_LABEL[r?.evidence_type ?? "none"] ?? "No evidence"}
+                              {EVIDENCE_LABEL[r?.evidence_type ?? "none"] ??
+                                "No evidence"}
                             </p>
                           </div>
                           <span className="metric shrink-0 text-sm font-semibold">
-                            {na ? "N/A" : r?.score ?? "—"}
-                            {!na && r?.score !== null && r?.score !== undefined ? (
+                            {na ? "N/A" : (r?.score ?? "—")}
+                            {!na &&
+                            r?.score !== null &&
+                            r?.score !== undefined ? (
                               <span className="text-muted-foreground">/5</span>
                             ) : null}
                           </span>
@@ -149,7 +160,9 @@ export function CategoryDetailSheet({
             </section>
 
             <section className="mt-6">
-              <h3 className="eyebrow mb-2">Findings ({categoryFindings.length})</h3>
+              <h3 className="eyebrow mb-2">
+                Findings ({categoryFindings.length})
+              </h3>
               {categoryFindings.length === 0 ? (
                 <EmptyState message="No findings recorded for this category." />
               ) : (
@@ -158,9 +171,11 @@ export function CategoryDetailSheet({
                     <li key={f.id} className="flex items-start gap-3 py-3">
                       <SeverityBadge severity={f.severity} />
                       <div className="min-w-0 flex-1">
-                        <p className="text-sm text-foreground">{f.description}</p>
+                        <p className="text-sm text-foreground">
+                          {f.description}
+                        </p>
                         <p className="metric mt-1 text-xs text-muted-foreground">
-                          {f.finding_code} · {f.target_date ?? "no date"}
+                          {f.finding_code} · {formatDate(f.target_date)}
                         </p>
                       </div>
                       <FindingStatusBadge status={f.status} />
@@ -173,7 +188,10 @@ export function CategoryDetailSheet({
             <div className="mt-6 flex gap-2">
               {assessmentId ? (
                 <Button asChild variant="outline">
-                  <Link to="/assessments/$assessmentId" params={{ assessmentId }}>
+                  <Link
+                    to="/assessments/$assessmentId"
+                    params={{ assessmentId }}
+                  >
                     Open assessment
                   </Link>
                 </Button>
