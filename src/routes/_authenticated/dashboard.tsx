@@ -31,6 +31,7 @@ import { CategoryDetailSheet } from "@/components/ironiq/category-detail-sheet";
 import { useFindings, useProjects, useReadinessHistory } from "@/lib/api";
 import { SEVERITY_ORDER, type FindingSeverity } from "@/lib/domain";
 import { formatScore } from "@/lib/scoring";
+import { formatDate } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { useFacilityTrendSummary } from "@/lib/facility-trend-api";
 
@@ -308,7 +309,7 @@ function Dashboard() {
                     <div className="flex shrink-0 items-center gap-3">
                       <FindingStatusBadge status={f.status} />
                       <span className="metric text-xs text-muted-foreground">
-                        {f.target_date ?? "No date"}
+                        {formatDate(f.target_date)}
                       </span>
                     </div>
                   </li>
@@ -332,7 +333,7 @@ function Dashboard() {
             <p className="text-xs text-muted-foreground">
               Scores derived from{" "}
               <span className="text-foreground">{assessment.name}</span> ·{" "}
-              {assessment.assessment_date} · lead assessor{" "}
+              {formatDate(assessment.assessment_date)} · lead assessor{" "}
               {assessment.lead_assessor ?? "unassigned"}.
             </p>
           ) : null}

@@ -15,7 +15,11 @@ import {
 import { toast } from "sonner";
 import { Panel, EmptyState } from "@/components/ironiq/layout-primitives";
 import { Button } from "@/components/ui/button";
-import { AutoField, EntryCard, TagPicker } from "@/components/ironiq/field/review-parts";
+import {
+  AutoField,
+  EntryCard,
+  TagPicker,
+} from "@/components/ironiq/field/review-parts";
 import {
   Chip,
   EvidenceStrip,
@@ -68,7 +72,11 @@ import {
 } from "@/lib/field-domains";
 import { FIELD_SCALE } from "@/lib/field-form";
 import { EventsTab } from "@/components/ironiq/field/event-parts";
-import { BaselineMetricsTab, CausalChainTab, SmeTab } from "@/components/ironiq/field/analysis-parts";
+import {
+  BaselineMetricsTab,
+  CausalChainTab,
+  SmeTab,
+} from "@/components/ironiq/field/analysis-parts";
 import { BacklogTab, PilotTab } from "@/components/ironiq/field/pilot-parts";
 import { FieldViewTab } from "@/components/ironiq/field/day-parts";
 import {
@@ -97,16 +105,16 @@ import {
   areaByCode,
   areaTitle,
   STATUS_TEXT,
-
   buildClientSummary,
   recommendPath,
   type AreaBaseline,
   type FieldStatus,
-
 } from "@/lib/field-followup";
-import { draftFieldExecutiveSummary, suggestValidationQuestions } from "@/lib/field-ai.functions";
-import { cn } from "@/lib/utils";
-
+import {
+  draftFieldExecutiveSummary,
+  suggestValidationQuestions,
+} from "@/lib/field-ai.functions";
+import { cn, formatDate } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/field/$fieldId")({
   head: () => ({
@@ -120,7 +128,8 @@ export const Route = createFileRoute("/_authenticated/field/$fieldId")({
       { property: "og:title", content: "Field Capability Assessment — IronIQ" },
       {
         property: "og:description",
-        content: "Rapid onsite capability capture with a preliminary field baseline.",
+        content:
+          "Rapid onsite capability capture with a preliminary field baseline.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -172,7 +181,6 @@ const TABS: { id: Tab; label: string }[] = [
   { id: "report", label: "Report" },
 ];
 
-
 interface AssessmentExtras {
   facility_name: string | null;
   facility_location: string | null;
@@ -221,7 +229,6 @@ interface AssessmentExtras {
   day_focus: string | null;
 }
 
-
 function FieldCapture() {
   const { fieldId } = Route.useParams();
   const navigate = useNavigate();
@@ -250,7 +257,9 @@ function FieldCapture() {
   const [domainCode, setDomainCode] = useState(FIELD_DOMAINS[0]!.code);
   const [obsOpen, setObsOpen] = useState(false);
   const [quickOpen, setQuickOpen] = useState(false);
-  const [editing, setEditing] = useState<FieldCaptureObservationRow | null>(null);
+  const [editing, setEditing] = useState<FieldCaptureObservationRow | null>(
+    null,
+  );
   const [aiBusy, setAiBusy] = useState(false);
   const [questionBusyId, setQuestionBusyId] = useState<string | null>(null);
   const draftSummary = useServerFn(draftFieldExecutiveSummary);
@@ -260,8 +269,14 @@ function FieldCapture() {
   const gapRows = capture.data?.gaps ?? [];
   const attachments = capture.data?.attachments ?? [];
   const quickRows = capture.data?.quickCaptures ?? [];
-  const baseline = useMemo(() => fieldBaseline(obsRows, gapRows), [obsRows, gapRows]);
-  const overrides = (data?.assessment as Record<string, any> | undefined)?.['baseline_statuses'] ?? {};
+  const baseline = useMemo(
+    () => fieldBaseline(obsRows, gapRows),
+    [obsRows, gapRows],
+  );
+  const overrides =
+    (data?.assessment as Record<string, any> | undefined)?.[
+      "baseline_statuses"
+    ] ?? {};
   const areas = useMemo(
     () => areaBaselines(obsRows, gapRows, overrides as Record<string, string>),
     [obsRows, gapRows, overrides],
@@ -271,12 +286,13 @@ function FieldCapture() {
     [gapRows],
   );
 
-
   if (isLoading) return <EmptyState message="Loading field assessment…" />;
-  if (!data?.assessment) return <EmptyState message="Field assessment not found." />;
+  if (!data?.assessment)
+    return <EmptyState message="Field assessment not found." />;
 
   const a = data.assessment as typeof data.assessment & AssessmentExtras;
-  const locked = a.assessment_status === "Delivered" || a.status === "submitted";
+  const locked =
+    a.assessment_status === "Delivered" || a.status === "submitted";
   const set = (values: Record<string, unknown>) => update.mutate(values);
   const opsData = ops.data ?? {
     events: [],
@@ -299,11 +315,11 @@ function FieldCapture() {
   };
 
   const pathAnswers = {
-    significantConstraints: a['rec_significant_constraints'] ?? null,
-    measurableImpact: a['rec_measurable_impact'] ?? null,
-    unvalidated: a['rec_unvalidated'] ?? null,
-    deeperHelps: a['rec_deeper_helps'] ?? null,
-    inScope: a['rec_in_scope'] ?? null,
+    significantConstraints: a["rec_significant_constraints"] ?? null,
+    measurableImpact: a["rec_measurable_impact"] ?? null,
+    unvalidated: a["rec_unvalidated"] ?? null,
+    deeperHelps: a["rec_deeper_helps"] ?? null,
+    inScope: a["rec_in_scope"] ?? null,
   };
   const recommendation = recommendPath(pathAnswers);
 
@@ -323,7 +339,10 @@ function FieldCapture() {
       });
       gaps.update.mutate({
         id: gap.id,
-        values: { validation_questions: out.questions, data_requirements: out.data_requirements },
+        values: {
+          validation_questions: out.questions,
+          data_requirements: out.data_requirements,
+        },
       });
       toast.success("Draft validation questions ready for your review");
     } catch (e) {
@@ -333,8 +352,10 @@ function FieldCapture() {
     }
   };
 
-
-  const saveObservation = (draft: ObservationDraft, opts: { addAnother: boolean; photo: File | null }) => {
+  const saveObservation = (
+    draft: ObservationDraft,
+    opts: { addAnother: boolean; photo: File | null },
+  ) => {
     const values = {
       domain_code: draft.domain_code,
       category: draft.category,
@@ -398,7 +419,9 @@ function FieldCapture() {
         `Coverage: ${baseline.overallCoveragePct}% of observation categories across ${baseline.domainsObserved}/8 domains.`,
       ].join("\n");
 
-      const out = await draftSummary({ data: { context: context.slice(0, 24000) } });
+      const out = await draftSummary({
+        data: { context: context.slice(0, 24000) },
+      });
       set({
         executive_summary: [
           out.executive_summary,
@@ -415,7 +438,9 @@ function FieldCapture() {
       });
       toast.success("Draft executive summary ready for your review");
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Could not draft the summary");
+      toast.error(
+        e instanceof Error ? e.message : "Could not draft the summary",
+      );
     } finally {
       setAiBusy(false);
     }
@@ -424,7 +449,12 @@ function FieldCapture() {
   return (
     <div className="space-y-4 pb-24">
       <div className="no-print grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3">
-        <Button variant="ghost" size="icon" aria-label="Back to field assessments" asChild>
+        <Button
+          variant="ghost"
+          size="icon"
+          aria-label="Back to field assessments"
+          asChild
+        >
           <Link to="/field">
             <ArrowLeft className="size-4" aria-hidden />
           </Link>
@@ -435,15 +465,19 @@ function FieldCapture() {
             {a.client_name || a.area || "Untitled assessment"}
           </h1>
           <p className="truncate text-xs text-muted-foreground">
-            {[a.facility_name, a.facility_location].filter(Boolean).join(" · ") || a.area}
-            {a.assessment_date ? ` · ${a.assessment_date}` : ""}
+            {[a.facility_name, a.facility_location]
+              .filter(Boolean)
+              .join(" · ") || a.area}
+            {a.assessment_date ? ` · ${formatDate(a.assessment_date)}` : ""}
           </p>
         </div>
         {locked ? (
           <Button
             size="sm"
             variant="outline"
-            onClick={() => set({ assessment_status: "In Progress", status: "in_progress" })}
+            onClick={() =>
+              set({ assessment_status: "In Progress", status: "in_progress" })
+            }
           >
             Reopen assessment
           </Button>
@@ -454,8 +488,11 @@ function FieldCapture() {
         )}
       </div>
 
-      <BaselineStrip baseline={baseline} gapCount={gapRows.length} areas={areas} />
-
+      <BaselineStrip
+        baseline={baseline}
+        gapCount={gapRows.length}
+        areas={areas}
+      />
 
       <nav className="no-print flex gap-1 overflow-x-auto border-b border-border">
         {TABS.map((t) => (
@@ -487,15 +524,21 @@ function FieldCapture() {
           hasGap={(id) => gapRows.some((g) => g.observation_id === id)}
           onAddObservation={(areaCode) =>
             observations.add.mutate({
-              domain_code: areaByCode(areaCode)?.domain_code ?? "production_operations",
+              domain_code:
+                areaByCode(areaCode)?.domain_code ?? "production_operations",
               focus_area: areaCode,
               evidence_class: "Observed",
             } as never)
           }
-          onUpdateObservation={(id, values) => observations.update.mutate({ id, values })}
+          onUpdateObservation={(id, values) =>
+            observations.update.mutate({ id, values })
+          }
           onDeleteObservation={(id) => observations.remove.mutate(id)}
           onPromote={(row) =>
-            gaps.fromObservation.mutate({ observation: row, gapNumber: gapRows.length + 1 })
+            gaps.fromObservation.mutate({
+              observation: row,
+              gapNumber: gapRows.length + 1,
+            })
           }
         />
       ) : null}
@@ -508,7 +551,10 @@ function FieldCapture() {
           aiBusyId={questionBusyId}
           onSuggestQuestions={runQuestions}
           onAdd={() =>
-            gaps.add.mutate({ gap_number: gapRows.length + 1, sort_order: gapRows.length + 1 })
+            gaps.add.mutate({
+              gap_number: gapRows.length + 1,
+              sort_order: gapRows.length + 1,
+            })
           }
           onUpdate={(id, values) => gaps.update.mutate({ id, values })}
           onDelete={(id) => gaps.remove.mutate(id)}
@@ -519,7 +565,8 @@ function FieldCapture() {
         <div className="space-y-4">
           <NextStepPanel
             answers={{
-              rec_significant_constraints: a.rec_significant_constraints ?? null,
+              rec_significant_constraints:
+                a.rec_significant_constraints ?? null,
               rec_measurable_impact: a.rec_measurable_impact ?? null,
               rec_unvalidated: a.rec_unvalidated ?? null,
               rec_deeper_helps: a.rec_deeper_helps ?? null,
@@ -544,19 +591,27 @@ function FieldCapture() {
                     set({
                       client_summary: buildClientSummary({
                         clientName: a.client_name,
-                        facility: [a.facility_name, a.facility_location].filter(Boolean).join(", ") || a.area,
+                        facility:
+                          [a.facility_name, a.facility_location]
+                            .filter(Boolean)
+                            .join(", ") || a.area,
                         date: a.assessment_date,
                         assessors: a.assessors,
                         problem: a.problem_statement,
                         areas,
                         findings: topFindings,
                         unknowns: obsRows
-                          .filter((o) => o.requires_validation || o.evidence_class === "Requires Validation")
+                          .filter(
+                            (o) =>
+                              o.requires_validation ||
+                              o.evidence_class === "Requires Validation",
+                          )
                           .map(
                             (o) =>
                               `${areaByCode(o.focus_area)?.title ?? "General"}: ${o.observed_condition ?? "Requires validation"}`,
                           ),
-                        recommendation: a.recommended_path ?? recommendation.path,
+                        recommendation:
+                          a.recommended_path ?? recommendation.path,
                         rationale: recommendation.rationale,
                       }),
                     })
@@ -564,7 +619,11 @@ function FieldCapture() {
                 >
                   Generate summary
                 </Button>
-                <Button size="sm" variant="outline" onClick={() => window.print()}>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => window.print()}
+                >
                   <Printer className="size-4" aria-hidden /> Print / PDF
                 </Button>
               </div>
@@ -596,7 +655,8 @@ function FieldCapture() {
           setup={{
             assessment_name: a.assessment_name ?? null,
             objective: a.objective ?? null,
-            primary_operational_question: a.primary_operational_question ?? null,
+            primary_operational_question:
+              a.primary_operational_question ?? null,
             assessment_lead: a.assessment_lead ?? null,
             team_members: a.team_members ?? null,
             start_date: a.start_date ?? null,
@@ -637,7 +697,9 @@ function FieldCapture() {
           onUpdateDelay={(id, values) => delayMut.update.mutate({ id, values })}
           onDeleteDelay={(id) => delayMut.remove.mutate(id)}
           onAddEvidence={(values) => evidenceMut.add.mutate(values)}
-          onUpdateEvidence={(id, values) => evidenceMut.update.mutate({ id, values })}
+          onUpdateEvidence={(id, values) =>
+            evidenceMut.update.mutate({ id, values })
+          }
           onDeleteEvidence={(id) => evidenceMut.remove.mutate(id)}
         />
       ) : null}
@@ -694,7 +756,9 @@ function FieldCapture() {
           onUpdate={(id, values) => pilotMut.update.mutate({ id, values })}
           onDelete={(id) => pilotMut.remove.mutate(id)}
           onAddMetric={(pilotId, values) => pilotMetricMut.add(pilotId, values)}
-          onUpdateMetric={(_pilotId, id, values) => pilotMetricMut.update(id, values)}
+          onUpdateMetric={(_pilotId, id, values) =>
+            pilotMetricMut.update(id, values)
+          }
           onDeleteMetric={(_pilotId, id) => pilotMetricMut.remove(id)}
         />
       ) : null}
@@ -707,7 +771,6 @@ function FieldCapture() {
         />
       ) : null}
 
-
       {tab === "walk" ? (
         <section className="space-y-4">
           <Panel
@@ -716,7 +779,9 @@ function FieldCapture() {
           >
             <div className="flex flex-wrap gap-1.5">
               {FIELD_DOMAINS.map((d) => {
-                const b = baseline.domains.find((x) => x.domain.code === d.code)!;
+                const b = baseline.domains.find(
+                  (x) => x.domain.code === d.code,
+                )!;
                 return (
                   <button
                     key={d.code}
@@ -731,7 +796,9 @@ function FieldCapture() {
                   >
                     {d.number}. {d.title}
                     <span className={cn("ml-2", BAND_TEXT[b.band])}>
-                      {b.averageRating === null ? "—" : b.averageRating.toFixed(1)}
+                      {b.averageRating === null
+                        ? "—"
+                        : b.averageRating.toFixed(1)}
                     </span>
                   </button>
                 );
@@ -755,17 +822,26 @@ function FieldCapture() {
             }}
             onDelete={(id) => observations.remove.mutate(id)}
             onCreateGap={(row) =>
-              gaps.fromObservation.mutate({ observation: row, gapNumber: gapRows.length + 1 })
+              gaps.fromObservation.mutate({
+                observation: row,
+                gapNumber: gapRows.length + 1,
+              })
             }
           />
 
           <Panel title="Rating scale" subtitle="Preliminary field ratings only">
             <ul className="grid gap-2 sm:grid-cols-2">
               {FIELD_SCALE.map((s) => (
-                <li key={s.value} className="grid grid-cols-[auto_minmax(0,1fr)] gap-3">
-                  <span className="metric text-lg font-semibold text-foreground">{s.value}</span>
+                <li
+                  key={s.value}
+                  className="grid grid-cols-[auto_minmax(0,1fr)] gap-3"
+                >
+                  <span className="metric text-lg font-semibold text-foreground">
+                    {s.value}
+                  </span>
                   <span className="min-w-0 text-xs text-muted-foreground">
-                    <strong className="text-foreground">{s.label}</strong> — {s.description}
+                    <strong className="text-foreground">{s.label}</strong> —{" "}
+                    {s.description}
                   </span>
                 </li>
               ))}
@@ -779,7 +855,11 @@ function FieldCapture() {
           title="Quick captures"
           subtitle="30-second shop-floor notes. Convert them into structured observations when you get a moment."
           actions={
-            <Button size="sm" disabled={locked} onClick={() => setQuickOpen(true)}>
+            <Button
+              size="sm"
+              disabled={locked}
+              onClick={() => setQuickOpen(true)}
+            >
               <Plus className="size-4" aria-hidden /> New capture
             </Button>
           }
@@ -792,9 +872,13 @@ function FieldCapture() {
                 <div key={c.id} className="rounded-sm border border-border p-3">
                   <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
                     <div className="min-w-0">
-                      <p className="text-sm text-foreground">{c.note || c.potential_problem}</p>
+                      <p className="text-sm text-foreground">
+                        {c.note || c.potential_problem}
+                      </p>
                       <p className="mt-1 text-xs text-muted-foreground">
-                        {[c.area, c.machine, domainByCode(c.domain_code)?.title].filter(Boolean).join(" · ")}
+                        {[c.area, c.machine, domainByCode(c.domain_code)?.title]
+                          .filter(Boolean)
+                          .join(" · ")}
                       </p>
                     </div>
                     <Button
@@ -839,7 +923,10 @@ function FieldCapture() {
           attachments={attachments}
           locked={locked}
           onAdd={() =>
-            gaps.add.mutate({ gap_number: gapRows.length + 1, sort_order: gapRows.length + 1 })
+            gaps.add.mutate({
+              gap_number: gapRows.length + 1,
+              sort_order: gapRows.length + 1,
+            })
           }
           onUpdate={(id, values) => gaps.update.mutate({ id, values })}
           onDelete={(id) => gaps.remove.mutate(id)}
@@ -859,11 +946,14 @@ function FieldCapture() {
 
       {tab === "baseline" ? (
         <div className="space-y-4">
-          <StatusBaselineTab baselines={areas} locked={locked} onSetStatus={setAreaStatus} />
+          <StatusBaselineTab
+            baselines={areas}
+            locked={locked}
+            onSetStatus={setAreaStatus}
+          />
           <BaselineTab baseline={baseline} />
         </div>
       ) : null}
-
 
       {tab === "report" ? (
         <ReportTab
@@ -890,9 +980,9 @@ function FieldCapture() {
                   assessors: a.assessors,
                   problem_statement: a.problem_statement,
                   problem_area: a.problem_area,
-                  problem_department: a['problem_department'] ?? null,
-                  problem_machine: a['problem_machine'] ?? null,
-                  problem_cell: a['problem_cell'] ?? null,
+                  problem_department: a["problem_department"] ?? null,
+                  problem_machine: a["problem_machine"] ?? null,
+                  problem_cell: a["problem_cell"] ?? null,
                   problem_process: a.problem_process ?? null,
                   problem_timing: a.problem_timing,
 
@@ -902,7 +992,13 @@ function FieldCapture() {
                 },
                 gaps: gapRows,
               },
-              { onSuccess: (capId) => navigate({ to: "/capability/$assessmentId", params: { assessmentId: capId } }) },
+              {
+                onSuccess: (capId) =>
+                  navigate({
+                    to: "/capability/$assessmentId",
+                    params: { assessmentId: capId },
+                  }),
+              },
             )
           }
         />
@@ -967,22 +1063,27 @@ function BaselineStrip({
 }) {
   const walked = areas.filter((a) => a.status !== "Requires Assessment").length;
   const constrained = areas.filter((a) => a.status === "Constrained").length;
-  const opportunities = areas.filter((a) => a.status === "Opportunity Identified").length;
+  const opportunities = areas.filter(
+    (a) => a.status === "Opportunity Identified",
+  ).length;
   const coverage = Math.round((walked / areas.length) * 100);
   return (
     <div className="panel grid gap-4 px-5 py-4 sm:grid-cols-4">
       <Stat label="Areas walked" value={`${walked} / ${areas.length}`} />
       <Stat label="Coverage" value={`${coverage}%`} />
-      <Stat label="Constrained / opportunity" value={`${constrained} / ${opportunities}`} />
+      <Stat
+        label="Constrained / opportunity"
+        value={`${constrained} / ${opportunities}`}
+      />
       <Stat label="Preliminary findings" value={String(gapCount)} />
       <p className="text-xs text-muted-foreground sm:col-span-4">
-        Preliminary field baseline from a limited walkthrough. It indicates where capability appears
-        constrained; it is not a full capability assessment and does not confirm root cause.
+        Preliminary field baseline from a limited walkthrough. It indicates
+        where capability appears constrained; it is not a full capability
+        assessment and does not confirm root cause.
       </p>
     </div>
   );
 }
-
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
@@ -1006,22 +1107,62 @@ function IntakeTab({
 }) {
   return (
     <div className="space-y-4">
-      <Panel title="Assessment header" subtitle="Client, facility and Ironclad assessors">
+      <Panel
+        title="Assessment header"
+        subtitle="Client, facility and Ironclad assessors"
+      >
         <div className="grid gap-3 sm:grid-cols-2">
-          <AutoField label="Client" required value={assessment['client_name']} disabled={locked} onCommit={(v) => set({ client_name: v })} />
-          <AutoField label="Facility" required value={assessment['facility_name']} disabled={locked} onCommit={(v) => set({ facility_name: v })} />
-          <AutoField label="Location" value={assessment['facility_location']} disabled={locked} onCommit={(v) => set({ facility_location: v })} />
-          <AutoField label="Ironclad assessors" required value={assessment['assessors']} disabled={locked} onCommit={(v) => set({ assessors: v })} />
+          <AutoField
+            label="Client"
+            required
+            value={assessment["client_name"]}
+            disabled={locked}
+            onCommit={(v) => set({ client_name: v })}
+          />
+          <AutoField
+            label="Facility"
+            required
+            value={assessment["facility_name"]}
+            disabled={locked}
+            onCommit={(v) => set({ facility_name: v })}
+          />
+          <AutoField
+            label="Location"
+            value={assessment["facility_location"]}
+            disabled={locked}
+            onCommit={(v) => set({ facility_location: v })}
+          />
+          <AutoField
+            label="Ironclad assessors"
+            required
+            value={assessment["assessors"]}
+            disabled={locked}
+            onCommit={(v) => set({ assessors: v })}
+          />
 
-          <AutoField label="Client contact" value={assessment['client_contact']} disabled={locked} onCommit={(v) => set({ client_contact: v })} />
-          <AutoField label="Contact title" value={assessment['client_contact_title']} disabled={locked} onCommit={(v) => set({ client_contact_title: v })} />
+          <AutoField
+            label="Client contact"
+            value={assessment["client_contact"]}
+            disabled={locked}
+            onCommit={(v) => set({ client_contact: v })}
+          />
+          <AutoField
+            label="Contact title"
+            value={assessment["client_contact_title"]}
+            disabled={locked}
+            onCommit={(v) => set({ client_contact_title: v })}
+          />
         </div>
         <div className="mt-3">
           <TagPicker
             label="Assessment status"
             single
             options={[...ASSESSMENT_STATUSES]}
-            selected={assessment['assessment_status'] ? [assessment['assessment_status']] : []}
+            selected={
+              assessment["assessment_status"]
+                ? [assessment["assessment_status"]]
+                : []
+            }
             disabled={locked}
             onChange={(v) => set({ assessment_status: v[0] ?? "Draft" })}
           />
@@ -1035,28 +1176,48 @@ function IntakeTab({
         <div className="grid gap-3">
           <AutoField
             label="1. What is having the greatest impact on production right now?"
-            value={assessment['problem_statement']}
+            value={assessment["problem_statement"]}
             multiline
             disabled={locked}
             onCommit={(v) => set({ problem_statement: v })}
           />
           <p className="eyebrow">2. Where is it happening?</p>
           <div className="grid gap-3 sm:grid-cols-4">
-            <AutoField label="Department" value={assessment['problem_department']} disabled={locked} onCommit={(v) => set({ problem_department: v })} />
-            <AutoField label="Machine" value={assessment['problem_machine']} disabled={locked} onCommit={(v) => set({ problem_machine: v })} />
-            <AutoField label="Cell" value={assessment['problem_cell']} disabled={locked} onCommit={(v) => set({ problem_cell: v })} />
-            <AutoField label="Shift / timing" value={assessment['problem_timing']} disabled={locked} onCommit={(v) => set({ problem_timing: v })} />
+            <AutoField
+              label="Department"
+              value={assessment["problem_department"]}
+              disabled={locked}
+              onCommit={(v) => set({ problem_department: v })}
+            />
+            <AutoField
+              label="Machine"
+              value={assessment["problem_machine"]}
+              disabled={locked}
+              onCommit={(v) => set({ problem_machine: v })}
+            />
+            <AutoField
+              label="Cell"
+              value={assessment["problem_cell"]}
+              disabled={locked}
+              onCommit={(v) => set({ problem_cell: v })}
+            />
+            <AutoField
+              label="Shift / timing"
+              value={assessment["problem_timing"]}
+              disabled={locked}
+              onCommit={(v) => set({ problem_timing: v })}
+            />
           </div>
           <TagPicker
             label="3. What effect is it having?"
             options={PROBLEM_IMPACT_OPTIONS}
-            selected={assessment['impact_tags'] ?? []}
+            selected={assessment["impact_tags"] ?? []}
             disabled={locked}
             onChange={(impact_tags) => set({ impact_tags })}
           />
           <AutoField
             label="Impact notes"
-            value={assessment['impact_notes']}
+            value={assessment["impact_notes"]}
             multiline
             rows={2}
             disabled={locked}
@@ -1064,14 +1225,14 @@ function IntakeTab({
           />
           <AutoField
             label="4. What has already been tried?"
-            value={assessment['attempted']}
+            value={assessment["attempted"]}
             multiline
             disabled={locked}
             onCommit={(v) => set({ attempted: v })}
           />
           <AutoField
             label="5. What would improve if this were resolved?"
-            value={assessment['improvement_if_resolved']}
+            value={assessment["improvement_if_resolved"]}
             multiline
             disabled={locked}
             onCommit={(v) => set({ improvement_if_resolved: v })}
@@ -1079,10 +1240,13 @@ function IntakeTab({
         </div>
       </Panel>
 
-      <Panel title="Grede focus areas" subtitle="Customer-scoped template — applies to this assessment only">
+      <Panel
+        title="Grede focus areas"
+        subtitle="Customer-scoped template — applies to this assessment only"
+      >
         <TagPicker
           options={GREDE_FOCUS_AREAS}
-          selected={assessment['workstreams'] ?? []}
+          selected={assessment["workstreams"] ?? []}
           disabled={locked}
           onChange={(workstreams) => set({ workstreams })}
         />
@@ -1106,7 +1270,9 @@ function DomainPanel({
 }: {
   code: string;
   observations: FieldCaptureObservationRow[];
-  attachments: ReturnType<typeof useFieldCapture>["data"] extends infer T ? any[] : any[];
+  attachments: ReturnType<typeof useFieldCapture>["data"] extends infer T
+    ? any[]
+    : any[];
   gaps: FieldCapabilityGap[];
   locked: boolean;
   onAdd: () => void;
@@ -1130,9 +1296,10 @@ function DomainPanel({
     >
       <div className="rounded-sm border border-dashed border-border p-3">
         <p className="eyebrow">Observation categories</p>
-        <p className="mt-2 text-xs text-muted-foreground">{domain.categories.join(" · ")}</p>
+        <p className="mt-2 text-xs text-muted-foreground">
+          {domain.categories.join(" · ")}
+        </p>
       </div>
-
 
       <div className="mt-4 grid gap-3">
         {rows.length === 0 ? (
@@ -1142,7 +1309,9 @@ function DomainPanel({
             <ObservationCard
               key={row.id}
               row={row}
-              attachments={attachments.filter((at: any) => at.observation_id === row.id)}
+              attachments={attachments.filter(
+                (at: any) => at.observation_id === row.id,
+              )}
               hasGap={gaps.some((g) => g.observation_id === row.id)}
               onEdit={() => onEdit(row)}
               onDelete={() => onDelete(row.id)}
@@ -1199,7 +1368,12 @@ function GapsTab({
               disabled={locked}
               onDelete={() => onDelete(g.id)}
             >
-              <AutoField label="Title" value={g.title} disabled={locked} onCommit={(v) => onUpdate(g.id, { title: v })} />
+              <AutoField
+                label="Title"
+                value={g.title}
+                disabled={locked}
+                onCommit={(v) => onUpdate(g.id, { title: v })}
+              />
               <AutoField
                 label="Area / machine / cell"
                 value={g.location}
@@ -1226,7 +1400,9 @@ function GapsTab({
                 options={EVIDENCE_CLASSES}
                 selected={g.evidence_class ? [g.evidence_class] : []}
                 disabled={locked}
-                onChange={(v) => onUpdate(g.id, { evidence_class: v[0] ?? null })}
+                onChange={(v) =>
+                  onUpdate(g.id, { evidence_class: v[0] ?? null })
+                }
               />
               <AutoField
                 label="Capability missing or constrained"
@@ -1274,7 +1450,9 @@ function GapsTab({
                 options={ROOT_CAPABILITY_DOMAINS}
                 selected={g.root_capability ? [g.root_capability] : []}
                 disabled={locked}
-                onChange={(v) => onUpdate(g.id, { root_capability: v[0] ?? null })}
+                onChange={(v) =>
+                  onUpdate(g.id, { root_capability: v[0] ?? null })
+                }
               />
 
               <p className="eyebrow pt-1">Ironclad bridge</p>
@@ -1301,7 +1479,9 @@ function GapsTab({
                     options={IRONCLAD_ACTIONS}
                     selected={g.ironclad_actions ?? []}
                     disabled={locked}
-                    onChange={(ironclad_actions) => onUpdate(g.id, { ironclad_actions })}
+                    onChange={(ironclad_actions) =>
+                      onUpdate(g.id, { ironclad_actions })
+                    }
                   />
                   <AutoField
                     label="Expected operational result (qualitative — no promised numbers)"
@@ -1326,7 +1506,9 @@ function GapsTab({
                   type="checkbox"
                   checked={g.is_top_finding}
                   disabled={locked}
-                  onChange={(e) => onUpdate(g.id, { is_top_finding: e.target.checked })}
+                  onChange={(e) =>
+                    onUpdate(g.id, { is_top_finding: e.target.checked })
+                  }
                 />
                 Top field finding
               </label>
@@ -1349,10 +1531,14 @@ function PriorityTab({
   locked: boolean;
   onUpdate: (id: string, values: Partial<FieldCapabilityGap>) => void;
 }) {
-  if (gaps.length === 0) return <EmptyState message="Capture capability gaps first." />;
+  if (gaps.length === 0)
+    return <EmptyState message="Capture capability gaps first." />;
   return (
     <div className="space-y-4">
-      <Panel title="Opportunity matrix" subtitle="Impact, effort, urgency and Ironclad fit drive the suggested priority">
+      <Panel
+        title="Opportunity matrix"
+        subtitle="Impact, effort, urgency and Ironclad fit drive the suggested priority"
+      >
         <div className="grid gap-4">
           {gaps.map((g, i) => (
             <div key={g.id} className="rounded-sm border border-border p-4">
@@ -1364,7 +1550,12 @@ function PriorityTab({
                   </p>
                 </div>
                 <div className="flex shrink-0 gap-1.5">
-                  {g.severity ? <Chip label={g.severity} className={severityToken[g.severity]} /> : null}
+                  {g.severity ? (
+                    <Chip
+                      label={g.severity}
+                      className={severityToken[g.severity]}
+                    />
+                  ) : null}
                   <Chip label={g.priority_code ?? suggestedPriority(g)} />
                 </div>
               </div>
@@ -1375,15 +1566,21 @@ function PriorityTab({
                   options={IMPACT_LEVELS}
                   selected={g.operational_impact ? [g.operational_impact] : []}
                   disabled={locked}
-                  onChange={(v) => onUpdate(g.id, { operational_impact: v[0] ?? null })}
+                  onChange={(v) =>
+                    onUpdate(g.id, { operational_impact: v[0] ?? null })
+                  }
                 />
                 <TagPicker
                   label="Implementation effort"
                   single
                   options={IMPACT_LEVELS}
-                  selected={g.implementation_effort ? [g.implementation_effort] : []}
+                  selected={
+                    g.implementation_effort ? [g.implementation_effort] : []
+                  }
                   disabled={locked}
-                  onChange={(v) => onUpdate(g.id, { implementation_effort: v[0] ?? null })}
+                  onChange={(v) =>
+                    onUpdate(g.id, { implementation_effort: v[0] ?? null })
+                  }
                 />
                 <TagPicker
                   label="Urgency"
@@ -1399,7 +1596,9 @@ function PriorityTab({
                   options={IRONCLAD_FIT}
                   selected={g.ironclad_fit ? [g.ironclad_fit] : []}
                   disabled={locked}
-                  onChange={(v) => onUpdate(g.id, { ironclad_fit: v[0] ?? null })}
+                  onChange={(v) =>
+                    onUpdate(g.id, { ironclad_fit: v[0] ?? null })
+                  }
                 />
                 <TagPicker
                   label="Priority"
@@ -1407,7 +1606,9 @@ function PriorityTab({
                   options={PRIORITY_CODES}
                   selected={g.priority_code ? [g.priority_code] : []}
                   disabled={locked}
-                  onChange={(v) => onUpdate(g.id, { priority_code: v[0] ?? null })}
+                  onChange={(v) =>
+                    onUpdate(g.id, { priority_code: v[0] ?? null })
+                  }
                 />
                 <TagPicker
                   label="Priority classification"
@@ -1415,11 +1616,15 @@ function PriorityTab({
                   options={PRIORITY_CLASSES}
                   selected={g.priority_class ? [g.priority_class] : []}
                   disabled={locked}
-                  onChange={(v) => onUpdate(g.id, { priority_class: v[0] ?? null })}
+                  onChange={(v) =>
+                    onUpdate(g.id, { priority_class: v[0] ?? null })
+                  }
                 />
               </div>
               {g.priority_class ? (
-                <p className="mt-2 text-xs text-muted-foreground">{PRIORITY_CLASS_HELP[g.priority_class]}</p>
+                <p className="mt-2 text-xs text-muted-foreground">
+                  {PRIORITY_CLASS_HELP[g.priority_class]}
+                </p>
               ) : null}
               {!g.priority_code ? (
                 <Button
@@ -1427,7 +1632,9 @@ function PriorityTab({
                   variant="outline"
                   className="mt-3"
                   disabled={locked}
-                  onClick={() => onUpdate(g.id, { priority_code: suggestedPriority(g) })}
+                  onClick={() =>
+                    onUpdate(g.id, { priority_code: suggestedPriority(g) })
+                  }
                 >
                   Apply suggested priority — {suggestedPriority(g)}
                 </Button>
@@ -1442,7 +1649,11 @@ function PriorityTab({
 
 /* ------------------------------ baseline tab ------------------------------ */
 
-function BaselineTab({ baseline }: { baseline: ReturnType<typeof fieldBaseline> }) {
+function BaselineTab({
+  baseline,
+}: {
+  baseline: ReturnType<typeof fieldBaseline>;
+}) {
   return (
     <Panel
       title="Preliminary field capability baseline"
@@ -1450,18 +1661,26 @@ function BaselineTab({ baseline }: { baseline: ReturnType<typeof fieldBaseline> 
     >
       <div className="grid gap-3">
         {baseline.domains.map((d) => (
-          <div key={d.domain.code} className="rounded-sm border border-border p-3">
+          <div
+            key={d.domain.code}
+            className="rounded-sm border border-border p-3"
+          >
             <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
               <div className="min-w-0">
                 <p className="truncate text-sm font-semibold text-foreground">
                   {d.domain.number}. {d.domain.title}
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  {BAND_LABEL[d.band]} · {d.observations} observations · coverage {d.coveragePct}% ·
-                  confidence {d.confidence}
+                  {BAND_LABEL[d.band]} · {d.observations} observations ·
+                  coverage {d.coveragePct}% · confidence {d.confidence}
                 </p>
               </div>
-              <p className={cn("metric shrink-0 text-2xl font-semibold", BAND_TEXT[d.band])}>
+              <p
+                className={cn(
+                  "metric shrink-0 text-2xl font-semibold",
+                  BAND_TEXT[d.band],
+                )}
+              >
                 {d.averageRating === null ? "—" : d.averageRating.toFixed(1)}
               </p>
             </div>
@@ -1472,7 +1691,9 @@ function BaselineTab({ baseline }: { baseline: ReturnType<typeof fieldBaseline> 
               />
             </div>
             {d.criticalGaps > 0 ? (
-              <p className="mt-2 text-xs font-semibold text-critical">{d.criticalGaps} critical gap(s)</p>
+              <p className="mt-2 text-xs font-semibold text-critical">
+                {d.criticalGaps} critical gap(s)
+              </p>
             ) : null}
           </div>
         ))}
@@ -1524,8 +1745,17 @@ function ReportTab({
         subtitle="AI drafts from your recorded material only. Review and edit before it leaves the building."
         actions={
           <div className="no-print flex gap-2">
-            <Button size="sm" variant="outline" disabled={aiBusy || locked} onClick={onDraft}>
-              {aiBusy ? <Loader2 className="size-4 animate-spin" aria-hidden /> : <Sparkles className="size-4" aria-hidden />}
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={aiBusy || locked}
+              onClick={onDraft}
+            >
+              {aiBusy ? (
+                <Loader2 className="size-4 animate-spin" aria-hidden />
+              ) : (
+                <Sparkles className="size-4" aria-hidden />
+              )}
               Draft with AI
             </Button>
             <Button size="sm" variant="outline" onClick={() => window.print()}>
@@ -1535,7 +1765,7 @@ function ReportTab({
         }
       >
         <AutoField
-          value={assessment['executive_summary']}
+          value={assessment["executive_summary"]}
           multiline
           rows={14}
           disabled={locked}
@@ -1548,10 +1778,15 @@ function ReportTab({
           <header>
             <p className="eyebrow">Ironclad Sustainment Solutions</p>
             <h2 className="text-lg font-semibold uppercase tracking-wide text-foreground">
-              Field Capability Assessment — {assessment['client_name'] ?? "Client"}
+              Field Capability Assessment —{" "}
+              {assessment["client_name"] ?? "Client"}
             </h2>
             <p className="text-xs text-muted-foreground">
-              {[assessment['facility_name'], assessment['facility_location'], assessment['assessment_date']]
+              {[
+                assessment["facility_name"],
+                assessment["facility_location"],
+                assessment["assessment_date"],
+              ]
                 .filter(Boolean)
                 .join(" · ")}
             </p>
@@ -1560,23 +1795,36 @@ function ReportTab({
           <section>
             <p className="eyebrow">Scope of this visit</p>
             <p className="text-foreground">
-              {walked.length} of {areas.length} capability areas walked · {observations.length}{" "}
-              observations recorded · {constrained.length} areas appear constrained
+              {walked.length} of {areas.length} capability areas walked ·{" "}
+              {observations.length} observations recorded · {constrained.length}{" "}
+              areas appear constrained
             </p>
           </section>
 
           <section>
             <p className="eyebrow">Client-stated problem</p>
-            <p className="whitespace-pre-wrap text-foreground">{assessment['problem_statement'] || "—"}</p>
+            <p className="whitespace-pre-wrap text-foreground">
+              {assessment["problem_statement"] || "—"}
+            </p>
           </section>
 
           <section>
             <p className="eyebrow">Field capability snapshot</p>
             <ul className="grid gap-1 sm:grid-cols-2">
               {areas.map((a) => (
-                <li key={a.area.code} className="flex items-baseline justify-between gap-3">
+                <li
+                  key={a.area.code}
+                  className="flex items-baseline justify-between gap-3"
+                >
                   <span className="text-foreground">{a.area.title}</span>
-                  <span className={cn("text-xs font-semibold", STATUS_TEXT[a.status])}>{a.status}</span>
+                  <span
+                    className={cn(
+                      "text-xs font-semibold",
+                      STATUS_TEXT[a.status],
+                    )}
+                  >
+                    {a.status}
+                  </span>
                 </li>
               ))}
             </ul>
@@ -1585,14 +1833,23 @@ function ReportTab({
           <section>
             <p className="eyebrow">Preliminary findings</p>
             {top.length === 0 ? (
-              <p className="text-muted-foreground">No findings flagged as top yet.</p>
+              <p className="text-muted-foreground">
+                No findings flagged as top yet.
+              </p>
             ) : (
               <ol className="list-decimal space-y-2 pl-4">
                 {top.map((g) => (
                   <li key={g.id}>
-                    <p className="font-semibold text-foreground">{g.title || g.observed_condition}</p>
+                    <p className="font-semibold text-foreground">
+                      {g.title || g.observed_condition}
+                    </p>
                     <p className="text-xs text-muted-foreground">
-                      {[areaTitle(g.focus_area), g.severity, g.priority_code, g.evidence_class]
+                      {[
+                        areaTitle(g.focus_area),
+                        g.severity,
+                        g.priority_code,
+                        g.evidence_class,
+                      ]
                         .filter(Boolean)
                         .join(" · ")}
                     </p>
@@ -1629,7 +1886,9 @@ function ReportTab({
           <section>
             <p className="eyebrow">Operational impact</p>
             {impacts.length === 0 ? (
-              <p className="text-muted-foreground">No operational impact has been recorded yet.</p>
+              <p className="text-muted-foreground">
+                No operational impact has been recorded yet.
+              </p>
             ) : (
               <ul className="list-disc space-y-1 pl-4 text-foreground">
                 {impacts.map((t, i) => (
@@ -1642,7 +1901,9 @@ function ReportTab({
           <section>
             <p className="eyebrow">Where Ironclad can support</p>
             {opportunities.length === 0 ? (
-              <p className="text-muted-foreground">No support areas identified yet.</p>
+              <p className="text-muted-foreground">
+                No support areas identified yet.
+              </p>
             ) : (
               <ul className="list-disc space-y-1 pl-4 text-foreground">
                 {opportunities.map((g) => (
@@ -1658,16 +1919,19 @@ function ReportTab({
           <section>
             <p className="eyebrow">Recommended next step</p>
             <p className="text-foreground">
-              {(assessment['recommended_path'] as string) || recommendation.path || "To be determined."}
+              {(assessment["recommended_path"] as string) ||
+                recommendation.path ||
+                "To be determined."}
             </p>
-            <p className="text-xs text-muted-foreground">{recommendation.rationale}</p>
+            <p className="text-xs text-muted-foreground">
+              {recommendation.rationale}
+            </p>
           </section>
-
 
           <section>
             <p className="eyebrow">Preliminary conclusion</p>
             <AutoField
-              value={assessment['preliminary_conclusion'] ?? DEFAULT_CONCLUSION}
+              value={assessment["preliminary_conclusion"] ?? DEFAULT_CONCLUSION}
               multiline
               rows={6}
               disabled={locked}
@@ -1676,8 +1940,9 @@ function ReportTab({
           </section>
 
           <p className="text-xs text-muted-foreground">
-            This document reflects a limited onsite walkthrough. Observations marked Reported, Inferred or
-            Requires Validation have not been independently verified. Restore Capability. Preserve Readiness.®
+            This document reflects a limited onsite walkthrough. Observations
+            marked Reported, Inferred or Requires Validation have not been
+            independently verified. Restore Capability. Preserve Readiness.®
           </p>
         </article>
       </Panel>
@@ -1687,7 +1952,11 @@ function ReportTab({
         subtitle="Carries the client problem, findings and evidence into a full IronIQ Capability Assessment"
       >
         <Button disabled={converting || locked} onClick={onConvert}>
-          {converting ? <Loader2 className="size-4 animate-spin" aria-hidden /> : <ArrowRight className="size-4" aria-hidden />}
+          {converting ? (
+            <Loader2 className="size-4 animate-spin" aria-hidden />
+          ) : (
+            <ArrowRight className="size-4" aria-hidden />
+          )}
           Launch full capability assessment
         </Button>
       </Panel>
@@ -1696,7 +1965,12 @@ function ReportTab({
         <Button
           size="lg"
           className="h-12 w-full"
-          onClick={() => set({ assessment_status: locked ? "In Review" : "Delivered", status: locked ? "open" : "submitted" })}
+          onClick={() =>
+            set({
+              assessment_status: locked ? "In Review" : "Delivered",
+              status: locked ? "open" : "submitted",
+            })
+          }
         >
           <Check className="size-4" aria-hidden />
           {locked ? "Reopen assessment" : "Mark delivered"}

@@ -57,7 +57,12 @@ export interface CapabilityResult {
   overallPercent: number | null;
   completionPct: number;
   severeCount: number;
-  severeCriteria: { domain: CapDomainRow; criterion: CapCriterionRow; dimension: CapDimension; score: number }[];
+  severeCriteria: {
+    domain: CapDomainRow;
+    criterion: CapCriterionRow;
+    dimension: CapDimension;
+    score: number;
+  }[];
 }
 
 export function computeCapability(
@@ -65,7 +70,9 @@ export function computeCapability(
   criteria: CapCriterionRow[],
   scores: CapScoreRow[],
 ): CapabilityResult {
-  const byKey = new Map(scores.map((s) => [`${s.criterion_id}:${s.dimension}`, s]));
+  const byKey = new Map(
+    scores.map((s) => [`${s.criterion_id}:${s.dimension}`, s]),
+  );
   const severeCriteria: CapabilityResult["severeCriteria"] = [];
   let ratedTotal = 0;
   let slotTotal = 0;
@@ -77,35 +84,50 @@ export function computeCapability(
         .filter((c) => c.domain_id === domain.id)
         .sort((a, b) => a.sort_order - b.sort_order);
 
-      const criteriaResults = domainCriteria.map<CriterionResult>((criterion) => {
-        const byDimension = {} as Record<CapDimension, CapScoreRow | undefined>;
-        const values: number[] = [];
-        let severe = false;
-        for (const d of DIMENSIONS) {
-          const row = byKey.get(`${criterion.id}:${d.key}`);
-          byDimension[d.key] = row;
-          slotTotal += 1;
-          if (isRated(row)) {
-            ratedTotal += 1;
-            values.push(row.score as number);
-            if ((row.score as number) <= 1) {
-              severe = true;
-              severeCriteria.push({ domain, criterion, dimension: d.key, score: row.score as number });
+      const criteriaResults = domainCriteria.map<CriterionResult>(
+        (criterion) => {
+          const byDimension = {} as Record<
+            CapDimension,
+            CapScoreRow | undefined
+          >;
+          const values: number[] = [];
+          let severe = false;
+          for (const d of DIMENSIONS) {
+            const row = byKey.get(`${criterion.id}:${d.key}`);
+            byDimension[d.key] = row;
+            slotTotal += 1;
+            if (isRated(row)) {
+              ratedTotal += 1;
+              values.push(row.score as number);
+              if ((row.score as number) <= 1) {
+                severe = true;
+                severeCriteria.push({
+                  domain,
+                  criterion,
+                  dimension: d.key,
+                  score: row.score as number,
+                });
+              }
             }
           }
-        }
-        return {
-          criterion,
-          score: values.length ? round1(values.reduce((a, b) => a + b, 0) / values.length) : null,
-          rated: values.length,
-          byDimension,
-          severe,
-        };
-      });
+          return {
+            criterion,
+            score: values.length
+              ? round1(values.reduce((a, b) => a + b, 0) / values.length)
+              : null,
+            rated: values.length,
+            byDimension,
+            severe,
+          };
+        },
+      );
 
       const rated = criteriaResults.filter((c) => c.score !== null);
       const score = rated.length
-        ? round1(rated.reduce((sum, c) => sum + (c.score as number), 0) / rated.length)
+        ? round1(
+            rated.reduce((sum, c) => sum + (c.score as number), 0) /
+              rated.length,
+          )
         : null;
 
       const dimensionScores = {} as Record<CapDimension, number | null>;
@@ -120,7 +142,9 @@ export function computeCapability(
       }
 
       const weakest = rated.length
-        ? rated.reduce((min, c) => ((c.score as number) < (min.score as number) ? c : min))
+        ? rated.reduce((min, c) =>
+            (c.score as number) < (min.score as number) ? c : min,
+          )
         : null;
 
       return {
@@ -138,7 +162,9 @@ export function computeCapability(
 
   const scored = domainResults.filter((d) => d.score !== null);
   const overall = scored.length
-    ? round1(scored.reduce((sum, d) => sum + (d.score as number), 0) / scored.length)
+    ? round1(
+        scored.reduce((sum, d) => sum + (d.score as number), 0) / scored.length,
+      )
     : null;
 
   return {
@@ -161,7 +187,11 @@ export function scoreToken(score: number | null): string {
 
 /* ---------- Prioritization ---------- */
 
-export const PRIORITY_FACTORS: { key: keyof CapActionRow; label: string; invert?: boolean }[] = [
+export const PRIORITY_FACTORS: {
+  key: keyof CapActionRow;
+  label: string;
+  invert?: boolean;
+}[] = [
   { key: "impact_rating", label: "Operational Impact" },
   { key: "urgency_rating", label: "Urgency" },
   { key: "severity_rating", label: "Severity" },
@@ -180,13 +210,19 @@ export function suggestedPriority(action: Partial<CapActionRow>): {
   score: number | null;
   priority: CapPriority | null;
 } {
-  const values = PRIORITY_FACTORS.map((f) => action[f.key] as number | null | undefined).filter(
-    (v): v is number => typeof v === "number",
-  );
+  const values = PRIORITY_FACTORS.map(
+    (f) => action[f.key] as number | null | undefined,
+  ).filter((v): v is number => typeof v === "number");
   if (values.length === 0) return { score: null, priority: null };
   const score = round1(values.reduce((a, b) => a + b, 0) / values.length);
   const priority: CapPriority =
-    score >= 4.2 ? "immediate" : score >= 3.4 ? "high" : score >= 2.4 ? "moderate" : "monitor";
+    score >= 4.2
+      ? "immediate"
+      : score >= 3.4
+        ? "high"
+        : score >= 2.4
+          ? "moderate"
+          : "monitor";
   return { score, priority };
 }
 
@@ -208,12 +244,17 @@ export function summarizeImprovement(
   action: Pick<CapActionRow, "baseline_value" | "target_value">,
   results: CapResultRow[],
 ): ImprovementSummary {
-  const ordered = [...results].sort((a, b) => a.measured_on.localeCompare(b.measured_on));
+  const ordered = [...results].sort(
+    (a, b) =>
+      new Date(a.measured_on).getTime() - new Date(b.measured_on).getTime(),
+  );
   const latest = ordered.at(-1)?.actual_value ?? null;
-  const previous = ordered.length > 1 ? (ordered.at(-2)?.actual_value ?? null) : null;
+  const previous =
+    ordered.length > 1 ? (ordered.at(-2)?.actual_value ?? null) : null;
   const baseline = action.baseline_value;
   const target = action.target_value;
-  const lowerIsBetter = baseline !== null && target !== null ? target < baseline : false;
+  const lowerIsBetter =
+    baseline !== null && target !== null ? target < baseline : false;
 
   if (baseline === null || latest === null) {
     return {
@@ -229,9 +270,16 @@ export function summarizeImprovement(
   }
 
   const absolute = round1(latest - baseline);
-  const percent = baseline === 0 ? null : round1(((latest - baseline) / Math.abs(baseline)) * 100);
+  const percent =
+    baseline === 0
+      ? null
+      : round1(((latest - baseline) / Math.abs(baseline)) * 100);
   const targetAchieved =
-    target === null ? null : lowerIsBetter ? latest <= target : latest >= target;
+    target === null
+      ? null
+      : lowerIsBetter
+        ? latest <= target
+        : latest >= target;
 
   let trend: ImprovementSummary["trend"] = "flat";
   if (previous !== null && previous !== latest) {
@@ -239,10 +287,22 @@ export function summarizeImprovement(
     trend = better ? "improving" : "declining";
   }
 
-  return { baseline, target, actual: latest, absolute, percent, targetAchieved, lowerIsBetter, trend };
+  return {
+    baseline,
+    target,
+    actual: latest,
+    absolute,
+    percent,
+    targetAchieved,
+    lowerIsBetter,
+    trend,
+  };
 }
 
-export function formatValue(v: number | null | undefined, unit?: string | null): string {
+export function formatValue(
+  v: number | null | undefined,
+  unit?: string | null,
+): string {
   if (v === null || v === undefined || Number.isNaN(Number(v))) return "—";
   const n = Number(v);
   const text = Number.isInteger(n) ? String(n) : String(round1(n));

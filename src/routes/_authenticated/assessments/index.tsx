@@ -1,10 +1,18 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Plus } from "lucide-react";
-import { PageHeader, Panel, EmptyState } from "@/components/ironiq/layout-primitives";
-import { AssessmentStatusBadge, ReadinessBadge } from "@/components/ironiq/badges";
+import {
+  PageHeader,
+  Panel,
+  EmptyState,
+} from "@/components/ironiq/layout-primitives";
+import {
+  AssessmentStatusBadge,
+  ReadinessBadge,
+} from "@/components/ironiq/badges";
 import { useApp } from "@/context/app-context";
 import { useAssessments } from "@/lib/api";
 import { formatScore, readinessLevelFor } from "@/lib/scoring";
+import { formatDate } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/_authenticated/assessments/")({
@@ -17,7 +25,10 @@ export const Route = createFileRoute("/_authenticated/assessments/")({
           "Baseline, follow-up and pre-award manufacturing readiness assessments with status, completion and scoring.",
       },
       { property: "og:title", content: "Assessments — IronIQ" },
-      { property: "og:description", content: "Manufacturing readiness assessment workflow and history." },
+      {
+        property: "og:description",
+        content: "Manufacturing readiness assessment workflow and history.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
@@ -55,7 +66,15 @@ function AssessmentsPage() {
             <table className="w-full min-w-[46rem] text-sm">
               <thead>
                 <tr className="border-b border-border text-left">
-                  {["Assessment", "Type", "Date", "Status", "Completion", "Score", "Readiness"].map((h) => (
+                  {[
+                    "Assessment",
+                    "Type",
+                    "Date",
+                    "Status",
+                    "Completion",
+                    "Score",
+                    "Readiness",
+                  ].map((h) => (
                     <th key={h} className="eyebrow px-5 py-3 font-semibold">
                       {h}
                     </th>
@@ -64,7 +83,10 @@ function AssessmentsPage() {
               </thead>
               <tbody className="divide-y divide-border">
                 {assessments.map((a) => (
-                  <tr key={a.id} className="transition-colors hover:bg-accent/40">
+                  <tr
+                    key={a.id}
+                    className="transition-colors hover:bg-accent/40"
+                  >
                     <td className="px-5 py-4">
                       <Link
                         to="/assessments/$assessmentId"
@@ -74,30 +96,37 @@ function AssessmentsPage() {
                         {a.name}
                       </Link>
                       <p className="mt-0.5 text-xs text-muted-foreground">
-                        {a.lead_assessor ?? "Unassigned"} · {a.production_area ?? "Full site"}
+                        {a.lead_assessor ?? "Unassigned"} ·{" "}
+                        {a.production_area ?? "Full site"}
                       </p>
                     </td>
                     <td className="px-5 py-4 capitalize text-muted-foreground">
                       {a.assessment_type?.replace(/_/g, " ") ?? "—"}
                     </td>
-                    <td className="metric px-5 py-4 text-muted-foreground">{a.assessment_date}</td>
+                    <td className="metric px-5 py-4 text-muted-foreground">
+                      {formatDate(a.assessment_date)}
+                    </td>
                     <td className="px-5 py-4">
                       <AssessmentStatusBadge status={a.status} />
                     </td>
-                    <td className="metric px-5 py-4">{formatScore(a.completion_pct, "%")}</td>
-                    <td className="metric px-5 py-4 font-semibold">{formatScore(a.overall_score)}</td>
+                    <td className="metric px-5 py-4">
+                      {formatScore(a.completion_pct, "%")}
+                    </td>
+                    <td className="metric px-5 py-4 font-semibold">
+                      {formatScore(a.overall_score)}
+                    </td>
                     <td className="px-5 py-4">
                       {/* Readiness is only rated once the assessment is fully scored. */}
                       <ReadinessBadge
                         level={
-                          a.overall_score === null || Number(a.completion_pct) < 100
+                          a.overall_score === null ||
+                          Number(a.completion_pct) < 100
                             ? null
                             : ((a.readiness_level as never) ??
                               readinessLevelFor(Number(a.overall_score)))
                         }
                       />
                     </td>
-
                   </tr>
                 ))}
               </tbody>

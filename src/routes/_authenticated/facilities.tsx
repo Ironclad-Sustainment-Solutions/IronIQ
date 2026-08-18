@@ -9,6 +9,7 @@ import { ReadinessBadge, Tag } from "@/components/ironiq/badges";
 import { useApp } from "@/context/app-context";
 import { useFacilities } from "@/lib/api";
 import { formatScore, readinessLevelFor } from "@/lib/scoring";
+import { formatDate } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
@@ -92,7 +93,10 @@ function FacilitiesPage() {
                       level={score === null ? null : readinessLevelFor(score)}
                     />
                     <span className="text-xs text-muted-foreground">
-                      Last assessed {f.last_assessment_date ?? "never"}
+                      Last assessed{" "}
+                      {f.last_assessment_date
+                        ? formatDate(f.last_assessment_date)
+                        : "never"}
                     </span>
                   </div>
 

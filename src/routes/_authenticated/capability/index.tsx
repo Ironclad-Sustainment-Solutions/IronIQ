@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Tag } from "@/components/ironiq/badges";
+import { formatDate } from "@/lib/utils";
 import { useApp } from "@/context/app-context";
 import {
   useCapAssessments,
@@ -220,7 +221,7 @@ function CapabilityIndex() {
                     {a.name}
                   </span>
                   <span className="text-xs text-muted-foreground">
-                    {a.assessment_date}
+                    {formatDate(a.assessment_date)}
                   </span>
                   <Tag token={statusToken[a.status]}>
                     {CAP_STATUS_LABELS[a.status]}

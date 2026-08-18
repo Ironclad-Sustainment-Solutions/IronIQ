@@ -9,6 +9,7 @@ import { SeverityBadge, FindingStatusBadge } from "@/components/ironiq/badges";
 import { useApp } from "@/context/app-context";
 import { useCorrectiveActions, useFindings } from "@/lib/api";
 import { SEVERITY_ORDER } from "@/lib/domain";
+import { formatDate } from "@/lib/utils";
 import {
   FindingDialog,
   CorrectiveActionDialog,
@@ -120,7 +121,7 @@ function FindingsPage() {
                       <dt className="eyebrow">Owner / target</dt>
                       <dd className="mt-0.5 text-muted-foreground">
                         {f.assigned_owner ?? "Unassigned"} ·{" "}
-                        {f.target_date ?? "no date"}
+                        {formatDate(f.target_date)}
                       </dd>
                     </div>
                   </dl>
@@ -154,7 +155,7 @@ function FindingsPage() {
                               </span>
                               <span className="metric text-xs text-muted-foreground">
                                 {a.owner ?? "—"} ·{" "}
-                                {a.completed_date ?? a.target_date ?? "—"}
+                                {formatDate(a.completed_date ?? a.target_date)}
                               </span>
                               {can("manage_findings") && facility ? (
                                 <CorrectiveActionDialog
@@ -185,7 +186,7 @@ function FindingsPage() {
                         Closure evidence:{" "}
                       </span>
                       {f.closure_evidence} — verified by {f.verified_by ?? "—"}{" "}
-                      on {f.verification_date ?? "—"}
+                      on {formatDate(f.verification_date)}
                     </p>
                   ) : null}
                 </div>
