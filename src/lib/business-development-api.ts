@@ -24,12 +24,26 @@ export interface Prospect {
   expected_close_date: string | null;
   lost_reason: string | null;
   assigned_to: string | null;
+  assigned_to_name: string | null;
   created_by: string | null;
   created_at: string;
   updated_at: string;
   note_count: string;
   interaction_count: string;
   last_interaction_at: string | null;
+}
+
+export interface StaffMember {
+  id: string;
+  full_name: string | null;
+  email: string | null;
+}
+
+export function useStaffMembers() {
+  return useQuery({
+    queryKey: ["staff-members"],
+    queryFn: () => fn.fetchStaffMembers() as Promise<StaffMember[]>,
+  });
 }
 
 export interface ProspectContact {

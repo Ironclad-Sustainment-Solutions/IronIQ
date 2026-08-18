@@ -47,6 +47,7 @@ import {
   useDeleteNote,
   useSaveMeeting,
   useDeleteMeeting,
+  useStaffMembers,
   STAGES,
   type ProspectStage,
   type ProspectContact,
@@ -103,7 +104,7 @@ function ProspectDetailPage() {
       <PageHeader
         eyebrow={prospect.industry ?? "Prospect"}
         title={prospect.company_name}
-        description={`Stage: ${stageInfo?.label ?? prospect.stage}`}
+        description={`Stage: ${stageInfo?.label ?? prospect.stage} · Assigned to: ${prospect.assigned_to_name ?? "Unassigned"}`}
         actions={
           <div className="flex gap-2">
             <EditProspectDialog prospect={prospect} />
@@ -209,10 +210,12 @@ function EditProspectDialog({
     estimated_value: string | null;
     expected_close_date: string | null;
     lost_reason: string | null;
+    assigned_to: string | null;
   };
 }) {
   const [open, setOpen] = useState(false);
   const save = useSaveProspect();
+  const staff = useStaffMembers();
   const [form, setForm] = useState({
     company_name: prospect.company_name,
     industry: prospect.industry ?? "",
@@ -220,6 +223,7 @@ function EditProspectDialog({
     estimated_value: prospect.estimated_value ?? "",
     expected_close_date: prospect.expected_close_date ?? "",
     lost_reason: prospect.lost_reason ?? "",
+    assigned_to: prospect.assigned_to ?? "",
   });
 
   return (
@@ -274,6 +278,29 @@ function EditProspectDialog({
               </SelectContent>
             </Select>
           </Field>
+          <Field label="Assigned to">
+            <Select
+              value={form.assigned_to || "unassigned"}
+              onValueChange={(v) =>
+                setForm((f) => ({
+                  ...f,
+                  assigned_to: v === "unassigned" ? "" : v,
+                }))
+              }
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="unassigned">Unassigned</SelectItem>
+                {(staff.data ?? []).map((s) => (
+                  <SelectItem key={s.id} value={s.id}>
+                    {s.full_name ?? s.email ?? "Unnamed"}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </Field>
           <Field label="Estimated value ($)">
             <Input
               type="number"
@@ -321,6 +348,7 @@ function EditProspectDialog({
                     : null,
                   expected_close_date: form.expected_close_date || null,
                   lost_reason: form.lost_reason || null,
+                  assigned_to: form.assigned_to || null,
                 },
                 { onSuccess: () => setOpen(false) },
               )
