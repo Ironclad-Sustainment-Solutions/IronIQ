@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireAuth } from "@/lib/auth/auth-middleware";
 import { withUser } from "@/lib/db.server";
 import { assertColumnsAllowed } from "@/lib/column-allowlist";
+import { assertProductAllowedForAssessment } from "@/lib/product-access-check.server";
 
 const PersistAggregatesInput = z.object({
   assessmentId: z.string().uuid(),
@@ -18,6 +19,7 @@ export const persistAssessmentAggregates = createServerFn({ method: "POST" })
   .middleware([requireAuth])
   .inputValidator((d: unknown) => PersistAggregatesInput.parse(d))
   .handler(async ({ data, context }) => {
+    await assertProductAllowedForAssessment(context.userId, data.assessmentId, "assessment");
     const values = {
       overall_score: data.overallScore,
       confidence_score: data.confidenceScore,

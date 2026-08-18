@@ -4,6 +4,12 @@ import { requireAuth } from "@/lib/auth/auth-middleware";
 import { withUser } from "@/lib/db.server";
 import { assertColumnsAllowed } from "@/lib/column-allowlist";
 import {
+  assertProductAllowed,
+  assertProductAllowedForFinding,
+  assertProductAllowedForCorrectiveAction,
+  assertProductAllowedForImprovementProject,
+} from "@/lib/product-access-check.server";
+import {
   captureFromFinding,
   captureFromCorrectiveAction,
   captureFromProject,
@@ -105,6 +111,7 @@ export const updateFinding = createServerFn({ method: "POST" })
   .middleware([requireAuth])
   .inputValidator((d: unknown) => UpdateFindingInput.parse(d))
   .handler(async ({ data, context }) => {
+    await assertProductAllowedForFinding(context.userId, data.id, "assessment");
     await withUser(context.userId, (client) =>
       upsert(client, "findings", data.id, data.values),
     );
@@ -175,6 +182,15 @@ export const saveCorrectiveAction = createServerFn({ method: "POST" })
   .middleware([requireAuth])
   .inputValidator((d: unknown) => SaveCorrectiveActionInput.parse(d))
   .handler(async ({ data, context }) => {
+    if (data.id) {
+      await assertProductAllowedForCorrectiveAction(context.userId, data.id, "assessment");
+    } else {
+      const findingId = data.values["finding_id"];
+      if (typeof findingId !== "string") {
+        throw new Error("finding_id is required to create a corrective action.");
+      }
+      await assertProductAllowedForFinding(context.userId, findingId, "assessment");
+    }
     const { rows } = await withUser(context.userId, async (client) => {
       if (data.id) {
         await upsert(client, "corrective_actions", data.id, data.values);
@@ -206,6 +222,7 @@ export const deleteCorrectiveAction = createServerFn({ method: "POST" })
   .middleware([requireAuth])
   .inputValidator((d: unknown) => DeleteCorrectiveActionInput.parse(d))
   .handler(async ({ data, context }) => {
+    await assertProductAllowedForCorrectiveAction(context.userId, data.id, "assessment");
     await withUser(context.userId, (client) =>
       client.query("DELETE FROM public.corrective_actions WHERE id = $1", [
         data.id,
@@ -223,6 +240,15 @@ export const saveImprovementProject = createServerFn({ method: "POST" })
   .middleware([requireAuth])
   .inputValidator((d: unknown) => SaveImprovementProjectInput.parse(d))
   .handler(async ({ data, context }) => {
+    if (data.id) {
+      await assertProductAllowedForImprovementProject(context.userId, data.id, "assessment");
+    } else {
+      const organizationId = data.values["organization_id"];
+      if (typeof organizationId !== "string") {
+        throw new Error("organization_id is required to create an improvement project.");
+      }
+      await assertProductAllowed(context.userId, organizationId, "assessment");
+    }
     const { rows } = await withUser(context.userId, async (client) => {
       if (data.id) {
         await upsert(client, "improvement_projects", data.id, data.values);
@@ -254,6 +280,7 @@ export const deleteImprovementProject = createServerFn({ method: "POST" })
   .middleware([requireAuth])
   .inputValidator((d: unknown) => DeleteImprovementProjectInput.parse(d))
   .handler(async ({ data, context }) => {
+    await assertProductAllowedForImprovementProject(context.userId, data.id, "assessment");
     await withUser(context.userId, (client) =>
       client.query("DELETE FROM public.improvement_projects WHERE id = $1", [
         data.id,
