@@ -146,9 +146,9 @@ const BUSINESS_DEV_NAV: {
   items: { to: string; label: string; icon: typeof LayoutDashboard }[];
 }[] = [
   {
-    section: "Pipeline",
+    section: "Business Leads",
     items: [
-      { to: "/business-development", label: "Pipeline", icon: Handshake },
+      { to: "/business-development", label: "Business Leads", icon: Handshake },
     ],
   },
 ];
