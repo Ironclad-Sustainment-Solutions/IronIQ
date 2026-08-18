@@ -4,6 +4,15 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { AlertTriangle, Loader2, Ruler, ShieldAlert } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogAction,
+} from "@/components/ui/alert-dialog";
 import { PageHeader, Panel, EmptyState } from "@/components/ironiq/layout-primitives";
 
 import { Tag } from "@/components/ironiq/badges";
@@ -26,6 +35,7 @@ import {
   type EstimatingPart,
 } from "@/lib/rfq-api";
 import { submitGeometryAnalysis } from "@/lib/geometry.functions";
+import { attestExportControlledAccess } from "@/lib/rfq-api.functions";
 import { calculateEstimate } from "@/lib/estimating";
 import {
   CONFIDENCE_LABELS,
@@ -133,6 +143,7 @@ function EstimatesPage() {
 function EstimateWorkspace({ item, facilityId }: { item: EstimatingPart; facilityId?: string }) {
   const queryClient = useQueryClient();
   const runAnalysis = useServerFn(submitGeometryAnalysis);
+  const attestAccess = useServerFn(attestExportControlledAccess);
   const runsQuery = useGeometryRuns(item.part.id);
   const machines = useMachines(facilityId).data ?? [];
   const materials = useMaterials().data ?? [];
@@ -141,6 +152,77 @@ function EstimateWorkspace({ item, facilityId }: { item: EstimatingPart; facilit
   const [quantity, setQuantity] = useState(item.part.quantity);
   const [margin, setMargin] = useState(35);
   const [programmingRate, setProgrammingRate] = useState(95);
+
+  // rfqs.itar / rfqs.cui / rfqs.export_controlled previously gated
+  // nothing -- any RLS-scoped user could open a flagged RFQ exactly like
+  // any other one, with no record of who'd looked at it. This is a
+  // lightweight click-through attestation + audit log, not a hard access
+  // control or step-up re-auth: every distinct time someone opens a
+  // flagged RFQ (this component remounts per part.id selection — see the
+  // `key` prop where it's rendered), they have to affirmatively confirm
+  // before the detail renders, and that confirmation is what gets logged.
+  const flagged = item.rfq.itar || item.rfq.cui || item.rfq.export_controlled;
+  const [attested, setAttested] = useState(false);
+  const [attesting, setAttesting] = useState(false);
+
+  async function confirmAttestation() {
+    setAttesting(true);
+    try {
+      await attestAccess({ data: { rfqId: item.rfq.id } });
+      setAttested(true);
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Could not confirm access — try again.",
+      );
+    } finally {
+      setAttesting(false);
+    }
+  }
+
+  if (flagged && !attested) {
+    const flags = [
+      item.rfq.itar ? "ITAR" : null,
+      item.rfq.cui ? "CUI" : null,
+      item.rfq.export_controlled ? "Export Controlled" : null,
+    ].filter(Boolean);
+
+    return (
+      <div className="min-w-0">
+        <Panel title="Export-controlled RFQ">
+          <div className="flex flex-col items-center gap-3 py-10 text-center">
+            <ShieldAlert className="size-8 text-medium" aria-hidden />
+            <p className="text-sm font-medium text-foreground">
+              {item.rfq.rfq_number} is flagged {flags.join(" · ")}
+            </p>
+            <p className="max-w-md text-sm text-muted-foreground">
+              Confirm you're authorized to view export-controlled data before this RFQ's
+              details, drawings, and cost build-up are shown. This confirmation is logged.
+            </p>
+          </div>
+        </Panel>
+        <AlertDialog open onOpenChange={() => {}}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Export-controlled data — {flags.join(" · ")}</AlertDialogTitle>
+              <AlertDialogDescription>
+                {item.rfq.rfq_number} ({item.rfq.title}) is flagged as {flags.join(", ")}.
+                By continuing, you confirm you are authorized to view export-controlled
+                data for this RFQ. This access is recorded in the audit log.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogAction disabled={attesting} onClick={() => void confirmAttestation()}>
+                {attesting ? (
+                  <Loader2 className="size-4 animate-spin" aria-hidden />
+                ) : null}
+                I confirm I'm authorized to view export-controlled data
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </div>
+    );
+  }
 
   const latestRun = (runsQuery.data ?? []).find((r) => r.status === "complete") ?? null;
   const geometry: GeometryResult | null = latestRun?.result ?? null;
