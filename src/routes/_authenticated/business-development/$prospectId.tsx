@@ -124,7 +124,7 @@ function ProspectDetailPage() {
                   </AlertDialogTitle>
                   <AlertDialogDescription>
                     This removes the prospect along with every contact, note,
-                    and meeting recorded for it. This cannot be undone.
+                    and interaction recorded for it. This cannot be undone.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
@@ -147,38 +147,11 @@ function ProspectDetailPage() {
         }
       />
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        <Panel
-          title="Contacts"
-          actions={<AddContactDialog prospectId={prospect.id} />}
-        >
-          {contacts.length === 0 ? (
-            <EmptyState message="No contacts added yet." />
-          ) : (
-            <div className="space-y-3">
-              {contacts.map((c) => (
-                <ContactRow key={c.id} contact={c} prospectId={prospect.id} />
-              ))}
-            </div>
-          )}
-        </Panel>
-
-        <Panel
-          title="Meetings"
-          actions={<AddMeetingDialog prospectId={prospect.id} />}
-        >
-          {meetings.length === 0 ? (
-            <EmptyState message="No meetings logged yet." />
-          ) : (
-            <div className="space-y-3">
-              {meetings.map((m) => (
-                <MeetingRow key={m.id} meeting={m} prospectId={prospect.id} />
-              ))}
-            </div>
-          )}
-        </Panel>
-      </div>
-
+      {/* Notes and Interactions lead, full-width — this is what actually
+          matters most day to day (per direct feedback: tracking every
+          interaction while a prospect is in the growth stage). Contacts
+          is useful reference info, but secondary, so it's pushed below
+          rather than competing for the same visual weight. */}
       <Panel title="Notes" actions={<AddNoteDialog prospectId={prospect.id} />}>
         {notes.length === 0 ? (
           <EmptyState message="No notes yet — jot down anything worth remembering." />
@@ -186,6 +159,37 @@ function ProspectDetailPage() {
           <div className="space-y-3">
             {notes.map((n) => (
               <NoteRow key={n.id} note={n} prospectId={prospect.id} />
+            ))}
+          </div>
+        )}
+      </Panel>
+
+      <Panel
+        title="Interactions"
+        subtitle="Every call, email, and meeting — a running history, not just formal meetings"
+        actions={<AddMeetingDialog prospectId={prospect.id} />}
+      >
+        {meetings.length === 0 ? (
+          <EmptyState message="No interactions logged yet." />
+        ) : (
+          <div className="space-y-3">
+            {meetings.map((m) => (
+              <MeetingRow key={m.id} meeting={m} prospectId={prospect.id} />
+            ))}
+          </div>
+        )}
+      </Panel>
+
+      <Panel
+        title="Contacts"
+        actions={<AddContactDialog prospectId={prospect.id} />}
+      >
+        {contacts.length === 0 ? (
+          <EmptyState message="No contacts added yet." />
+        ) : (
+          <div className="grid gap-3 sm:grid-cols-2">
+            {contacts.map((c) => (
+              <ContactRow key={c.id} contact={c} prospectId={prospect.id} />
             ))}
           </div>
         )}
@@ -561,6 +565,16 @@ function AddNoteDialog({ prospectId }: { prospectId: string }) {
   );
 }
 
+const INTERACTION_TYPE_LABELS: Record<
+  ProspectMeeting["interaction_type"],
+  string
+> = {
+  meeting: "Meeting",
+  call: "Call",
+  email: "Email",
+  other: "Other",
+};
+
 function MeetingRow({
   meeting,
   prospectId,
@@ -573,11 +587,16 @@ function MeetingRow({
     <div className="rounded-md border border-border p-3">
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <p className="text-sm font-medium text-foreground">
-            {new Date(meeting.meeting_date).toLocaleDateString()}
-          </p>
+          <div className="flex items-center gap-2">
+            <Tag token="steel">
+              {INTERACTION_TYPE_LABELS[meeting.interaction_type]}
+            </Tag>
+            <p className="text-sm font-medium text-foreground">
+              {new Date(meeting.meeting_date).toLocaleDateString()}
+            </p>
+          </div>
           {meeting.attendees ? (
-            <p className="text-xs text-muted-foreground">
+            <p className="mt-1 text-xs text-muted-foreground">
               Attendees: {meeting.attendees}
             </p>
           ) : null}
@@ -607,6 +626,7 @@ function AddMeetingDialog({ prospectId }: { prospectId: string }) {
   const save = useSaveMeeting();
   const [form, setForm] = useState({
     meeting_date: new Date().toISOString().slice(0, 10),
+    interaction_type: "meeting" as ProspectMeeting["interaction_type"],
     attendees: "",
     summary: "",
     next_steps: "",
@@ -616,14 +636,41 @@ function AddMeetingDialog({ prospectId }: { prospectId: string }) {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button variant="ghost" size="sm">
-          <Plus className="size-3.5" aria-hidden /> Log meeting
+          <Plus className="size-3.5" aria-hidden /> Log interaction
         </Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Log a meeting</DialogTitle>
+          <DialogTitle>Log an interaction</DialogTitle>
+          <DialogDescription>
+            A call, an email, a meeting — anything worth tracking.
+          </DialogDescription>
         </DialogHeader>
         <div className="space-y-3">
+          <Field label="Type">
+            <Select
+              value={form.interaction_type}
+              onValueChange={(v) =>
+                setForm((f) => ({
+                  ...f,
+                  interaction_type: v as ProspectMeeting["interaction_type"],
+                }))
+              }
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {Object.entries(INTERACTION_TYPE_LABELS).map(
+                  ([value, label]) => (
+                    <SelectItem key={value} value={value}>
+                      {label}
+                    </SelectItem>
+                  ),
+                )}
+              </SelectContent>
+            </Select>
+          </Field>
           <Field label="Date">
             <Input
               type="date"
@@ -668,6 +715,7 @@ function AddMeetingDialog({ prospectId }: { prospectId: string }) {
                 {
                   prospectId,
                   meeting_date: form.meeting_date,
+                  interaction_type: form.interaction_type,
                   attendees: form.attendees || null,
                   summary: form.summary || null,
                   next_steps: form.next_steps || null,
@@ -677,6 +725,7 @@ function AddMeetingDialog({ prospectId }: { prospectId: string }) {
                     setOpen(false);
                     setForm({
                       meeting_date: new Date().toISOString().slice(0, 10),
+                      interaction_type: "meeting",
                       attendees: "",
                       summary: "",
                       next_steps: "",
@@ -686,7 +735,7 @@ function AddMeetingDialog({ prospectId }: { prospectId: string }) {
               )
             }
           >
-            Log meeting
+            Log interaction
           </Button>
         </DialogFooter>
       </DialogContent>
