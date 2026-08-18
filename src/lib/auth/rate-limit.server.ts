@@ -1,13 +1,18 @@
 import { withAdmin } from "@/lib/db.server";
 
 /**
- * DB-backed sliding-window rate limiter for auth endpoints (login, signup).
- * Deliberately not in-memory: an in-memory counter resets on every deploy
- * or restart (trivial to defeat against a host that redeploys/restarts
- * regularly) and doesn't work correctly if this ever runs as more than one
- * instance. Every check/record happens inside withAdmin's existing
- * transaction with `SELECT ... FOR UPDATE`, so concurrent requests for the
- * same identifier serialize instead of racing past each other.
+ * DB-backed sliding-window rate limiter. Originally built for auth
+ * endpoints (login, signup) but generic over any string identifier --
+ * also used to cap per-user usage of the AI-calling endpoints (cost
+ * control, not a security boundary: these all require requireAuth
+ * already, this just stops one account from running up the Anthropic
+ * bill). Deliberately not in-memory: an in-memory counter resets on
+ * every deploy or restart (trivial to defeat against a host that
+ * redeploys/restarts regularly) and doesn't work correctly if this ever
+ * runs as more than one instance. Every check/record happens inside
+ * withAdmin's existing transaction with `SELECT ... FOR UPDATE`, so
+ * concurrent requests for the same identifier serialize instead of
+ * racing past each other.
  */
 
 export class RateLimitedError extends Error {
@@ -31,9 +36,9 @@ interface RateLimitOptions {
 
 /**
  * Throws RateLimitedError if `identifier` is currently locked out. Callers
- * should check this *before* doing any real work (e.g. bcrypt.compare),
- * so a locked-out caller can't use the expensive path as a timing oracle
- * or to burn CPU.
+ * should check this *before* doing any real work (e.g. bcrypt.compare, or
+ * an actual Anthropic API call), so a locked-out caller can't use the
+ * expensive path as a timing oracle, to burn CPU, or to run up API costs.
  */
 export async function assertNotRateLimited(identifier: string): Promise<void> {
   await withAdmin(async (client) => {
@@ -52,11 +57,14 @@ export async function assertNotRateLimited(identifier: string): Promise<void> {
 }
 
 /**
- * Records a failed attempt for `identifier`, locking it out once
- * `maxAttempts` is reached within `windowMs`. Call this after a failed
- * login/signup attempt, never after a successful one.
+ * Records an attempt against `identifier`, locking it out once
+ * `maxAttempts` is reached within `windowMs`. For login, only call this
+ * after a failed attempt (a correct password shouldn't count against the
+ * limit). For usage-based limits like the AI endpoints, call this on
+ * every attempt regardless of outcome, since cost is what's being capped,
+ * not credential guesses.
  */
-export async function recordFailedAttempt(
+export async function recordAttempt(
   identifier: string,
   { maxAttempts, windowMs, lockoutMs }: RateLimitOptions,
 ): Promise<void> {
@@ -119,3 +127,29 @@ export const SIGNUP_IP_LIMIT: RateLimitOptions = {
   windowMs: 60 * 60 * 1000,
   lockoutMs: 60 * 60 * 1000,
 };
+
+// Generous enough that no legitimate assessor workflow should ever hit it
+// (e.g. cleaning up several field notes in a row during a walkthrough),
+// but caps sustained automated abuse of endpoints that cost real money
+// per call. One shared budget across every AI-calling endpoint per user,
+// rather than a separate counter per endpoint -- rotating between
+// different AI features to dodge a per-endpoint cap shouldn't work.
+export const AI_USER_LIMIT: RateLimitOptions = {
+  maxAttempts: 60,
+  windowMs: 10 * 60 * 1000,
+  lockoutMs: 10 * 60 * 1000,
+};
+
+/**
+ * Checks the shared per-user AI-usage limit and records this attempt in
+ * one call, before any real work happens. Simpler than a try/finally
+ * wrapper around the whole handler body (which risks brace-matching
+ * mistakes across many different handler shapes) and equally correct for
+ * cost control: what matters is that every actual invocation counts once,
+ * not precisely when within the request it's recorded.
+ */
+export async function checkAndRecordAiUsage(userId: string): Promise<void> {
+  const key = `ai:user:${userId}`;
+  await assertNotRateLimited(key);
+  await recordAttempt(key, AI_USER_LIMIT);
+}

@@ -14,6 +14,7 @@ import { generateText, Output } from "ai";
 import { z } from "zod";
 import { createAnthropicProvider } from "./ai-gateway.server";
 import { requireAuth } from "@/lib/auth/auth-middleware";
+import { checkAndRecordAiUsage } from "@/lib/auth/rate-limit.server";
 import { ALLOWED_FIELD_PATHS } from "@/lib/intake-mapping";
 import {
   BULK_INTAKE_EXTENSION,
@@ -60,6 +61,7 @@ export const mapIntakeToTemplateAssessment = createServerFn({ method: "POST" })
   .middleware([requireAuth])
   .inputValidator((input: unknown) => MapTemplateInput.parse(input))
   .handler(async ({ data, context }) => {
+    await checkAndRecordAiUsage(context.userId);
     const result = await generateText({
       model: gateway()(MODEL),
       system: GUARDRAILS + BULK_INTAKE_EXTENSION,
