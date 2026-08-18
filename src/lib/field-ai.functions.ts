@@ -47,6 +47,7 @@ function gateway() {
 const SummaryInput = z.object({ context: z.string().min(1).max(24000) });
 
 export const draftFieldExecutiveSummary = createServerFn({ method: "POST" })
+  .middleware([requireAuth])
   .inputValidator((input: unknown) => SummaryInput.parse(input))
   .handler(async ({ data }) => {
     const result = await generateText({
@@ -79,6 +80,7 @@ const NoteInput = z.object({
 });
 
 export const cleanFieldNote = createServerFn({ method: "POST" })
+  .middleware([requireAuth])
   .inputValidator((input: unknown) => NoteInput.parse(input))
   .handler(async ({ data }) => {
     const result = await generateText({
@@ -113,6 +115,7 @@ const ValidationInput = z.object({ finding: z.string().min(1).max(6000) });
 
 /** Questions the assessor should ask the client to validate a preliminary finding. */
 export const suggestValidationQuestions = createServerFn({ method: "POST" })
+  .middleware([requireAuth])
   .inputValidator((input: unknown) => ValidationInput.parse(input))
   .handler(async ({ data }) => {
     const result = await generateText({
@@ -136,6 +139,7 @@ ${data.finding}`,
 const BridgeInput = z.object({ gap: z.string().min(1).max(6000) });
 
 export const draftIroncladBridge = createServerFn({ method: "POST" })
+  .middleware([requireAuth])
   .inputValidator((input: unknown) => BridgeInput.parse(input))
   .handler(async ({ data }) => {
     const result = await generateText({
