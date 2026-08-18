@@ -183,7 +183,31 @@ if (unlisted.length > 0) {
   );
 }
 
-const client = new pg.Client({ connectionString, ssl: { rejectUnauthorized: false } });
+// SSL is enabled by default for remote hosts (Render's managed Postgres
+// requires it for external connections) but explicitly disabled for
+// localhost/loopback -- a vanilla local Postgres or CI service container
+// (e.g. the pgvector/pgvector:pg16 image used in .github/workflows/ci.yml)
+// does not have SSL configured at all by default, and node-pg's `ssl`
+// option does NOT gracefully fall back to plaintext the way psql's
+// default sslmode=prefer does: setting `ssl: {...}` at all forces an SSL
+// handshake, and if the server doesn't support one, the connection fails
+// outright with "The server does not support SSL connections". This was
+// a real, reproduced bug -- confirmed locally by disabling SSL on a
+// Postgres instance and hitting the exact same error message CI reported.
+function shouldUseSsl(connString) {
+  let host;
+  try {
+    host = new URL(connString).hostname;
+  } catch {
+    return true; // unparseable -- default to the safer (remote-friendly) behavior
+  }
+  return !["localhost", "127.0.0.1", "::1"].includes(host);
+}
+
+const client = new pg.Client({
+  connectionString,
+  ssl: shouldUseSsl(connectionString) ? { rejectUnauthorized: false } : false,
+});
 await client.connect();
 
 const baseSchema = readFileSync(new URL("./db/schema.sql", import.meta.url), "utf8");
