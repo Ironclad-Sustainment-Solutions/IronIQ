@@ -16,6 +16,7 @@ import { generateText, Output } from "ai";
 import { z } from "zod";
 import { createAnthropicProvider } from "./ai-gateway.server";
 import { requireAuth } from "@/lib/auth/auth-middleware";
+import { checkAndRecordAiUsage } from "@/lib/auth/rate-limit.server";
 import { withUser } from "@/lib/db.server";
 
 const MODEL = process.env["AI_MODEL"] ?? "claude-sonnet-5";
@@ -41,6 +42,7 @@ export const summarizeIntakeDocument = createServerFn({ method: "POST" })
   .middleware([requireAuth])
   .inputValidator((d: unknown) => SummarizeInput.parse(d))
   .handler(async ({ data, context }) => {
+    await checkAndRecordAiUsage(context.userId);
     const doc = await withUser(context.userId, async (client) => {
       const { rows } = await client.query(
         `SELECT d.category, d.original_filename, e.extracted_text

@@ -11,6 +11,7 @@ import { generateText, Output } from "ai";
 import { z } from "zod";
 import { createAnthropicProvider } from "./ai-gateway.server";
 import { requireAuth } from "@/lib/auth/auth-middleware";
+import { checkAndRecordAiUsage } from "@/lib/auth/rate-limit.server";
 import { ALLOWED_FIELD_PATHS } from "@/lib/intake-mapping";
 import {
   BULK_INTAKE_EXTENSION,
@@ -60,7 +61,8 @@ const IntakeInput = z.object({
 export const summarizeIntake = createServerFn({ method: "POST" })
   .middleware([requireAuth])
   .inputValidator((input: unknown) => IntakeInput.parse(input))
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
+    await checkAndRecordAiUsage(context.userId);
     const result = await generateText({
       model: gateway()(MODEL),
       system: GUARDRAILS,
@@ -96,7 +98,8 @@ const ConstraintInput = z.object({
 export const suggestConstraints = createServerFn({ method: "POST" })
   .middleware([requireAuth])
   .inputValidator((input: unknown) => ConstraintInput.parse(input))
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
+    await checkAndRecordAiUsage(context.userId);
     const result = await generateText({
       model: gateway()(MODEL),
       system: GUARDRAILS,
@@ -144,7 +147,8 @@ const ActionInput = z.object({
 export const suggestRestorationActions = createServerFn({ method: "POST" })
   .middleware([requireAuth])
   .inputValidator((input: unknown) => ActionInput.parse(input))
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
+    await checkAndRecordAiUsage(context.userId);
     const result = await generateText({
       model: gateway()(MODEL),
       system: GUARDRAILS,
@@ -181,7 +185,8 @@ const NarrativeInput = z.object({
 export const draftReportNarrative = createServerFn({ method: "POST" })
   .middleware([requireAuth])
   .inputValidator((input: unknown) => NarrativeInput.parse(input))
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
+    await checkAndRecordAiUsage(context.userId);
     const result = await generateText({
       model: gateway()(MODEL),
       system: GUARDRAILS,
@@ -224,6 +229,7 @@ export const mapIntakeToCapabilityAssessment = createServerFn({
   .middleware([requireAuth])
   .inputValidator((input: unknown) => MapCapInput.parse(input))
   .handler(async ({ data, context }) => {
+    await checkAndRecordAiUsage(context.userId);
     const result = await generateText({
       model: gateway()(MODEL),
       system: GUARDRAILS + BULK_INTAKE_EXTENSION,
