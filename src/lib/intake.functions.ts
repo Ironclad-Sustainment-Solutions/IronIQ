@@ -297,12 +297,15 @@ export const listIntakeSuggestions = createServerFn({ method: "GET" })
   .handler(async ({ data, context }) =>
     withUser(context.userId, async (client) => {
       const { rows } = await client.query(
-        `SELECT id, target_system, template_assessment_id, cap_assessment_id, field_assessment_id,
-                target_field_path, suggested_value, confidence, source_document_ids, status, created_at
-           FROM public.intake_field_suggestions
-          WHERE facility_id = $1
-            AND ($2::public.intake_target_system IS NULL OR target_system = $2)
-          ORDER BY created_at DESC`,
+        `SELECT s.id, s.target_system, s.template_assessment_id, s.cap_assessment_id, s.field_assessment_id,
+                s.target_field_path, s.suggested_value, s.confidence, s.source_document_ids, s.status, s.created_at,
+                (SELECT array_agg(d.original_filename ORDER BY d.original_filename)
+                   FROM public.intake_documents d
+                  WHERE d.id = ANY(s.source_document_ids)) AS source_document_names
+           FROM public.intake_field_suggestions s
+          WHERE s.facility_id = $1
+            AND ($2::public.intake_target_system IS NULL OR s.target_system = $2)
+          ORDER BY s.created_at DESC`,
         [data.facilityId, data.targetSystem ?? null],
       );
       return rows;

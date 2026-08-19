@@ -8,6 +8,7 @@ import {
 } from "@/components/ironiq/layout-primitives";
 import { Tag } from "@/components/ironiq/badges";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -92,6 +93,14 @@ function BulkIntakePage() {
   const generate = useGenerateIntakeSuggestions(organization?.id, facility?.id);
   const suggestions = useIntakeSuggestions(facility?.id, targetSystem);
   const updateStatus = useUpdateIntakeSuggestionStatus(facility?.id);
+
+  // Which suggestion (if any) has its inline edit form open, and the
+  // in-progress edited text for it. Reviewers can already Accept/Reject
+  // as-is, but a suggestion that's *almost* right previously had no way
+  // to be corrected before saving -- the backend already supported
+  // status: "edited" with an editedValue, this just wires the UI to it.
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editedText, setEditedText] = useState("");
 
   const docRows = documents.data ?? [];
   const parsedCount = docRows.filter((d) => d.status === "parsed").length;
@@ -287,9 +296,19 @@ function BulkIntakePage() {
                     <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                       {s.target_field_path}
                     </p>
-                    <p className="mt-1 text-sm text-foreground">
-                      {s.suggested_value}
-                    </p>
+                    {editingId === s.id ? (
+                      <Textarea
+                        autoFocus
+                        value={editedText}
+                        onChange={(e) => setEditedText(e.target.value)}
+                        className="mt-1"
+                        rows={3}
+                      />
+                    ) : (
+                      <p className="mt-1 text-sm text-foreground">
+                        {s.suggested_value}
+                      </p>
+                    )}
                   </div>
                   <Tag
                     token={
@@ -305,30 +324,69 @@ function BulkIntakePage() {
                 </div>
                 <div className="mt-3 flex items-center justify-between gap-3">
                   <p className="text-xs text-muted-foreground">
-                    Sourced from {s.source_document_ids.length} document(s) ·
-                    status: {s.status}
+                    {s.source_document_names?.length
+                      ? `Sourced from ${s.source_document_names.join(", ")}`
+                      : `Sourced from ${s.source_document_ids.length} document(s)`}{" "}
+                    · status: {s.status}
                   </p>
                   {s.status === "suggested" ? (
-                    <div className="flex gap-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() =>
-                          updateStatus.mutate({ id: s.id, status: "accepted" })
-                        }
-                      >
-                        Accept
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() =>
-                          updateStatus.mutate({ id: s.id, status: "rejected" })
-                        }
-                      >
-                        Reject
-                      </Button>
-                    </div>
+                    editingId === s.id ? (
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={!editedText.trim()}
+                          onClick={() => {
+                            updateStatus.mutate({
+                              id: s.id,
+                              status: "edited",
+                              editedValue: editedText,
+                            });
+                            setEditingId(null);
+                          }}
+                        >
+                          Save edit
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => setEditingId(null)}
+                        >
+                          Cancel
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() =>
+                            updateStatus.mutate({ id: s.id, status: "accepted" })
+                          }
+                        >
+                          Accept
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => {
+                            setEditingId(s.id);
+                            setEditedText(s.suggested_value);
+                          }}
+                        >
+                          Edit
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() =>
+                            updateStatus.mutate({ id: s.id, status: "rejected" })
+                          }
+                        >
+                          Reject
+                        </Button>
+                      </div>
+                    )
                   ) : null}
                 </div>
               </div>

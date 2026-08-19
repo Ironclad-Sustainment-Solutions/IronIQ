@@ -40,6 +40,7 @@ export interface IntakeSuggestionRow {
   suggested_value: string;
   confidence: "low" | "moderate" | "high";
   source_document_ids: string[];
+  source_document_names: string[] | null;
   status: "suggested" | "accepted" | "edited" | "rejected";
   created_at: string;
 }
