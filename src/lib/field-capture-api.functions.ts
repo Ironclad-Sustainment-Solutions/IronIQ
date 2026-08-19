@@ -341,13 +341,30 @@ export const getEvidenceUrl = createServerFn({ method: "GET" })
     return getSignedDownloadUrl(EVIDENCE_BUCKET, data.path, 60 * 60);
   });
 
-const DeleteEvidenceInput = z.object({ id: z.string().uuid(), storagePath: z.string() });
+const DeleteEvidenceInput = z.object({ id: z.string().uuid() });
 
 export const deleteEvidence = createServerFn({ method: "POST" })
   .middleware([requireAuth])
   .inputValidator((d: unknown) => DeleteEvidenceInput.parse(d))
   .handler(async ({ data, context }) => {
-    await deleteObject(EVIDENCE_BUCKET, data.storagePath);
+    // Previously took `storagePath` as its own client-supplied field and
+    // deleted it from S3 with NO check at all -- the same
+    // arbitrary-file-deletion pattern fixed for deleteCadJob and
+    // deleteIntakeDocument (see that commit for the full writeup). Any
+    // authenticated user could delete any object in the evidence bucket,
+    // from any organization's field assessment, by supplying a path
+    // string with no ownership tie to `id` whatsoever. Fixed the same
+    // way: resolve the real storage_path server-side, under the
+    // caller's own RLS-scoped role, before deleting anything.
+    const storagePath = await withUser(context.userId, async (client) => {
+      const { rows } = await client.query<{ storage_path: string }>(
+        "SELECT storage_path FROM public.field_attachments WHERE id = $1",
+        [data.id],
+      );
+      return rows[0]?.storage_path ?? null;
+    });
+    if (!storagePath) throw new Error("Evidence file not found or not accessible.");
+    await deleteObject(EVIDENCE_BUCKET, storagePath);
     await withUser(context.userId, (client) =>
       client.query("DELETE FROM public.field_attachments WHERE id = $1", [data.id]),
     );

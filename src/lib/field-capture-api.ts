@@ -247,8 +247,7 @@ export function useEvidenceUrl(path?: string | null) {
 export function useDeleteEvidence(fieldId: string) {
   const invalidate = useInvalidateCapture(fieldId);
   return useMutation({
-    mutationFn: async (row: FieldAttachmentRow) =>
-      fn.deleteEvidence({ data: { id: row.id, storagePath: row.storage_path } }),
+    mutationFn: async (row: FieldAttachmentRow) => fn.deleteEvidence({ data: { id: row.id } }),
     onSuccess: invalidate,
     onError: (e) => toast.error(e instanceof Error ? e.message : "Could not remove evidence"),
   });
