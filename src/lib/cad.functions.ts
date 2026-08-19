@@ -232,7 +232,6 @@ export const updateCadFieldStatus = createServerFn({ method: "POST" })
 
 const DeleteCadJobInput = z.object({
   id: z.string().uuid(),
-  storagePath: z.string(),
 });
 
 export const deleteCadJob = createServerFn({ method: "POST" })
@@ -240,7 +239,22 @@ export const deleteCadJob = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => DeleteCadJobInput.parse(d))
   .handler(async ({ data, context }) => {
     await assertProductAllowedForCadJob(context.userId, data.id, "cad");
-    await deleteObject(CAD_BUCKET, data.storagePath);
+    // Resolve the real storage_path server-side, under RLS, rather than
+    // trusting a client-supplied path -- that was a real arbitrary-file-
+    // deletion vulnerability: the input previously took `storagePath` as
+    // its own separate field, entirely unverified against `id`, so a
+    // client could pass a legitimate job of their own (satisfying the
+    // product-restriction/RLS check above) alongside ANY other path
+    // string and have that arbitrary S3 object deleted instead.
+    const storagePath = await withUser(context.userId, async (client) => {
+      const { rows } = await client.query<{ storage_path: string }>(
+        `SELECT storage_path FROM public.cad_jobs WHERE id = $1`,
+        [data.id],
+      );
+      return rows[0]?.storage_path ?? null;
+    });
+    if (!storagePath) throw new Error("Job not found or not accessible.");
+    await deleteObject(CAD_BUCKET, storagePath);
     await withUser(context.userId, (client) =>
       client.query(`DELETE FROM public.cad_jobs WHERE id = $1`, [data.id]),
     );

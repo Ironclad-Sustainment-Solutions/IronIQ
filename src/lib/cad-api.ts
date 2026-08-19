@@ -94,8 +94,7 @@ export function useUploadCadJob(
 export function useDeleteCadJob(organizationId?: string | null) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (input: { id: string; storagePath: string }) =>
-      fn.deleteCadJob({ data: input }),
+    mutationFn: (input: { id: string }) => fn.deleteCadJob({ data: input }),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ["cad-jobs", organizationId] });
       toast.success("Job removed");

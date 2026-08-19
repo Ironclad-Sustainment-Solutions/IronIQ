@@ -140,7 +140,6 @@ function CadConversionPage() {
                         e.stopPropagation();
                         remove.mutate({
                           id: job.id,
-                          storagePath: job.storage_path,
                         });
                         if (selectedJobId === job.id) setSelectedJobId(null);
                       }}
