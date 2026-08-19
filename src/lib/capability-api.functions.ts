@@ -63,6 +63,31 @@ async function assertProductAllowedForCapRow(
   await assertProductAllowed(userId, organizationId, "assessment");
 }
 
+// Closes the gap the capUpsert create-path comment used to document as
+// deliberately left out: cap_evidence/cap_finding_links reference a
+// finding, cap_results/cap_validations reference an action, neither of
+// which is assessment_id directly. Both resolve to organization_id one
+// join further out than assertProductAllowedForCapAssessment handles.
+async function resolveCapFindingOrg(userId: string, findingId: string): Promise<string | null> {
+  return withUser(userId, async (client) => {
+    const { rows } = await client.query<{ organization_id: string }>(
+      `SELECT a.organization_id FROM public.cap_assessments a JOIN public.cap_findings f ON f.assessment_id = a.id WHERE f.id = $1`,
+      [findingId],
+    );
+    return rows[0]?.organization_id ?? null;
+  });
+}
+
+async function resolveCapActionOrg(userId: string, actionId: string): Promise<string | null> {
+  return withUser(userId, async (client) => {
+    const { rows } = await client.query<{ organization_id: string }>(
+      `SELECT a.organization_id FROM public.cap_assessments a JOIN public.cap_actions ac ON ac.assessment_id = a.id WHERE ac.id = $1`,
+      [actionId],
+    );
+    return rows[0]?.organization_id ?? null;
+  });
+}
+
 export const fetchCapabilityLibrary = createServerFn({ method: "GET" })
   .middleware([requireAuth])
   .handler(({ context }) =>
@@ -198,16 +223,38 @@ export const capUpsert = createServerFn({ method: "POST" })
       await assertProductAllowedForCapRow(context.userId, data.table, data.id);
     } else {
       // Creating a new child row -- resolve the org via whichever parent
-      // id the client is linking it to. Covers the six tables that
-      // reference assessment_id directly; the four deeper ones
-      // (cap_evidence/cap_finding_links/cap_results/cap_validations,
-      // which reference a finding or action instead) aren't covered for
-      // creation here -- same kind of deliberate, documented scope
-      // decision as the rest of this pass, not an oversight.
+      // id the client is linking it to. assessment_id covers six tables
+      // directly; finding_id/parent_finding_id (cap_evidence,
+      // cap_finding_links) and action_id (cap_results, cap_validations)
+      // each need one more join out to reach organization_id, which is
+      // what previously made this branch stop short -- now resolved via
+      // resolveCapFindingOrg/resolveCapActionOrg.
       const assessmentId = data.values["assessment_id"];
+      const findingId = data.values["finding_id"] ?? data.values["parent_finding_id"];
+      const actionId = data.values["action_id"];
+
+      let organizationId: string | null = null;
       if (typeof assessmentId === "string") {
-        await assertProductAllowedForCapAssessment(context.userId, assessmentId, "assessment");
+        organizationId = await withUser(context.userId, async (client) => {
+          const { rows } = await client.query<{ organization_id: string }>(
+            `SELECT organization_id FROM public.cap_assessments WHERE id = $1`,
+            [assessmentId],
+          );
+          return rows[0]?.organization_id ?? null;
+        });
+      } else if (typeof findingId === "string") {
+        organizationId = await resolveCapFindingOrg(context.userId, findingId);
+      } else if (typeof actionId === "string") {
+        organizationId = await resolveCapActionOrg(context.userId, actionId);
       }
+
+      if (organizationId) {
+        await assertProductAllowed(context.userId, organizationId, "assessment");
+      }
+      // If none of assessment_id/finding_id/parent_finding_id/action_id
+      // was supplied, there's no parent to resolve an org from -- the
+      // INSERT itself will fail on whatever real FK constraint the table
+      // has, so no restriction check can run either way.
     }
     return withUser(context.userId, async (client) => {
       const payload = { ...data.values, modified_by: context.userId };
