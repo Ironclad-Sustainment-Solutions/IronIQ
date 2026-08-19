@@ -208,7 +208,6 @@ function BulkIntakePage() {
                       onClick={() =>
                         remove.mutate({
                           id: doc.id,
-                          storagePath: doc.storage_path,
                         })
                       }
                     >

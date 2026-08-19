@@ -338,14 +338,29 @@ export const updateIntakeSuggestionStatus = createServerFn({ method: "POST" })
 
 const DeleteIntakeDocumentInput = z.object({
   id: z.string().uuid(),
-  storagePath: z.string(),
 });
 
 export const deleteIntakeDocument = createServerFn({ method: "POST" })
   .middleware([requireAuth])
   .inputValidator((d: unknown) => DeleteIntakeDocumentInput.parse(d))
   .handler(async ({ data, context }) => {
-    await deleteObject(INTAKE_BUCKET, data.storagePath);
+    // Previously took `storagePath` as its own client-supplied field and
+    // deleted it from S3 with NO check at all -- not even requireAuth
+    // beyond "logged in somehow," no org-scoping, nothing tying the path
+    // to `id`. Any authenticated user could delete any object in the
+    // bulk-intake bucket, from any organization, by just supplying a
+    // path string. Fixed by resolving the real storage_path server-side,
+    // under the caller's own RLS-scoped role, before deleting anything --
+    // if RLS wouldn't let them see this row, nothing gets deleted.
+    const storagePath = await withUser(context.userId, async (client) => {
+      const { rows } = await client.query<{ storage_path: string }>(
+        `SELECT storage_path FROM public.intake_documents WHERE id = $1`,
+        [data.id],
+      );
+      return rows[0]?.storage_path ?? null;
+    });
+    if (!storagePath) throw new Error("Document not found or not accessible.");
+    await deleteObject(INTAKE_BUCKET, storagePath);
     // ON DELETE CASCADE removes any intake_extractions row automatically.
     // Any intake_field_suggestions referencing this document via
     // source_document_ids (a plain array, not an FK — see schema notes)
