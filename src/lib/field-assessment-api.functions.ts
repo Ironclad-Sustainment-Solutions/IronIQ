@@ -3,12 +3,36 @@ import { z } from "zod";
 import { requireAuth } from "@/lib/auth/auth-middleware";
 import { withUser } from "@/lib/db.server";
 import { assertColumnsAllowed } from "@/lib/column-allowlist";
+import {
+  assertProductAllowed,
+  assertProductAllowedForFieldAssessment,
+} from "@/lib/product-access-check.server";
 
 const ChildTable = z.enum([
   "field_gaps",
   "field_constraints",
   "field_opportunities",
 ]);
+
+// All three ChildTable tables have field_assessment_id directly, so
+// resolving org for an existing child row (childUpdate/childRemove, which
+// only get table + the child row's own id, not field_assessment_id) is a
+// single join through field_assessments.
+async function assertProductAllowedForFieldChildRow(
+  userId: string,
+  table: string,
+  id: string,
+): Promise<void> {
+  const fieldAssessmentId = await withUser(userId, async (client) => {
+    const { rows } = await client.query<{ field_assessment_id: string }>(
+      `SELECT field_assessment_id FROM public.${table} WHERE id = $1`,
+      [id],
+    );
+    return rows[0]?.field_assessment_id ?? null;
+  });
+  if (!fieldAssessmentId) throw new Error("Record not found or not accessible.");
+  await assertProductAllowedForFieldAssessment(userId, fieldAssessmentId, "assessment");
+}
 
 const FieldAssessmentsInput = z.object({
   organizationId: z.string().uuid(),
@@ -65,8 +89,9 @@ const CreateFieldAssessmentInput = z.object({
 export const createFieldAssessment = createServerFn({ method: "POST" })
   .middleware([requireAuth])
   .inputValidator((d: unknown) => CreateFieldAssessmentInput.parse(d))
-  .handler(({ data, context }) =>
-    withUser(context.userId, async (client) => {
+  .handler(async ({ data, context }) => {
+    await assertProductAllowed(context.userId, data.organization_id, "assessment");
+    return withUser(context.userId, async (client) => {
       const { rows } = await client.query(
         `INSERT INTO public.field_assessments
            (organization_id, facility_id, area, work_center, shift, observer_name, created_by)
@@ -82,8 +107,8 @@ export const createFieldAssessment = createServerFn({ method: "POST" })
         ],
       );
       return rows[0].id as string;
-    }),
-  );
+    });
+  });
 
 const SaveFieldRatingInput = z.object({
   fieldAssessmentId: z.string().uuid(),
@@ -98,6 +123,7 @@ export const saveFieldRating = createServerFn({ method: "POST" })
   .middleware([requireAuth])
   .inputValidator((d: unknown) => SaveFieldRatingInput.parse(d))
   .handler(async ({ data, context }) => {
+    await assertProductAllowedForFieldAssessment(context.userId, data.fieldAssessmentId, "assessment");
     await withUser(context.userId, (client) =>
       client.query(
         `INSERT INTO public.field_assessment_ratings
@@ -125,8 +151,9 @@ const UpdateFieldAssessmentInput = z.object({
 export const updateFieldAssessment = createServerFn({ method: "POST" })
   .middleware([requireAuth])
   .inputValidator((d: unknown) => UpdateFieldAssessmentInput.parse(d))
-  .handler(({ data, context }) =>
-    withUser(context.userId, async (client) => {
+  .handler(async ({ data, context }) => {
+    await assertProductAllowedForFieldAssessment(context.userId, data.id, "assessment");
+    return withUser(context.userId, async (client) => {
       const cols = Object.keys(data.values);
       if (cols.length === 0) return;
       assertColumnsAllowed("field_assessments", cols);
@@ -135,13 +162,14 @@ export const updateFieldAssessment = createServerFn({ method: "POST" })
         `UPDATE public.field_assessments SET ${setClause} WHERE id = $${cols.length + 1}`,
         [...Object.values(data.values), data.id],
       );
-    }),
-  );
+    });
+  });
 
 export const deleteFieldAssessment = createServerFn({ method: "POST" })
   .middleware([requireAuth])
   .inputValidator((d: unknown) => idInput.parse(d))
   .handler(async ({ data, context }) => {
+    await assertProductAllowedForFieldAssessment(context.userId, data.id, "assessment");
     await withUser(context.userId, (client) =>
       client.query("DELETE FROM public.field_assessments WHERE id = $1", [
         data.id,
@@ -198,6 +226,7 @@ export const saveObservation = createServerFn({ method: "POST" })
   .middleware([requireAuth])
   .inputValidator((d: unknown) => SaveObservationInput.parse(d))
   .handler(async ({ data, context }) => {
+    await assertProductAllowedForFieldAssessment(context.userId, data.fieldId, "assessment");
     await withUser(context.userId, (client) =>
       client.query(
         `INSERT INTO public.field_observations
@@ -226,8 +255,9 @@ const ChildAddInput = z.object({
 export const childAdd = createServerFn({ method: "POST" })
   .middleware([requireAuth])
   .inputValidator((d: unknown) => ChildAddInput.parse(d))
-  .handler(({ data, context }) =>
-    withUser(context.userId, async (client) => {
+  .handler(async ({ data, context }) => {
+    await assertProductAllowedForFieldAssessment(context.userId, data.fieldId, "assessment");
+    return withUser(context.userId, async (client) => {
       const valueCols = Object.keys(data.values);
       assertColumnsAllowed(data.table, valueCols);
       const cols = ["field_assessment_id", ...valueCols];
@@ -238,8 +268,8 @@ export const childAdd = createServerFn({ method: "POST" })
         vals,
       );
       return rows[0].id as string;
-    }),
-  );
+    });
+  });
 
 const ChildUpdateInput = z.object({
   table: ChildTable,
@@ -250,8 +280,9 @@ const ChildUpdateInput = z.object({
 export const childUpdate = createServerFn({ method: "POST" })
   .middleware([requireAuth])
   .inputValidator((d: unknown) => ChildUpdateInput.parse(d))
-  .handler(({ data, context }) =>
-    withUser(context.userId, async (client) => {
+  .handler(async ({ data, context }) => {
+    await assertProductAllowedForFieldChildRow(context.userId, data.table, data.id);
+    return withUser(context.userId, async (client) => {
       const cols = Object.keys(data.values);
       if (cols.length === 0) return;
       assertColumnsAllowed(data.table, cols);
@@ -260,8 +291,8 @@ export const childUpdate = createServerFn({ method: "POST" })
         `UPDATE public.${data.table} SET ${setClause} WHERE id = $${cols.length + 1}`,
         [...Object.values(data.values), data.id],
       );
-    }),
-  );
+    });
+  });
 
 const ChildRemoveInput = z.object({ table: ChildTable, id: z.string().uuid() });
 
@@ -269,6 +300,7 @@ export const childRemove = createServerFn({ method: "POST" })
   .middleware([requireAuth])
   .inputValidator((d: unknown) => ChildRemoveInput.parse(d))
   .handler(async ({ data, context }) => {
+    await assertProductAllowedForFieldChildRow(context.userId, data.table, data.id);
     await withUser(context.userId, (client) =>
       client.query(`DELETE FROM public.${data.table} WHERE id = $1`, [data.id]),
     );

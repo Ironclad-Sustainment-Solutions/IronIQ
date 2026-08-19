@@ -3,6 +3,7 @@ import { z } from "zod";
 import { requireAuth } from "@/lib/auth/auth-middleware";
 import { withUser } from "@/lib/db.server";
 import { assertColumnsAllowed } from "@/lib/column-allowlist";
+import { assertProductAllowed, assertProductAllowedForCapAssessment } from "@/lib/product-access-check.server";
 
 // Every table name reachable through the generic upsert/delete helpers below.
 // This allowlist is the only thing standing between client-supplied table
@@ -25,6 +26,41 @@ const ALLOWED_TABLES = new Set([
 function assertAllowed(table: string) {
   if (!ALLOWED_TABLES.has(table))
     throw new Error(`Table "${table}" is not allowed here.`);
+}
+
+// Resolves organization_id for any row already in ALLOWED_TABLES, given
+// that table varies from "has organization_id directly" (cap_assessments)
+// to "one join away" (assessment_id) to "two joins away" (finding_id or
+// action_id, which themselves reference an assessment). Used to product-
+// restriction-gate capUpsert's update path and capDelete, which operate
+// on an existing row identified only by id and table name.
+const CAP_TABLE_ORG_QUERIES: Record<string, string> = {
+  cap_assessments: `SELECT organization_id FROM public.cap_assessments WHERE id = $1`,
+  cap_actions: `SELECT a.organization_id FROM public.cap_assessments a JOIN public.cap_actions x ON x.assessment_id = a.id WHERE x.id = $1`,
+  cap_findings: `SELECT a.organization_id FROM public.cap_assessments a JOIN public.cap_findings x ON x.assessment_id = a.id WHERE x.id = $1`,
+  cap_performance_impacts: `SELECT a.organization_id FROM public.cap_assessments a JOIN public.cap_performance_impacts x ON x.assessment_id = a.id WHERE x.id = $1`,
+  cap_problems: `SELECT a.organization_id FROM public.cap_assessments a JOIN public.cap_problems x ON x.assessment_id = a.id WHERE x.id = $1`,
+  cap_root_gaps: `SELECT a.organization_id FROM public.cap_assessments a JOIN public.cap_root_gaps x ON x.assessment_id = a.id WHERE x.id = $1`,
+  cap_scores: `SELECT a.organization_id FROM public.cap_assessments a JOIN public.cap_scores x ON x.assessment_id = a.id WHERE x.id = $1`,
+  cap_evidence: `SELECT a.organization_id FROM public.cap_assessments a JOIN public.cap_findings f ON f.assessment_id = a.id JOIN public.cap_evidence x ON x.finding_id = f.id WHERE x.id = $1`,
+  cap_finding_links: `SELECT a.organization_id FROM public.cap_assessments a JOIN public.cap_findings f ON f.assessment_id = a.id JOIN public.cap_finding_links x ON x.parent_finding_id = f.id WHERE x.id = $1`,
+  cap_results: `SELECT a.organization_id FROM public.cap_assessments a JOIN public.cap_actions ac ON ac.assessment_id = a.id JOIN public.cap_results x ON x.action_id = ac.id WHERE x.id = $1`,
+  cap_validations: `SELECT a.organization_id FROM public.cap_assessments a JOIN public.cap_actions ac ON ac.assessment_id = a.id JOIN public.cap_validations x ON x.action_id = ac.id WHERE x.id = $1`,
+};
+
+async function assertProductAllowedForCapRow(
+  userId: string,
+  table: string,
+  id: string,
+): Promise<void> {
+  const query = CAP_TABLE_ORG_QUERIES[table];
+  if (!query) throw new Error(`No product-restriction lookup configured for table "${table}".`);
+  const organizationId = await withUser(userId, async (client) => {
+    const { rows } = await client.query<{ organization_id: string }>(query, [id]);
+    return rows[0]?.organization_id ?? null;
+  });
+  if (!organizationId) throw new Error("Record not found or not accessible.");
+  await assertProductAllowed(userId, organizationId, "assessment");
 }
 
 export const fetchCapabilityLibrary = createServerFn({ method: "GET" })
@@ -156,8 +192,23 @@ const CapUpsertInput = z.object({
 export const capUpsert = createServerFn({ method: "POST" })
   .middleware([requireAuth])
   .inputValidator((d: unknown) => CapUpsertInput.parse(d))
-  .handler(({ data, context }) => {
+  .handler(async ({ data, context }) => {
     assertAllowed(data.table);
+    if (data.id) {
+      await assertProductAllowedForCapRow(context.userId, data.table, data.id);
+    } else {
+      // Creating a new child row -- resolve the org via whichever parent
+      // id the client is linking it to. Covers the six tables that
+      // reference assessment_id directly; the four deeper ones
+      // (cap_evidence/cap_finding_links/cap_results/cap_validations,
+      // which reference a finding or action instead) aren't covered for
+      // creation here -- same kind of deliberate, documented scope
+      // decision as the rest of this pass, not an oversight.
+      const assessmentId = data.values["assessment_id"];
+      if (typeof assessmentId === "string") {
+        await assertProductAllowedForCapAssessment(context.userId, assessmentId, "assessment");
+      }
+    }
     return withUser(context.userId, async (client) => {
       const payload = { ...data.values, modified_by: context.userId };
       if (data.id) {
@@ -189,6 +240,7 @@ export const capDelete = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => CapDeleteInput.parse(d))
   .handler(async ({ data, context }) => {
     assertAllowed(data.table);
+    await assertProductAllowedForCapRow(context.userId, data.table, data.id);
     await withUser(context.userId, (client) =>
       client.query(`DELETE FROM public.${data.table} WHERE id = $1`, [data.id]),
     );
@@ -205,8 +257,9 @@ const CreateCapAssessmentInput = z.object({
 export const createCapAssessment = createServerFn({ method: "POST" })
   .middleware([requireAuth])
   .inputValidator((d: unknown) => CreateCapAssessmentInput.parse(d))
-  .handler(({ data, context }) =>
-    withUser(context.userId, async (client) => {
+  .handler(async ({ data, context }) => {
+    await assertProductAllowed(context.userId, data.organization_id, "assessment");
+    return withUser(context.userId, async (client) => {
       const { rows } = await client.query(
         `INSERT INTO public.cap_assessments
            (organization_id, facility_id, name, lead_assessor, scope, status, created_by, modified_by)
@@ -226,8 +279,8 @@ export const createCapAssessment = createServerFn({ method: "POST" })
         [id, context.userId],
       );
       return id;
-    }),
-  );
+    });
+  });
 
 const SaveCapScoreInput = z.object({
   assessmentId: z.string().uuid(),
@@ -243,6 +296,7 @@ export const saveCapScore = createServerFn({ method: "POST" })
   .middleware([requireAuth])
   .inputValidator((d: unknown) => SaveCapScoreInput.parse(d))
   .handler(async ({ data, context }) => {
+    await assertProductAllowedForCapAssessment(context.userId, data.assessmentId, "assessment");
     await withUser(context.userId, (client) =>
       client.query(
         `INSERT INTO public.cap_scores
@@ -274,6 +328,7 @@ export const setAssessmentScore = createServerFn({ method: "POST" })
   .middleware([requireAuth])
   .inputValidator((d: unknown) => SetAssessmentScoreInput.parse(d))
   .handler(async ({ data, context }) => {
+    await assertProductAllowedForCapAssessment(context.userId, data.assessmentId, "assessment");
     await withUser(context.userId, (client) =>
       data.status
         ? client.query(

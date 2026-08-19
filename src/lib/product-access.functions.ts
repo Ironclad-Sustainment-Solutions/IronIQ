@@ -18,13 +18,22 @@
  *
  * Still not covered: the Assessment product has many separate write
  * paths (template assessment scoring, cap_assessments, field_assessments,
- * Bulk Intake, corrective actions, improvement projects) accumulated
- * across this whole build, and no enforcement check has been added to
- * any of them — client-side nav hiding covers the visible, day-to-day
- * case (a restricted org's users don't see Assessment in their sidebar
- * at all), but a determined user hitting an Assessment-product API
- * endpoint directly today would not be blocked server-side. Flagging
- * this honestly rather than claiming complete coverage.
+ * corrective actions, improvement projects) accumulated across this
+ * whole build. A later pass added the same "guard the create entry
+ * point" coverage CAD/CNC started with -- createAssessment in
+ * api.functions.ts, createCapAssessment in capability-api.functions.ts,
+ * createFieldAssessment in field-assessment-api.functions.ts -- but none
+ * of the downstream actions on an already-created assessment (scoring,
+ * closing, corrective actions, improvement projects) are guarded yet,
+ * the same gap CAD/CNC had until their later pass closed it. Bulk
+ * Intake's raw document upload (createIntakeUpload in
+ * intake.functions.ts) and its three AI mapping adapters are
+ * deliberately left out rather than guessed at -- Bulk Intake is a
+ * shared document-intake layer that feeds all three systems (assessment,
+ * capability, field), not something that maps cleanly onto a single
+ * product category the way the other creation entry points do.
+ * Client-side nav hiding still covers the visible, day-to-day case for
+ * everything not listed above.
  */
 
 import { createServerFn } from "@tanstack/react-start";

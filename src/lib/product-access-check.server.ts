@@ -77,6 +77,111 @@ export async function assertProductAllowedForCadField(
   await assertProductAllowed(userId, organizationId, product);
 }
 
+/** Same as assertProductAllowed, but resolves the org from an existing standard assessment's id first. */
+export async function assertProductAllowedForAssessment(
+  userId: string,
+  assessmentId: string,
+  product: Extract<Product, "assessment">,
+): Promise<void> {
+  const organizationId = await withUser(userId, async (client) => {
+    const { rows } = await client.query<{ organization_id: string }>(
+      `SELECT organization_id FROM public.assessments WHERE id = $1`,
+      [assessmentId],
+    );
+    return rows[0]?.organization_id ?? null;
+  });
+  if (!organizationId) throw new Error("Assessment not found or not accessible.");
+  await assertProductAllowed(userId, organizationId, product);
+}
+
+/** Same as assertProductAllowed, but resolves the org from an existing capability assessment's id first. */
+export async function assertProductAllowedForCapAssessment(
+  userId: string,
+  capAssessmentId: string,
+  product: Extract<Product, "assessment">,
+): Promise<void> {
+  const organizationId = await withUser(userId, async (client) => {
+    const { rows } = await client.query<{ organization_id: string }>(
+      `SELECT organization_id FROM public.cap_assessments WHERE id = $1`,
+      [capAssessmentId],
+    );
+    return rows[0]?.organization_id ?? null;
+  });
+  if (!organizationId) throw new Error("Assessment not found or not accessible.");
+  await assertProductAllowed(userId, organizationId, product);
+}
+
+/** Same as assertProductAllowed, but resolves the org from an existing field assessment's id first. */
+export async function assertProductAllowedForFieldAssessment(
+  userId: string,
+  fieldAssessmentId: string,
+  product: Extract<Product, "assessment">,
+): Promise<void> {
+  const organizationId = await withUser(userId, async (client) => {
+    const { rows } = await client.query<{ organization_id: string }>(
+      `SELECT organization_id FROM public.field_assessments WHERE id = $1`,
+      [fieldAssessmentId],
+    );
+    return rows[0]?.organization_id ?? null;
+  });
+  if (!organizationId) throw new Error("Assessment not found or not accessible.");
+  await assertProductAllowed(userId, organizationId, product);
+}
+
+/** Same as assertProductAllowed, but resolves the org from an existing finding's id first (findings has organization_id directly). */
+export async function assertProductAllowedForFinding(
+  userId: string,
+  findingId: string,
+  product: Extract<Product, "assessment">,
+): Promise<void> {
+  const organizationId = await withUser(userId, async (client) => {
+    const { rows } = await client.query<{ organization_id: string }>(
+      `SELECT organization_id FROM public.findings WHERE id = $1`,
+      [findingId],
+    );
+    return rows[0]?.organization_id ?? null;
+  });
+  if (!organizationId) throw new Error("Finding not found or not accessible.");
+  await assertProductAllowed(userId, organizationId, product);
+}
+
+/** Same as assertProductAllowed, but resolves the org from an existing corrective action's id first (a join through its finding, since corrective_actions has no organization_id of its own). */
+export async function assertProductAllowedForCorrectiveAction(
+  userId: string,
+  actionId: string,
+  product: Extract<Product, "assessment">,
+): Promise<void> {
+  const organizationId = await withUser(userId, async (client) => {
+    const { rows } = await client.query<{ organization_id: string }>(
+      `SELECT f.organization_id
+         FROM public.corrective_actions ca
+         JOIN public.findings f ON f.id = ca.finding_id
+        WHERE ca.id = $1`,
+      [actionId],
+    );
+    return rows[0]?.organization_id ?? null;
+  });
+  if (!organizationId) throw new Error("Corrective action not found or not accessible.");
+  await assertProductAllowed(userId, organizationId, product);
+}
+
+/** Same as assertProductAllowed, but resolves the org from an existing improvement project's id first (improvement_projects has organization_id directly). */
+export async function assertProductAllowedForImprovementProject(
+  userId: string,
+  projectId: string,
+  product: Extract<Product, "assessment">,
+): Promise<void> {
+  const organizationId = await withUser(userId, async (client) => {
+    const { rows } = await client.query<{ organization_id: string }>(
+      `SELECT organization_id FROM public.improvement_projects WHERE id = $1`,
+      [projectId],
+    );
+    return rows[0]?.organization_id ?? null;
+  });
+  if (!organizationId) throw new Error("Improvement project not found or not accessible.");
+  await assertProductAllowed(userId, organizationId, product);
+}
+
 /** Same as assertProductAllowed, but resolves the org from an existing CNC change log entry's id first. */
 export async function assertProductAllowedForCncLogEntry(
   userId: string,
