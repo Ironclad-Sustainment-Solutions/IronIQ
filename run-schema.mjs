@@ -167,6 +167,7 @@ const ORDERED_ADDITIONS = [
   "schema_additions_user_approval.sql",
   "schema_additions_auth_rate_limiting.sql",
   "schema_additions_session_idle_timeout.sql",
+  "schema_additions_cap_join_indexes.sql",
 ];
 
 const dbDir = new URL("./db/", import.meta.url);
