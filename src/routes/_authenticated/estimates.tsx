@@ -179,51 +179,16 @@ function EstimateWorkspace({ item, facilityId }: { item: EstimatingPart; facilit
     }
   }
 
-  if (flagged && !attested) {
-    const flags = [
-      item.rfq.itar ? "ITAR" : null,
-      item.rfq.cui ? "CUI" : null,
-      item.rfq.export_controlled ? "Export Controlled" : null,
-    ].filter(Boolean);
-
-    return (
-      <div className="min-w-0">
-        <Panel title="Export-controlled RFQ">
-          <div className="flex flex-col items-center gap-3 py-10 text-center">
-            <ShieldAlert className="size-8 text-medium" aria-hidden />
-            <p className="text-sm font-medium text-foreground">
-              {item.rfq.rfq_number} is flagged {flags.join(" · ")}
-            </p>
-            <p className="max-w-md text-sm text-muted-foreground">
-              Confirm you're authorized to view export-controlled data before this RFQ's
-              details, drawings, and cost build-up are shown. This confirmation is logged.
-            </p>
-          </div>
-        </Panel>
-        <AlertDialog open onOpenChange={() => {}}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Export-controlled data — {flags.join(" · ")}</AlertDialogTitle>
-              <AlertDialogDescription>
-                {item.rfq.rfq_number} ({item.rfq.title}) is flagged as {flags.join(", ")}.
-                By continuing, you confirm you are authorized to view export-controlled
-                data for this RFQ. This access is recorded in the audit log.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogAction disabled={attesting} onClick={() => void confirmAttestation()}>
-                {attesting ? (
-                  <Loader2 className="size-4 animate-spin" aria-hidden />
-                ) : null}
-                I confirm I'm authorized to view export-controlled data
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-      </div>
-    );
-  }
-
+  // Computed unconditionally, before the early return below, even though
+  // none of it is used when the attestation gate is showing -- moving
+  // useMemo (or anything derived from state that changes across renders)
+  // after a conditional early return violates the Rules of Hooks: the
+  // hook would only run on some renders (once attested becomes true) and
+  // not others, which React requires to be consistent on every render of
+  // the same component instance. Caught by `react-hooks/rules-of-hooks`
+  // during an eslint cleanup pass -- a real bug this introduced, not just
+  // lint noise, since it could cause React to misattribute hook state
+  // across renders once a user actually attests.
   const latestRun = (runsQuery.data ?? []).find((r) => r.status === "complete") ?? null;
   const geometry: GeometryResult | null = latestRun?.result ?? null;
   const warnings = latestRun?.warnings ?? [];
@@ -271,6 +236,51 @@ function EstimateWorkspace({ item, facilityId }: { item: EstimatingPart; facilit
       }),
     [quantity, machine, material, geometry, req, drawing, model, item.rfq, margin, programmingRate],
   );
+
+  if (flagged && !attested) {
+    const flags = [
+      item.rfq.itar ? "ITAR" : null,
+      item.rfq.cui ? "CUI" : null,
+      item.rfq.export_controlled ? "Export Controlled" : null,
+    ].filter(Boolean);
+
+    return (
+      <div className="min-w-0">
+        <Panel title="Export-controlled RFQ">
+          <div className="flex flex-col items-center gap-3 py-10 text-center">
+            <ShieldAlert className="size-8 text-medium" aria-hidden />
+            <p className="text-sm font-medium text-foreground">
+              {item.rfq.rfq_number} is flagged {flags.join(" · ")}
+            </p>
+            <p className="max-w-md text-sm text-muted-foreground">
+              Confirm you're authorized to view export-controlled data before this RFQ's
+              details, drawings, and cost build-up are shown. This confirmation is logged.
+            </p>
+          </div>
+        </Panel>
+        <AlertDialog open onOpenChange={() => {}}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Export-controlled data — {flags.join(" · ")}</AlertDialogTitle>
+              <AlertDialogDescription>
+                {item.rfq.rfq_number} ({item.rfq.title}) is flagged as {flags.join(", ")}.
+                By continuing, you confirm you are authorized to view export-controlled
+                data for this RFQ. This access is recorded in the audit log.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogAction disabled={attesting} onClick={() => void confirmAttestation()}>
+                {attesting ? (
+                  <Loader2 className="size-4 animate-spin" aria-hidden />
+                ) : null}
+                I confirm I'm authorized to view export-controlled data
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </div>
+    );
+  }
 
   async function analyse() {
     if (!model) {
