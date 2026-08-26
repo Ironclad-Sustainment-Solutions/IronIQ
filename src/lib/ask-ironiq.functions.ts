@@ -95,6 +95,7 @@ export const askIronIQ = createServerFn({ method: "POST" })
         pattern_summary: string;
         pattern_resolution: string | null;
         pattern_outcome: string | null;
+        origin: "engagement_derived" | "reference_library";
         distance: number;
       }[];
     });
@@ -128,7 +129,7 @@ rather than guess.`,
     const context_block = patterns
       .map(
         (p, i) =>
-          `Pattern ${i + 1} [${p.product}] (${p.category_label ?? "unspecified industry"}):\nProblem: ${p.pattern_summary}\nResolution: ${p.pattern_resolution ?? "(not recorded)"}\nOutcome: ${p.pattern_outcome ?? "(not recorded)"}`,
+          `Pattern ${i + 1} [${p.product}] (${p.category_label ?? "unspecified industry"}${p.origin === "reference_library" ? ", curated reference pattern" : ", from a past engagement"}):\nProblem: ${p.pattern_summary}\nResolution: ${p.pattern_resolution ?? "(not recorded)"}\nOutcome: ${p.pattern_outcome ?? "(not recorded)"}`,
       )
       .join("\n\n");
 

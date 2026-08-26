@@ -70,7 +70,7 @@ export const draftFromPrecedent = createServerFn({ method: "POST" })
 
     const patterns = await withUser(context.userId, async (client) => {
       const { rows } = await client.query(
-        `SELECT id, product, category_label, pattern_summary, pattern_resolution,
+        `SELECT id, product, category_label, pattern_summary, pattern_resolution, origin,
                 embedding <=> $1 AS distance
            FROM public.intelligence_patterns
           WHERE status = 'approved'
@@ -86,6 +86,7 @@ export const draftFromPrecedent = createServerFn({ method: "POST" })
         category_label: string | null;
         pattern_summary: string;
         pattern_resolution: string | null;
+        origin: "engagement_derived" | "reference_library";
         distance: number;
       }[];
     });
@@ -97,7 +98,7 @@ export const draftFromPrecedent = createServerFn({ method: "POST" })
     const context_block = patterns
       .map(
         (p, i) =>
-          `Pattern ${i + 1} [${p.product}] (${p.category_label ?? "unspecified industry"}):\nProblem: ${p.pattern_summary}\nResolution: ${p.pattern_resolution ?? "(not recorded)"}`,
+          `Pattern ${i + 1} [${p.product}] (${p.category_label ?? "unspecified industry"}${p.origin === "reference_library" ? ", curated reference pattern" : ", from a past engagement"}):\nProblem: ${p.pattern_summary}\nResolution: ${p.pattern_resolution ?? "(not recorded)"}`,
       )
       .join("\n\n");
 
