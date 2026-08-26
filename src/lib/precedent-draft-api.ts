@@ -8,6 +8,7 @@ export interface PrecedentDraftPattern {
   category_label: string | null;
   pattern_summary: string;
   pattern_resolution: string | null;
+  origin: "engagement_derived" | "reference_library";
   distance: number;
 }
 

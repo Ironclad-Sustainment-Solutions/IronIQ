@@ -21,6 +21,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Collapsible, CollapsibleTrigger, CollapsibleContent } from "@/components/ui/collapsible";
 import {
   Select,
   SelectContent,
@@ -742,6 +743,33 @@ export function CorrectiveActionDialog({
                 </span>
               ) : null}
             </div>
+            {draftAI.data?.patterns.length ? (
+              <Collapsible className="mt-1.5">
+                <CollapsibleTrigger asChild>
+                  <Button type="button" variant="link" size="sm" className="h-auto p-0 text-xs">
+                    View matched patterns
+                  </Button>
+                </CollapsibleTrigger>
+                <CollapsibleContent className="mt-2 space-y-2">
+                  {draftAI.data.patterns.map((p, i) => (
+                    <div key={p.id} className="rounded border border-border p-2 text-xs">
+                      <p className="font-medium text-foreground">
+                        Pattern {i + 1} — {p.category_label ?? "unspecified industry"} ·{" "}
+                        {p.origin === "reference_library"
+                          ? "curated reference pattern"
+                          : "from a past engagement"}
+                      </p>
+                      <p className="mt-1 text-muted-foreground">{p.pattern_summary}</p>
+                      {p.pattern_resolution ? (
+                        <p className="mt-1 text-muted-foreground">
+                          Resolution: {p.pattern_resolution}
+                        </p>
+                      ) : null}
+                    </div>
+                  ))}
+                </CollapsibleContent>
+              </Collapsible>
+            ) : null}
           </div>
           <Field label="Owner">
             <Input

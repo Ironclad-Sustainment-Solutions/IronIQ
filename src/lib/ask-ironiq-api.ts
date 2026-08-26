@@ -23,6 +23,7 @@ export interface AskIronIQPattern {
   pattern_summary: string;
   pattern_resolution: string | null;
   pattern_outcome: string | null;
+  origin: "engagement_derived" | "reference_library";
   distance: number;
 }
 
