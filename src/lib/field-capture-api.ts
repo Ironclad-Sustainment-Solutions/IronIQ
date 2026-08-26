@@ -25,7 +25,9 @@ export function useFieldCapture(fieldId?: string) {
     queryKey: ["field-capture", fieldId],
     enabled: Boolean(fieldId),
     queryFn: async () => {
-      const result = await fn.getFieldCapture({ data: { fieldId: fieldId as string } });
+      const result = await fn.getFieldCapture({
+        data: { fieldId: fieldId as string },
+      });
       return {
         observations: result.observations as FieldCaptureObservationRow[],
         quickCaptures: result.quickCaptures as FieldQuickCaptureRow[],
@@ -73,20 +75,30 @@ export function useObservationMutations(fieldId: string) {
       invalidate();
       toast.success("Observation saved");
     },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Could not save observation"),
+    onError: (e) =>
+      toast.error(
+        e instanceof Error ? e.message : "Could not save observation",
+      ),
   });
 
   const update = useMutation({
-    mutationFn: async ({ id, values }: { id: string; values: ObservationInput }) =>
-      fn.updateObservation({ data: { id, values } }),
+    mutationFn: async ({
+      id,
+      values,
+    }: {
+      id: string;
+      values: ObservationInput;
+    }) => fn.updateObservation({ data: { id, values } }),
     onSuccess: invalidate,
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Could not save"),
+    onError: (e) =>
+      toast.error(e instanceof Error ? e.message : "Could not save"),
   });
 
   const remove = useMutation({
     mutationFn: async (id: string) => fn.removeObservation({ data: { id } }),
     onSuccess: invalidate,
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Could not delete"),
+    onError: (e) =>
+      toast.error(e instanceof Error ? e.message : "Could not delete"),
   });
 
   return { add, update, remove };
@@ -102,13 +114,15 @@ export function useQuickCaptures(fieldId: string) {
       invalidate();
       toast.success("Quick capture saved");
     },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Could not save capture"),
+    onError: (e) =>
+      toast.error(e instanceof Error ? e.message : "Could not save capture"),
   });
 
   const remove = useMutation({
     mutationFn: async (id: string) => fn.removeQuickCapture({ data: { id } }),
     onSuccess: invalidate,
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Could not delete"),
+    onError: (e) =>
+      toast.error(e instanceof Error ? e.message : "Could not delete"),
   });
 
   /** Promote a running note into a full observation record. */
@@ -129,7 +143,8 @@ export function useQuickCaptures(fieldId: string) {
       invalidate();
       toast.success("Converted to observation");
     },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Could not convert"),
+    onError: (e) =>
+      toast.error(e instanceof Error ? e.message : "Could not convert"),
   });
 
   return { add, remove, convert };
@@ -145,20 +160,28 @@ export function useGapMutations(fieldId: string) {
       invalidate();
       toast.success("Capability gap created");
     },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Could not create gap"),
+    onError: (e) =>
+      toast.error(e instanceof Error ? e.message : "Could not create gap"),
   });
 
   const update = useMutation({
-    mutationFn: async ({ id, values }: { id: string; values: Partial<FieldCapabilityGap> }) =>
-      fn.updateGap({ data: { id, values } }),
+    mutationFn: async ({
+      id,
+      values,
+    }: {
+      id: string;
+      values: Partial<FieldCapabilityGap>;
+    }) => fn.updateGap({ data: { id, values } }),
     onSuccess: invalidate,
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Could not save"),
+    onError: (e) =>
+      toast.error(e instanceof Error ? e.message : "Could not save"),
   });
 
   const remove = useMutation({
     mutationFn: async (id: string) => fn.removeGap({ data: { id } }),
     onSuccess: invalidate,
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Could not delete"),
+    onError: (e) =>
+      toast.error(e instanceof Error ? e.message : "Could not delete"),
   });
 
   /** Build a capability gap from an observation, carrying its evidence forward. */
@@ -174,7 +197,8 @@ export function useGapMutations(fieldId: string) {
       invalidate();
       toast.success("Capability gap created from observation");
     },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Could not create gap"),
+    onError: (e) =>
+      toast.error(e instanceof Error ? e.message : "Could not create gap"),
   });
 
   return { add, update, remove, fromObservation };
@@ -185,7 +209,8 @@ export function useGapMutations(fieldId: string) {
 function fileToBase64(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
-    reader.onload = () => resolve((reader.result as string).split(",")[1] ?? "");
+    reader.onload = () =>
+      resolve((reader.result as string).split(",")[1] ?? "");
     reader.onerror = () => reject(new Error("Could not read file"));
     reader.readAsDataURL(file);
   });
@@ -231,7 +256,8 @@ export function useUploadEvidence(fieldId: string) {
       invalidate();
       toast.success("Evidence attached");
     },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Could not upload evidence"),
+    onError: (e) =>
+      toast.error(e instanceof Error ? e.message : "Could not upload evidence"),
   });
 }
 
@@ -247,9 +273,11 @@ export function useEvidenceUrl(path?: string | null) {
 export function useDeleteEvidence(fieldId: string) {
   const invalidate = useInvalidateCapture(fieldId);
   return useMutation({
-    mutationFn: async (row: FieldAttachmentRow) => fn.deleteEvidence({ data: { id: row.id } }),
+    mutationFn: async (row: FieldAttachmentRow) =>
+      fn.deleteEvidence({ data: { id: row.id } }),
     onSuccess: invalidate,
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Could not remove evidence"),
+    onError: (e) =>
+      toast.error(e instanceof Error ? e.message : "Could not remove evidence"),
   });
 }
 
@@ -287,6 +315,9 @@ export function useConvertToFullAssessment(fieldId: string) {
       void qc.invalidateQueries({ queryKey: ["field-assessment", fieldId] });
       toast.success("Full capability assessment created");
     },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Could not convert assessment"),
+    onError: (e) =>
+      toast.error(
+        e instanceof Error ? e.message : "Could not convert assessment",
+      ),
   });
 }

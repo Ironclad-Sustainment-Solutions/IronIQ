@@ -7,7 +7,10 @@
  * whether a deeper Full Capability Assessment is actually warranted.
  */
 
-import type { FieldCapabilityGap, FieldCaptureObservationRow } from "./field-domains";
+import type {
+  FieldCapabilityGap,
+  FieldCaptureObservationRow,
+} from "./field-domains";
 
 /* ------------------------- 12 field overview areas ------------------------ */
 
@@ -26,42 +29,48 @@ export const FIELD_AREAS: FieldArea[] = [
     code: "production_flow",
     number: 1,
     title: "Production Flow",
-    prompt: "Does work move through the area without waiting, detours or rework loops?",
+    prompt:
+      "Does work move through the area without waiting, detours or rework loops?",
     domain_code: "production_operations",
   },
   {
     code: "machine_cell_performance",
     number: 2,
     title: "Machine / Cell Performance",
-    prompt: "Are machines and cells running when they should, at the expected rate?",
+    prompt:
+      "Are machines and cells running when they should, at the expected rate?",
     domain_code: "equipment_infrastructure",
   },
   {
     code: "fixtures_workholding",
     number: 3,
     title: "Fixtures & Workholding",
-    prompt: "Is workholding available, repeatable, documented and in usable condition?",
+    prompt:
+      "Is workholding available, repeatable, documented and in usable condition?",
     domain_code: "tooling_fixturing",
   },
   {
     code: "tooling",
     number: 4,
     title: "Tooling",
-    prompt: "Is the right tooling available, standardized and controlled at the machine?",
+    prompt:
+      "Is the right tooling available, standardized and controlled at the machine?",
     domain_code: "tooling_fixturing",
   },
   {
     code: "setup_changeover",
     number: 5,
     title: "Setup & Changeover",
-    prompt: "Are setups repeatable, documented and completed without rediscovery?",
+    prompt:
+      "Are setups repeatable, documented and completed without rediscovery?",
     domain_code: "production_operations",
   },
   {
     code: "cnc_programming",
     number: 6,
     title: "CNC Programming",
-    prompt: "Can programming keep pace with production without becoming the constraint?",
+    prompt:
+      "Can programming keep pace with production without becoming the constraint?",
     domain_code: "digital_manufacturing",
   },
   {
@@ -75,14 +84,16 @@ export const FIELD_AREAS: FieldArea[] = [
     code: "technical_documentation",
     number: 8,
     title: "Technical Documentation",
-    prompt: "Are drawings, specs and process documents current, complete and accessible?",
+    prompt:
+      "Are drawings, specs and process documents current, complete and accessible?",
     domain_code: "technical_data",
   },
   {
     code: "equipment_support",
     number: 9,
     title: "Equipment Support",
-    prompt: "Is maintenance keeping equipment available and capable for this work?",
+    prompt:
+      "Is maintenance keeping equipment available and capable for this work?",
     domain_code: "equipment_infrastructure",
   },
   {
@@ -140,10 +151,14 @@ export const STATUS_BG: Record<FieldStatus, string> = {
 };
 
 export const STATUS_HELP: Record<FieldStatus, string> = {
-  "Generally Capable": "Nothing observed that appears to limit production in this area.",
-  "Opportunity Identified": "Working today, but an improvement opportunity was visible.",
-  Constrained: "Something observed appears to actively limit production capability.",
-  "Requires Assessment": "Not enough was seen during the walkthrough to form a view.",
+  "Generally Capable":
+    "Nothing observed that appears to limit production in this area.",
+  "Opportunity Identified":
+    "Working today, but an improvement opportunity was visible.",
+  Constrained:
+    "Something observed appears to actively limit production capability.",
+  "Requires Assessment":
+    "Not enough was seen during the walkthrough to form a view.",
 };
 
 /**
@@ -162,10 +177,16 @@ export function suggestAreaStatus(
   const constrained =
     areaGaps.some((g) => g.severity === "Critical" || g.severity === "High") ||
     rows.some((o) => o.severity === "Critical" || o.severity === "High") ||
-    rows.some((o) => typeof o.rating === "number" && !o.not_observed && (o.rating as number) <= 2);
+    rows.some(
+      (o) =>
+        typeof o.rating === "number" &&
+        !o.not_observed &&
+        (o.rating as number) <= 2,
+    );
   if (constrained) return "Constrained";
 
-  if (areaGaps.length > 0 || rows.some((o) => o.severity === "Moderate")) return "Opportunity Identified";
+  if (areaGaps.length > 0 || rows.some((o) => o.severity === "Moderate"))
+    return "Opportunity Identified";
 
   const observed = rows.filter((o) => !o.not_observed);
   return observed.length > 0 ? "Generally Capable" : "Requires Assessment";
@@ -201,7 +222,8 @@ export function areaBaselines(
       observations: rows.length,
       gaps: gaps.filter((g) => g.focus_area === area.code).length,
       requiresValidation: rows.filter(
-        (o) => o.requires_validation || o.evidence_class === "Requires Validation",
+        (o) =>
+          o.requires_validation || o.evidence_class === "Requires Validation",
       ).length,
     };
   });
@@ -260,7 +282,6 @@ export const OPP_SERVICES = [
   "Full Capability Assessment",
 ];
 
-
 export const OPP_COMPLEXITY = ["Low", "Moderate", "High"];
 export const OPP_REVENUE = ["Small", "Medium", "Large", "Unknown"];
 export const OPP_CONFIDENCE = ["High", "Moderate", "Low"];
@@ -289,7 +310,11 @@ export interface PathAnswers {
   inScope: boolean | null;
 }
 
-export const PATH_QUESTIONS: { key: keyof PathAnswers; column: string; label: string }[] = [
+export const PATH_QUESTIONS: {
+  key: keyof PathAnswers;
+  column: string;
+  label: string;
+}[] = [
   {
     key: "significantConstraints",
     column: "rec_significant_constraints",
@@ -298,7 +323,8 @@ export const PATH_QUESTIONS: { key: keyof PathAnswers; column: string; label: st
   {
     key: "measurableImpact",
     column: "rec_measurable_impact",
-    label: "Do those constraints appear to affect measurable production performance?",
+    label:
+      "Do those constraints appear to affect measurable production performance?",
   },
   {
     key: "unvalidated",
@@ -308,9 +334,14 @@ export const PATH_QUESTIONS: { key: keyof PathAnswers; column: string; label: st
   {
     key: "deeperHelps",
     column: "rec_deeper_helps",
-    label: "Would deeper investigation materially improve the client's decisions?",
+    label:
+      "Would deeper investigation materially improve the client's decisions?",
   },
-  { key: "inScope", column: "rec_in_scope", label: "Is the work within Ironclad's scope of support?" },
+  {
+    key: "inScope",
+    column: "rec_in_scope",
+    label: "Is the work within Ironclad's scope of support?",
+  },
 ];
 
 export interface PathRecommendation {
@@ -354,10 +385,16 @@ export function recommendPath(a: PathAnswers): PathRecommendation {
       answered,
     };
   }
-  if (answered === 0) return { path: null, rationale: "Answer the questions to see a recommendation.", answered };
+  if (answered === 0)
+    return {
+      path: null,
+      rationale: "Answer the questions to see a recommendation.",
+      answered,
+    };
   return {
     path: null,
-    rationale: "Answer the remaining questions — the recorded evidence does not yet point to one path.",
+    rationale:
+      "Answer the remaining questions — the recorded evidence does not yet point to one path.",
     answered,
   };
 }
@@ -365,13 +402,41 @@ export function recommendPath(a: PathAnswers): PathRecommendation {
 /* --------------------------- meeting agenda script ------------------------ */
 
 export const MEETING_AGENDA = [
-  { minutes: 5, title: "Purpose of the visit", detail: "Why Ironclad was onsite and what was in scope." },
-  { minutes: 5, title: "What we were asked to look at", detail: "The client-stated problem in their words." },
-  { minutes: 10, title: "What we observed", detail: "Field overview by area, with evidence classification." },
-  { minutes: 20, title: "Preliminary findings", detail: "Top findings, one at a time, with client validation." },
-  { minutes: 10, title: "What is still unknown", detail: "What could not be validated during a short walk." },
-  { minutes: 5, title: "What we would need to learn next", detail: "Data, access and interviews required." },
-  { minutes: 5, title: "Recommended next step", detail: "Targeted project, full assessment, or no engagement." },
+  {
+    minutes: 5,
+    title: "Purpose of the visit",
+    detail: "Why Ironclad was onsite and what was in scope.",
+  },
+  {
+    minutes: 5,
+    title: "What we were asked to look at",
+    detail: "The client-stated problem in their words.",
+  },
+  {
+    minutes: 10,
+    title: "What we observed",
+    detail: "Field overview by area, with evidence classification.",
+  },
+  {
+    minutes: 20,
+    title: "Preliminary findings",
+    detail: "Top findings, one at a time, with client validation.",
+  },
+  {
+    minutes: 10,
+    title: "What is still unknown",
+    detail: "What could not be validated during a short walk.",
+  },
+  {
+    minutes: 5,
+    title: "What we would need to learn next",
+    detail: "Data, access and interviews required.",
+  },
+  {
+    minutes: 5,
+    title: "Recommended next step",
+    detail: "Targeted project, full assessment, or no engagement.",
+  },
 ];
 
 /* ---------------------------- client summary text ------------------------- */
@@ -412,11 +477,17 @@ export function buildClientSummary(i: SummaryInputs): string {
     lines.push("No findings have been selected yet.");
   } else {
     i.findings.forEach((f, n) => {
-      lines.push(`Finding ${n + 1}: ${f.title || f.observed_condition || "Untitled finding"}`);
-      if (f.observed_condition) lines.push(`  Observed: ${f.observed_condition}`);
-      if (f.operational_impact_text) lines.push(`  Operational impact: ${f.operational_impact_text}`);
-      if (f.preliminary_constraint) lines.push(`  Preliminary constraint: ${f.preliminary_constraint}`);
-      if (f.validation_needed) lines.push(`  Validation required: ${f.validation_needed}`);
+      lines.push(
+        `Finding ${n + 1}: ${f.title || f.observed_condition || "Untitled finding"}`,
+      );
+      if (f.observed_condition)
+        lines.push(`  Observed: ${f.observed_condition}`);
+      if (f.operational_impact_text)
+        lines.push(`  Operational impact: ${f.operational_impact_text}`);
+      if (f.preliminary_constraint)
+        lines.push(`  Preliminary constraint: ${f.preliminary_constraint}`);
+      if (f.validation_needed)
+        lines.push(`  Validation required: ${f.validation_needed}`);
       if (f.evidence_class) lines.push(`  Evidence: ${f.evidence_class}`);
       lines.push("");
     });
@@ -426,7 +497,9 @@ export function buildClientSummary(i: SummaryInputs): string {
   for (const u of i.unknowns) lines.push(`• ${u}`);
   lines.push("");
   lines.push("6. RECOMMENDED NEXT STEP");
-  lines.push(i.recommendation ?? "To be determined at the findings review meeting.");
+  lines.push(
+    i.recommendation ?? "To be determined at the findings review meeting.",
+  );
   if (i.rationale) lines.push(i.rationale);
   lines.push("");
   lines.push("7. IMPORTANT NOTE");

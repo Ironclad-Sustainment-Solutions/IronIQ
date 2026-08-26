@@ -53,7 +53,15 @@ import {
   type TemplateInput,
 } from "@/lib/template-mutations";
 
-function Field({ label, hint, children }: { label: string; hint?: string; children: ReactNode }) {
+function Field({
+  label,
+  hint,
+  children,
+}: {
+  label: string;
+  hint?: string;
+  children: ReactNode;
+}) {
   const id = useId();
   const control = isValidElement(children)
     ? cloneElement(children as ReactElement<{ id?: string }>, { id })
@@ -83,7 +91,11 @@ function Toggle({
   const id = useId();
   return (
     <div className="flex items-start gap-3 rounded-md border border-border p-3">
-      <Checkbox id={id} checked={checked} onCheckedChange={(v) => onChange(v === true)} />
+      <Checkbox
+        id={id}
+        checked={checked}
+        onCheckedChange={(v) => onChange(v === true)}
+      />
       <div className="space-y-0.5">
         <Label htmlFor={id} className="text-sm font-medium text-foreground">
           {label}
@@ -109,7 +121,10 @@ export function TemplateDialog({
 }) {
   const [open, setOpen] = useState(false);
   const save = useSaveTemplate();
-  const [form, setForm] = useState<TemplateInput>({ name: "", template_code: "" });
+  const [form, setForm] = useState<TemplateInput>({
+    name: "",
+    template_code: "",
+  });
 
   useEffect(() => {
     if (!open) return;
@@ -139,9 +154,12 @@ export function TemplateDialog({
       <DialogTrigger asChild>{trigger}</DialogTrigger>
       <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{template ? "Edit template" : "New assessment template"}</DialogTitle>
+          <DialogTitle>
+            {template ? "Edit template" : "New assessment template"}
+          </DialogTitle>
           <DialogDescription>
-            A new template starts as version 1 in draft. Content is authored before publication.
+            A new template starts as version 1 in draft. Content is authored
+            before publication.
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 sm:grid-cols-2">
@@ -156,7 +174,9 @@ export function TemplateDialog({
           <Field label="Template ID" hint="Stable identifier, e.g. IQ-MRA-001">
             <Input
               value={form.template_code}
-              onChange={(e) => setForm((f) => ({ ...f, template_code: e.target.value }))}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, template_code: e.target.value }))
+              }
               maxLength={40}
               placeholder="IQ-MRA-001"
             />
@@ -164,7 +184,9 @@ export function TemplateDialog({
           <Field label="Assessment type">
             <Input
               value={form.assessment_type ?? ""}
-              onChange={(e) => setForm((f) => ({ ...f, assessment_type: e.target.value }))}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, assessment_type: e.target.value }))
+              }
               maxLength={80}
               placeholder="Manufacturing Readiness"
             />
@@ -172,7 +194,9 @@ export function TemplateDialog({
           <Field label="Industry">
             <Input
               value={form.industry ?? ""}
-              onChange={(e) => setForm((f) => ({ ...f, industry: e.target.value }))}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, industry: e.target.value }))
+              }
               maxLength={80}
               placeholder="Discrete manufacturing"
             />
@@ -181,7 +205,9 @@ export function TemplateDialog({
             <Field label="Description">
               <Textarea
                 value={form.description ?? ""}
-                onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, description: e.target.value }))
+                }
                 maxLength={600}
                 rows={2}
               />
@@ -191,7 +217,9 @@ export function TemplateDialog({
             <Field label="Intended use">
               <Textarea
                 value={form.intended_use ?? ""}
-                onChange={(e) => setForm((f) => ({ ...f, intended_use: e.target.value }))}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, intended_use: e.target.value }))
+                }
                 maxLength={600}
                 rows={2}
                 placeholder="When and how assessors should apply this template."
@@ -199,18 +227,26 @@ export function TemplateDialog({
             </Field>
           </div>
           <div className="sm:col-span-2">
-            <Field label="Owner" hint="IronIQ-owned templates are available to every client.">
+            <Field
+              label="Owner"
+              hint="IronIQ-owned templates are available to every client."
+            >
               <Select
                 value={form.owner_organization_id ?? "ironiq"}
                 onValueChange={(v) =>
-                  setForm((f) => ({ ...f, owner_organization_id: v === "ironiq" ? null : v }))
+                  setForm((f) => ({
+                    ...f,
+                    owner_organization_id: v === "ironiq" ? null : v,
+                  }))
                 }
               >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="ironiq">IronIQ (global library)</SelectItem>
+                  <SelectItem value="ironiq">
+                    IronIQ (global library)
+                  </SelectItem>
                   {organizations.map((o) => (
                     <SelectItem key={o.id} value={o.id}>
                       {o.name}
@@ -227,7 +263,9 @@ export function TemplateDialog({
           </Button>
           <Button
             disabled={save.isPending}
-            onClick={() => save.mutate(form, { onSuccess: () => setOpen(false) })}
+            onClick={() =>
+              save.mutate(form, { onSuccess: () => setOpen(false) })
+            }
           >
             {template ? "Save changes" : "Create draft template"}
           </Button>
@@ -290,9 +328,12 @@ export function CategoryDialog({
       <DialogTrigger asChild>{trigger}</DialogTrigger>
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle>{category ? "Edit category" : "New category"}</DialogTitle>
+          <DialogTitle>
+            {category ? "Edit category" : "New category"}
+          </DialogTitle>
           <DialogDescription>
-            Category weights must total exactly 100% before this version can be published.
+            Category weights must total exactly 100% before this version can be
+            published.
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 sm:grid-cols-2">
@@ -304,21 +345,28 @@ export function CategoryDialog({
               placeholder="PC"
             />
           </Field>
-          <Field label="Weight %" hint={`Unallocated: ${Math.round(remaining * 100) / 100}%`}>
+          <Field
+            label="Weight %"
+            hint={`Unallocated: ${Math.round(remaining * 100) / 100}%`}
+          >
             <Input
               type="number"
               min={0}
               max={100}
               step="0.01"
               value={form.weight}
-              onChange={(e) => setForm((f) => ({ ...f, weight: Number(e.target.value) }))}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, weight: Number(e.target.value) }))
+              }
             />
           </Field>
           <div className="sm:col-span-2">
             <Field label="Name">
               <Input
                 value={form.name}
-                onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, name: e.target.value }))
+                }
                 maxLength={120}
                 placeholder="Process Control & Capability"
               />
@@ -328,7 +376,9 @@ export function CategoryDialog({
             <Field label="Description">
               <Textarea
                 value={form.description ?? ""}
-                onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, description: e.target.value }))
+                }
                 maxLength={400}
                 rows={2}
               />
@@ -342,7 +392,10 @@ export function CategoryDialog({
           <Button
             disabled={save.isPending}
             onClick={() =>
-              save.mutate({ input: form, siblings }, { onSuccess: () => setOpen(false) })
+              save.mutate(
+                { input: form, siblings },
+                { onSuccess: () => setOpen(false) },
+              )
             }
           >
             Save category
@@ -414,34 +467,46 @@ export function QuestionDialog({
       <DialogTrigger asChild>{trigger}</DialogTrigger>
       <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{question ? "Edit question" : "New question"}</DialogTitle>
+          <DialogTitle>
+            {question ? "Edit question" : "New question"}
+          </DialogTitle>
           <DialogDescription>
-            Questions are scored 0–5. Critical controls scored 0 or 1 cap the facility readiness level.
+            Questions are scored 0–5. Critical controls scored 0 or 1 cap the
+            facility readiness level.
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Question ID" hint="Unique within this template version">
             <Input
               value={form.question_code}
-              onChange={(e) => setForm((f) => ({ ...f, question_code: e.target.value }))}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, question_code: e.target.value }))
+              }
               maxLength={30}
               placeholder="PC-01"
             />
           </Field>
-          <Field label="Weight" hint="Relative weight inside the category; must be greater than zero.">
+          <Field
+            label="Weight"
+            hint="Relative weight inside the category; must be greater than zero."
+          >
             <Input
               type="number"
               min={0.01}
               step="0.01"
               value={form.weight}
-              onChange={(e) => setForm((f) => ({ ...f, weight: Number(e.target.value) }))}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, weight: Number(e.target.value) }))
+              }
             />
           </Field>
           <div className="sm:col-span-2">
             <Field label="Question text">
               <Textarea
                 value={form.question_text}
-                onChange={(e) => setForm((f) => ({ ...f, question_text: e.target.value }))}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, question_text: e.target.value }))
+                }
                 maxLength={600}
                 rows={2}
               />
@@ -451,7 +516,9 @@ export function QuestionDialog({
             <Field label="Guidance / scoring anchors">
               <Textarea
                 value={form.guidance_text ?? ""}
-                onChange={(e) => setForm((f) => ({ ...f, guidance_text: e.target.value }))}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, guidance_text: e.target.value }))
+                }
                 maxLength={1000}
                 rows={3}
               />
@@ -460,7 +527,9 @@ export function QuestionDialog({
           <Field label="Required evidence">
             <Select
               value={form.required_evidence ?? "none"}
-              onValueChange={(v) => setForm((f) => ({ ...f, required_evidence: v as EvidenceType }))}
+              onValueChange={(v) =>
+                setForm((f) => ({ ...f, required_evidence: v as EvidenceType }))
+              }
             >
               <SelectTrigger>
                 <SelectValue />
@@ -477,7 +546,12 @@ export function QuestionDialog({
           <Field label="Default finding severity">
             <Select
               value={form.default_severity ?? "medium"}
-              onValueChange={(v) => setForm((f) => ({ ...f, default_severity: v as FindingSeverity }))}
+              onValueChange={(v) =>
+                setForm((f) => ({
+                  ...f,
+                  default_severity: v as FindingSeverity,
+                }))
+              }
             >
               <SelectTrigger>
                 <SelectValue />
@@ -513,7 +587,9 @@ export function QuestionDialog({
             label="Allow N/A"
             hint="Assessors may mark this question not applicable."
             checked={Boolean(form.allow_not_applicable)}
-            onChange={(v) => setForm((f) => ({ ...f, allow_not_applicable: v }))}
+            onChange={(v) =>
+              setForm((f) => ({ ...f, allow_not_applicable: v }))
+            }
           />
         </div>
         <DialogFooter>

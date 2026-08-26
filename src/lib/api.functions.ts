@@ -2,7 +2,10 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireAuth } from "@/lib/auth/auth-middleware";
 import { withUser } from "@/lib/db.server";
-import { assertProductAllowed, assertProductAllowedForAssessment } from "@/lib/product-access-check.server";
+import {
+  assertProductAllowed,
+  assertProductAllowedForAssessment,
+} from "@/lib/product-access-check.server";
 
 const optionalId = z.object({ id: z.string().uuid().optional() });
 
@@ -285,7 +288,11 @@ export const upsertAssessmentResponse = createServerFn({ method: "POST" })
   .middleware([requireAuth])
   .inputValidator((d: unknown) => UpsertResponseInput.parse(d))
   .handler(async ({ data, context }) => {
-    await assertProductAllowedForAssessment(context.userId, data.assessment_id, "assessment");
+    await assertProductAllowedForAssessment(
+      context.userId,
+      data.assessment_id,
+      "assessment",
+    );
     await withUser(context.userId, (client) =>
       client.query(
         `INSERT INTO public.assessment_responses
@@ -325,7 +332,11 @@ export const createAssessment = createServerFn({ method: "POST" })
   .middleware([requireAuth])
   .inputValidator((d: unknown) => CreateAssessmentInput.parse(d))
   .handler(async ({ data, context }) => {
-    await assertProductAllowed(context.userId, data.organization_id, "assessment");
+    await assertProductAllowed(
+      context.userId,
+      data.organization_id,
+      "assessment",
+    );
     return withUser(context.userId, async (client) => {
       const { rows } = await client.query(
         `INSERT INTO public.assessments

@@ -9,7 +9,8 @@ export type JobStatus = Database["public"]["Enums"]["job_status"];
 export type IntakeResult = Database["public"]["Enums"]["intake_result"];
 export type SimulationStatus = Database["public"]["Enums"]["simulation_status"];
 export type IntegrationMode = Database["public"]["Enums"]["integration_mode"];
-export type RecommendationDecision = Database["public"]["Enums"]["recommendation_decision"];
+export type RecommendationDecision =
+  Database["public"]["Enums"]["recommendation_decision"];
 export type CheckSeverity = Database["public"]["Enums"]["check_severity"];
 export type ComplexityLevel = Database["public"]["Enums"]["complexity_level"];
 export type ExceptionKind = Database["public"]["Enums"]["exception_kind"];
@@ -19,7 +20,8 @@ export const AI_STATEMENT =
   "AI assists with manufacturing planning and programming preparation. Final responsibility for program validation, posting, and production release remains with the assigned qualified programmer.";
 
 export const PRELIMINARY_LABEL = "Preliminary — Programmer Review Required";
-export const AUTOMATION_LABEL = "Automation Generated — Programmer Validation Required";
+export const AUTOMATION_LABEL =
+  "Automation Generated — Programmer Validation Required";
 
 export const PRODUCTION_LICENSE =
   "Ironclad Sustainment Solutions grants the named customer a non-transferable license to use this CNC program and setup documentation for production of the identified part number and revision on the identified machine. Any modification, transfer to another machine, or use on a different part revision voids validation and requires re-approval by a qualified programmer.";
@@ -46,38 +48,98 @@ export const PRODUCTION_STAGES: ProductionStage[] = [
 ];
 
 export const JOB_STATUS_META: Record<JobStatus, StatusMeta> = {
-  customer_submission_draft: { label: "Customer Submission Draft", stage: "Intake" },
-  customer_data_submitted: { label: "Customer Data Submitted", stage: "Intake" },
+  customer_submission_draft: {
+    label: "Customer Submission Draft",
+    stage: "Intake",
+  },
+  customer_data_submitted: {
+    label: "Customer Data Submitted",
+    stage: "Intake",
+  },
   iss_intake_review: { label: "Intake Review", stage: "Intake" },
   missing_information: { label: "Missing Information", stage: "Intake" },
-  digital_data_recovery_required: { label: "Digital Data Recovery Required", stage: "Intake" },
+  digital_data_recovery_required: {
+    label: "Digital Data Recovery Required",
+    stage: "Intake",
+  },
   machine_profile_review: { label: "Machine Profile Review", stage: "Intake" },
-  tooling_review_required: { label: "Tooling Review Required", stage: "Intake" },
-  fixture_review_required: { label: "Fixture Review Required", stage: "Intake" },
+  tooling_review_required: {
+    label: "Tooling Review Required",
+    stage: "Intake",
+  },
+  fixture_review_required: {
+    label: "Fixture Review Required",
+    stage: "Intake",
+  },
   ready_for_ai_planning: { label: "Ready for AI Planning", stage: "Planning" },
-  ai_manufacturing_plan_in_progress: { label: "AI Manufacturing Plan In Progress", stage: "Planning" },
-  ai_manufacturing_plan_generated: { label: "AI Manufacturing Plan Generated", stage: "Planning" },
-  programmer_plan_review: { label: "Programmer Plan Review", stage: "Planning" },
-  manufacturing_plan_approved: { label: "Manufacturing Plan Approved", stage: "Planning" },
-  mastercam_integration_pending: { label: "CAM Integration Pending", stage: "Programming" },
+  ai_manufacturing_plan_in_progress: {
+    label: "AI Manufacturing Plan In Progress",
+    stage: "Planning",
+  },
+  ai_manufacturing_plan_generated: {
+    label: "AI Manufacturing Plan Generated",
+    stage: "Planning",
+  },
+  programmer_plan_review: {
+    label: "Programmer Plan Review",
+    stage: "Planning",
+  },
+  manufacturing_plan_approved: {
+    label: "Manufacturing Plan Approved",
+    stage: "Planning",
+  },
+  mastercam_integration_pending: {
+    label: "CAM Integration Pending",
+    stage: "Programming",
+  },
   mastercam_job_created: { label: "CAM Job Created", stage: "Programming" },
-  toolpath_generation_in_progress: { label: "Toolpath Generation In Progress", stage: "Programming" },
-  preliminary_toolpaths_generated: { label: "Preliminary Toolpaths Generated", stage: "Programming" },
-  automated_checks_in_progress: { label: "Automated Checks In Progress", stage: "Verification" },
-  corrections_required: { label: "Corrections Required", stage: "Verification" },
-  ready_for_simulation: { label: "Ready for Simulation", stage: "Verification" },
-  simulation_in_progress: { label: "Simulation In Progress", stage: "Verification" },
+  toolpath_generation_in_progress: {
+    label: "Toolpath Generation In Progress",
+    stage: "Programming",
+  },
+  preliminary_toolpaths_generated: {
+    label: "Preliminary Toolpaths Generated",
+    stage: "Programming",
+  },
+  automated_checks_in_progress: {
+    label: "Automated Checks In Progress",
+    stage: "Verification",
+  },
+  corrections_required: {
+    label: "Corrections Required",
+    stage: "Verification",
+  },
+  ready_for_simulation: {
+    label: "Ready for Simulation",
+    stage: "Verification",
+  },
+  simulation_in_progress: {
+    label: "Simulation In Progress",
+    stage: "Verification",
+  },
   simulation_failed: { label: "Simulation Failed", stage: "Verification" },
-  simulation_passed_with_warnings: { label: "Simulation Passed with Warnings", stage: "Verification" },
+  simulation_passed_with_warnings: {
+    label: "Simulation Passed with Warnings",
+    stage: "Verification",
+  },
   simulation_passed: { label: "Simulation Passed", stage: "Verification" },
-  programmer_approval_pending: { label: "Programmer Approval Pending", stage: "Approval" },
-  programmer_revisions_in_progress: { label: "Programmer Revisions In Progress", stage: "Approval" },
+  programmer_approval_pending: {
+    label: "Programmer Approval Pending",
+    stage: "Approval",
+  },
+  programmer_revisions_in_progress: {
+    label: "Programmer Revisions In Progress",
+    stage: "Approval",
+  },
   programmer_approved: { label: "Programmer Approved", stage: "Approval" },
   posting_in_progress: { label: "Posting In Progress", stage: "Release" },
   posted_code_review: { label: "Posted Code Review", stage: "Release" },
   setup_sheet_generation: { label: "Setup Sheet Generation", stage: "Release" },
   final_technical_review: { label: "Final Technical Review", stage: "Release" },
-  ready_for_customer_release: { label: "Ready for Customer Release", stage: "Release" },
+  ready_for_customer_release: {
+    label: "Ready for Customer Release",
+    stage: "Release",
+  },
   released_to_customer: { label: "Released to Customer", stage: "Release" },
   customer_prove_out: { label: "Customer Prove-Out", stage: "Feedback" },
   revision_requested: { label: "Revision Requested", stage: "Feedback" },
@@ -107,7 +169,12 @@ export const COMPLEXITY_LABELS: Record<ComplexityLevel, string> = {
   very_high: "Very High",
 };
 
-export const COMPLEXITY_LEVELS: ComplexityLevel[] = ["low", "moderate", "high", "very_high"];
+export const COMPLEXITY_LEVELS: ComplexityLevel[] = [
+  "low",
+  "moderate",
+  "high",
+  "very_high",
+];
 
 export const INTAKE_RESULT_META: Record<IntakeResult, string> = {
   ready_for_ai_planning: "Ready for AI Planning",
@@ -141,7 +208,10 @@ export const SIMULATION_STATUS_META: Record<SimulationStatus, string> = {
   human_verification_required: "Human Verification Required",
 };
 
-export const INTEGRATION_MODE_META: Record<IntegrationMode, { label: string; description: string }> = {
+export const INTEGRATION_MODE_META: Record<
+  IntegrationMode,
+  { label: string; description: string }
+> = {
   direct_automation: {
     label: "Mode 1 — Direct Automation",
     description:
@@ -186,12 +256,21 @@ export const INTAKE_CHECKS = [
   { key: "revision", label: "Correct part revision submitted" },
   { key: "cad_openable", label: "CAD model or drawing can be opened" },
   { key: "conflicts", label: "No missing or conflicting information" },
-  { key: "machine_profile", label: "Matched to an approved customer machine profile" },
-  { key: "controller_post", label: "Controller and post-processor requirements confirmed" },
+  {
+    key: "machine_profile",
+    label: "Matched to an approved customer machine profile",
+  },
+  {
+    key: "controller_post",
+    label: "Controller and post-processor requirements confirmed",
+  },
   { key: "material_stock", label: "Material and stock dimensions confirmed" },
   { key: "workholding", label: "Workholding constraints confirmed" },
   { key: "tooling", label: "Tooling availability confirmed" },
-  { key: "critical_features", label: "Critical features and tolerances identified" },
+  {
+    key: "critical_features",
+    label: "Critical features and tolerances identified",
+  },
   { key: "inspection", label: "Inspection requirements identified" },
 ] as const;
 

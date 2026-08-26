@@ -30,15 +30,21 @@ export function isVersionEditable(status: TemplateStatus): boolean {
   return status === "draft";
 }
 
-export function sumCategoryWeights(categories: Pick<AssessmentCategory, "weight" | "archived">[]): number {
+export function sumCategoryWeights(
+  categories: Pick<AssessmentCategory, "weight" | "archived">[],
+): number {
   const total = categories
     .filter((c) => !c.archived)
     .reduce((acc, c) => acc + Number(c.weight ?? 0), 0);
   return Math.round(total * 100) / 100;
 }
 
-export function nextVersionNumber(versions: Pick<AssessmentTemplateVersion, "version">[]): number {
-  return versions.reduce((max, v) => Math.max(max, Number(v.version ?? 0)), 0) + 1;
+export function nextVersionNumber(
+  versions: Pick<AssessmentTemplateVersion, "version">[],
+): number {
+  return (
+    versions.reduce((max, v) => Math.max(max, Number(v.version ?? 0)), 0) + 1
+  );
 }
 
 export function validateCategoryInput(
@@ -49,11 +55,17 @@ export function validateCategoryInput(
   const errors: string[] = [];
   if (!input.code?.trim()) errors.push("Category ID is required.");
   if (!input.name?.trim()) errors.push("Category name is required.");
-  if (!(Number(input.weight) > 0)) errors.push("Category weight must be greater than zero.");
+  if (!(Number(input.weight) > 0))
+    errors.push("Category weight must be greater than zero.");
   const duplicate = siblings.some(
-    (c) => c.id !== editingId && c.code.trim().toLowerCase() === input.code.trim().toLowerCase(),
+    (c) =>
+      c.id !== editingId &&
+      c.code.trim().toLowerCase() === input.code.trim().toLowerCase(),
   );
-  if (duplicate) errors.push(`Category ID "${input.code}" is already used in this template version.`);
+  if (duplicate)
+    errors.push(
+      `Category ID "${input.code}" is already used in this template version.`,
+    );
   return errors;
 }
 
@@ -65,13 +77,18 @@ export function validateQuestionInput(
   const errors: string[] = [];
   if (!input.question_code?.trim()) errors.push("Question ID is required.");
   if (!input.question_text?.trim()) errors.push("Question text is required.");
-  if (!(Number(input.weight) > 0)) errors.push("Question weight must be greater than zero.");
+  if (!(Number(input.weight) > 0))
+    errors.push("Question weight must be greater than zero.");
   const duplicate = siblings.some(
     (q) =>
       q.id !== editingId &&
-      q.question_code.trim().toLowerCase() === input.question_code.trim().toLowerCase(),
+      q.question_code.trim().toLowerCase() ===
+        input.question_code.trim().toLowerCase(),
   );
-  if (duplicate) errors.push(`Question ID "${input.question_code}" is already used in this template version.`);
+  if (duplicate)
+    errors.push(
+      `Question ID "${input.question_code}" is already used in this template version.`,
+    );
   return errors;
 }
 
@@ -96,7 +113,10 @@ export function validateForPublish(
   if (!hasCategory) errors.push("Add at least one category.");
 
   const weightsOk = weightTotal === 100;
-  if (!weightsOk) errors.push(`Category weights must total exactly 100% (currently ${weightTotal}%).`);
+  if (!weightsOk)
+    errors.push(
+      `Category weights must total exactly 100% (currently ${weightTotal}%).`,
+    );
 
   const emptyCategories = active.filter(
     (c) => !activeQuestions.some((q) => q.category_id === c.id),
@@ -109,33 +129,55 @@ export function validateForPublish(
   const blankFields = activeQuestions.filter(
     (q) => !q.question_code?.trim() || !q.question_text?.trim(),
   );
-  if (blankFields.length) errors.push(`${blankFields.length} question(s) are missing an ID or text.`);
+  if (blankFields.length)
+    errors.push(`${blankFields.length} question(s) are missing an ID or text.`);
 
   const badWeights = activeQuestions.filter((q) => !(Number(q.weight) > 0));
-  if (badWeights.length) errors.push(`${badWeights.length} question(s) have a weight of zero or less.`);
+  if (badWeights.length)
+    errors.push(
+      `${badWeights.length} question(s) have a weight of zero or less.`,
+    );
 
   const catCodes = active.map((c) => c.code.trim().toLowerCase());
   const dupCats = catCodes.filter((c, i) => catCodes.indexOf(c) !== i);
-  if (dupCats.length) errors.push(`Duplicate category IDs: ${[...new Set(dupCats)].join(", ")}.`);
+  if (dupCats.length)
+    errors.push(`Duplicate category IDs: ${[...new Set(dupCats)].join(", ")}.`);
 
-  const qCodes = activeQuestions.map((q) => q.question_code.trim().toLowerCase());
+  const qCodes = activeQuestions.map((q) =>
+    q.question_code.trim().toLowerCase(),
+  );
   const dupQs = qCodes.filter((c, i) => qCodes.indexOf(c) !== i);
-  if (dupQs.length) errors.push(`Duplicate question IDs: ${[...new Set(dupQs)].join(", ")}.`);
+  if (dupQs.length)
+    errors.push(`Duplicate question IDs: ${[...new Set(dupQs)].join(", ")}.`);
 
   return {
     ok: errors.length === 0,
     weightTotal,
     errors,
     checks: [
-      { label: "At least one category", passed: hasCategory, detail: `${active.length} categories` },
-      { label: "Category weights total 100%", passed: weightsOk, detail: `${weightTotal}%` },
+      {
+        label: "At least one category",
+        passed: hasCategory,
+        detail: `${active.length} categories`,
+      },
+      {
+        label: "Category weights total 100%",
+        passed: weightsOk,
+        detail: `${weightTotal}%`,
+      },
       {
         label: "Every category has an active question",
         passed: emptyCategories.length === 0,
         detail: `${activeQuestions.length} active questions`,
       },
-      { label: "Required question fields complete", passed: blankFields.length === 0 },
-      { label: "Question weights are positive", passed: badWeights.length === 0 },
+      {
+        label: "Required question fields complete",
+        passed: blankFields.length === 0,
+      },
+      {
+        label: "Question weights are positive",
+        passed: badWeights.length === 0,
+      },
       { label: "Category IDs unique", passed: dupCats.length === 0 },
       { label: "Question IDs unique", passed: dupQs.length === 0 },
     ],
@@ -254,7 +296,11 @@ export function selectableTemplateVersions(
   versions: AssessmentTemplateVersion[],
 ): AssessmentTemplateVersion[] {
   const usable = new Set(
-    templates.filter((t) => !t.archived && t.status !== "archived").map((t) => t.id),
+    templates
+      .filter((t) => !t.archived && t.status !== "archived")
+      .map((t) => t.id),
   );
-  return versions.filter((v) => v.status === "published" && usable.has(v.template_id));
+  return versions.filter(
+    (v) => v.status === "published" && usable.has(v.template_id),
+  );
 }

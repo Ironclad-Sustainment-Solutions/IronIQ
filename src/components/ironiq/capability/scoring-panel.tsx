@@ -12,7 +12,11 @@ import {
   type CapDomainRow,
   type CapScoreRow,
 } from "@/lib/capability-domain";
-import { computeCapability, scoreToken, type CriterionResult } from "@/lib/capability-scoring";
+import {
+  computeCapability,
+  scoreToken,
+  type CriterionResult,
+} from "@/lib/capability-scoring";
 import { useSaveCapScore } from "@/lib/capability-api";
 import { cn } from "@/lib/utils";
 import { AlertTriangle, ChevronDown } from "lucide-react";
@@ -29,7 +33,9 @@ export function ScoringPanel({
   scores: CapScoreRow[];
 }) {
   const result = computeCapability(domains, criteria, scores);
-  const [openDomain, setOpenDomain] = useState<string | null>(domains[0]?.id ?? null);
+  const [openDomain, setOpenDomain] = useState<string | null>(
+    domains[0]?.id ?? null,
+  );
 
   return (
     <div className="grid gap-6">
@@ -42,9 +48,13 @@ export function ScoringPanel({
             <div key={s.value} className="rounded-md border border-border p-3">
               <div className="flex items-center gap-2">
                 <ScoreChip score={s.value} size="sm" />
-                <span className="font-display text-sm font-semibold uppercase tracking-widest">{s.label}</span>
+                <span className="font-display text-sm font-semibold uppercase tracking-widest">
+                  {s.label}
+                </span>
               </div>
-              <p className="mt-1.5 text-xs text-muted-foreground">{s.description}</p>
+              <p className="mt-1.5 text-xs text-muted-foreground">
+                {s.description}
+              </p>
             </div>
           ))}
         </div>
@@ -64,7 +74,9 @@ export function ScoringPanel({
                 <h2 className="text-base font-semibold uppercase tracking-wider text-foreground">
                   {d.domain.name}
                 </h2>
-                <p className="mt-1 text-xs text-muted-foreground">{d.domain.key_question}</p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {d.domain.key_question}
+                </p>
               </div>
               <div className="hidden w-40 shrink-0 sm:block">
                 <Meter value={d.percent} token={scoreToken(d.score)} />
@@ -74,16 +86,26 @@ export function ScoringPanel({
               </div>
               {d.severeCount > 0 ? (
                 <Tag token="critical">
-                  <AlertTriangle className="size-3" aria-hidden /> {d.severeCount} severe
+                  <AlertTriangle className="size-3" aria-hidden />{" "}
+                  {d.severeCount} severe
                 </Tag>
               ) : null}
               <ScoreChip score={d.score} />
-              <ChevronDown className={cn("size-4 shrink-0 transition-transform", open && "rotate-180")} />
+              <ChevronDown
+                className={cn(
+                  "size-4 shrink-0 transition-transform",
+                  open && "rotate-180",
+                )}
+              />
             </button>
             {open ? (
               <div className="divide-y divide-border">
                 {d.criteria.map((c) => (
-                  <CriterionRow key={c.criterion.id} assessmentId={assessmentId} result={c} />
+                  <CriterionRow
+                    key={c.criterion.id}
+                    assessmentId={assessmentId}
+                    result={c}
+                  />
                 ))}
               </div>
             ) : null}
@@ -94,7 +116,13 @@ export function ScoringPanel({
   );
 }
 
-function CriterionRow({ assessmentId, result }: { assessmentId: string; result: CriterionResult }) {
+function CriterionRow({
+  assessmentId,
+  result,
+}: {
+  assessmentId: string;
+  result: CriterionResult;
+}) {
   const save = useSaveCapScore(assessmentId);
   const [expanded, setExpanded] = useState<CapDimension | null>(null);
 
@@ -102,7 +130,9 @@ function CriterionRow({ assessmentId, result }: { assessmentId: string; result: 
     <div className="px-5 py-4">
       <div className="flex flex-wrap items-center gap-3">
         <div className="min-w-48 flex-1">
-          <p className="text-sm font-medium text-foreground">{result.criterion.name}</p>
+          <p className="text-sm font-medium text-foreground">
+            {result.criterion.name}
+          </p>
           {result.severe ? (
             <p className="mt-0.5 text-[11px] font-semibold uppercase tracking-widest text-critical">
               Severe constraint
@@ -121,7 +151,9 @@ function CriterionRow({ assessmentId, result }: { assessmentId: string; result: 
               <button
                 type="button"
                 title={dim.question}
-                onClick={() => setExpanded(expanded === dim.key ? null : dim.key)}
+                onClick={() =>
+                  setExpanded(expanded === dim.key ? null : dim.key)
+                }
                 className="eyebrow block w-full text-left hover:text-foreground"
               >
                 {dim.label}
@@ -186,7 +218,8 @@ function CriterionRow({ assessmentId, result }: { assessmentId: string; result: 
               criterion_id: result.criterion.id,
               dimension: expanded,
               score: result.byDimension[expanded]?.score ?? null,
-              not_applicable: result.byDimension[expanded]?.not_applicable ?? false,
+              not_applicable:
+                result.byDimension[expanded]?.not_applicable ?? false,
               rationale,
               confidence: result.byDimension[expanded]?.confidence ?? null,
             })

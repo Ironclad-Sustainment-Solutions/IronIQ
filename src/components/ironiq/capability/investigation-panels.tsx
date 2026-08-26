@@ -56,7 +56,13 @@ import { Plus, Trash2, ArrowDown, ArrowRight } from "lucide-react";
 
 const token = (t: string) => t as "critical";
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function Field({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
   return (
     <div className="grid gap-1.5">
       <Label className="eyebrow">{label}</Label>
@@ -92,7 +98,9 @@ function Native({
   );
 }
 
-const CONFIDENCE_OPTIONS = (Object.keys(CONFIDENCE_LABELS) as CapConfidence[]).map((c) => ({
+const CONFIDENCE_OPTIONS = (
+  Object.keys(CONFIDENCE_LABELS) as CapConfidence[]
+).map((c) => ({
   value: c,
   label: CONFIDENCE_LABELS[c],
 }));
@@ -106,8 +114,16 @@ export function PerformanceGapPanel({
   assessmentId: string;
   metrics: CapMetricRow[];
 }) {
-  const upsert = useInvestigationUpsert<Record<string, unknown>>(assessmentId, "cap_metrics", { silent: true });
-  const remove = useInvestigationDelete(assessmentId, "cap_metrics", "Metric removed");
+  const upsert = useInvestigationUpsert<Record<string, unknown>>(
+    assessmentId,
+    "cap_metrics",
+    { silent: true },
+  );
+  const remove = useInvestigationDelete(
+    assessmentId,
+    "cap_metrics",
+    "Metric removed",
+  );
   const [category, setCategory] = useState<string>("production");
 
   return (
@@ -121,7 +137,10 @@ export function PerformanceGapPanel({
             <Native
               value={category}
               onChange={setCategory}
-              options={PERFORMANCE_CATEGORY_OPTIONS.map((o) => ({ value: o.value, label: o.label }))}
+              options={PERFORMANCE_CATEGORY_OPTIONS.map((o) => ({
+                value: o.value,
+                label: o.label,
+              }))}
             />
           </Field>
           <Button
@@ -129,7 +148,13 @@ export function PerformanceGapPanel({
               upsert.mutate({
                 category: category === "other" ? "production" : category,
                 other_label: category === "other" ? "Other metric" : null,
-                higher_is_better: !["scrap_rework", "cost", "lead_time", "setup_time", "downtime"].includes(category),
+                higher_is_better: ![
+                  "scrap_rework",
+                  "cost",
+                  "lead_time",
+                  "setup_time",
+                  "downtime",
+                ].includes(category),
               })
             }
           >
@@ -165,7 +190,8 @@ function MetricCard({
 }) {
   const [draft, setDraft] = useState(metric);
   useEffect(() => setDraft(metric), [metric]);
-  const set = (patch: Partial<CapMetricRow>) => setDraft({ ...draft, ...patch });
+  const set = (patch: Partial<CapMetricRow>) =>
+    setDraft({ ...draft, ...patch });
   const commit = (patch: Partial<CapMetricRow>) => {
     set(patch);
     onSave(patch as Record<string, unknown>);
@@ -178,9 +204,16 @@ function MetricCard({
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <p className="eyebrow">{PERF_CATEGORY_LABELS[draft.category]}</p>
-          <h3 className="text-base font-semibold uppercase tracking-wider">{title}</h3>
+          <h3 className="text-base font-semibold uppercase tracking-wider">
+            {title}
+          </h3>
         </div>
-        <Button variant="ghost" size="sm" onClick={onDelete} aria-label="Remove metric">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onDelete}
+          aria-label="Remove metric"
+        >
           <Trash2 className="size-4" />
         </Button>
       </div>
@@ -190,21 +223,37 @@ function MetricCard({
         <div className="text-center">
           <p className="eyebrow">Current</p>
           <p className="metric-value text-2xl">{draft.current_value ?? "—"}</p>
-          <p className="text-[11px] text-muted-foreground">{draft.unit ?? ""}</p>
-        </div>
-        <ArrowRight className="mx-auto hidden size-4 text-muted-foreground sm:block" aria-hidden />
-        <div className="text-center">
-          <p className="eyebrow">Gap</p>
-          <p className={`metric-value text-2xl ${gap.met ? "text-success" : "text-critical"}`}>{gap.label}</p>
           <p className="text-[11px] text-muted-foreground">
-            {gap.percentOfRequired !== null ? `${gap.percentOfRequired}% of required` : "—"}
+            {draft.unit ?? ""}
           </p>
         </div>
-        <ArrowRight className="mx-auto hidden size-4 text-muted-foreground sm:block" aria-hidden />
+        <ArrowRight
+          className="mx-auto hidden size-4 text-muted-foreground sm:block"
+          aria-hidden
+        />
+        <div className="text-center">
+          <p className="eyebrow">Gap</p>
+          <p
+            className={`metric-value text-2xl ${gap.met ? "text-success" : "text-critical"}`}
+          >
+            {gap.label}
+          </p>
+          <p className="text-[11px] text-muted-foreground">
+            {gap.percentOfRequired !== null
+              ? `${gap.percentOfRequired}% of required`
+              : "—"}
+          </p>
+        </div>
+        <ArrowRight
+          className="mx-auto hidden size-4 text-muted-foreground sm:block"
+          aria-hidden
+        />
         <div className="text-center">
           <p className="eyebrow">Required</p>
           <p className="metric-value text-2xl">{draft.required_value ?? "—"}</p>
-          <p className="text-[11px] text-muted-foreground">{draft.unit ?? ""}</p>
+          <p className="text-[11px] text-muted-foreground">
+            {draft.unit ?? ""}
+          </p>
         </div>
       </div>
 
@@ -237,7 +286,12 @@ function MetricCard({
           <Input
             type="number"
             value={draft.current_value ?? ""}
-            onChange={(e) => set({ current_value: e.target.value === "" ? null : Number(e.target.value) })}
+            onChange={(e) =>
+              set({
+                current_value:
+                  e.target.value === "" ? null : Number(e.target.value),
+              })
+            }
             onBlur={() => onSave({ current_value: draft.current_value })}
           />
         </Field>
@@ -245,7 +299,12 @@ function MetricCard({
           <Input
             type="number"
             value={draft.required_value ?? ""}
-            onChange={(e) => set({ required_value: e.target.value === "" ? null : Number(e.target.value) })}
+            onChange={(e) =>
+              set({
+                required_value:
+                  e.target.value === "" ? null : Number(e.target.value),
+              })
+            }
             onBlur={() => onSave({ required_value: draft.required_value })}
           />
         </Field>
@@ -253,7 +312,12 @@ function MetricCard({
           <Input
             type="number"
             value={draft.target_value ?? ""}
-            onChange={(e) => set({ target_value: e.target.value === "" ? null : Number(e.target.value) })}
+            onChange={(e) =>
+              set({
+                target_value:
+                  e.target.value === "" ? null : Number(e.target.value),
+              })
+            }
             onBlur={() => onSave({ target_value: draft.target_value })}
           />
         </Field>
@@ -268,7 +332,9 @@ function MetricCard({
         <Field label="Confidence">
           <Native
             value={draft.confidence ?? ""}
-            onChange={(v) => commit({ confidence: (v || null) as CapConfidence | null })}
+            onChange={(v) =>
+              commit({ confidence: (v || null) as CapConfidence | null })
+            }
             options={CONFIDENCE_OPTIONS}
             placeholder="Select confidence"
           />
@@ -290,7 +356,9 @@ function MetricCard({
           <Textarea
             value={draft.current_condition ?? ""}
             onChange={(e) => set({ current_condition: e.target.value })}
-            onBlur={() => onSave({ current_condition: draft.current_condition })}
+            onBlur={() =>
+              onSave({ current_condition: draft.current_condition })
+            }
             placeholder="What the operation is actually achieving today"
           />
         </Field>
@@ -317,8 +385,16 @@ export function ObservationPanel({
   observations: CapObservationRow[];
   domains: CapDomainRow[];
 }) {
-  const upsert = useInvestigationUpsert<Record<string, unknown>>(assessmentId, "cap_observations", { silent: true });
-  const remove = useInvestigationDelete(assessmentId, "cap_observations", "Observation removed");
+  const upsert = useInvestigationUpsert<Record<string, unknown>>(
+    assessmentId,
+    "cap_observations",
+    { silent: true },
+  );
+  const remove = useInvestigationDelete(
+    assessmentId,
+    "cap_observations",
+    "Observation removed",
+  );
 
   return (
     <div className="grid gap-6">
@@ -326,12 +402,16 @@ export function ObservationPanel({
         title="Operational Observation"
         subtitle="Document what is actually happening in the operation. Observations do not have to be assigned to a capability domain yet."
       >
-        <Button onClick={() => upsert.mutate({ observation: "New observation" })}>
+        <Button
+          onClick={() => upsert.mutate({ observation: "New observation" })}
+        >
           <Plus className="size-4" /> Add observation
         </Button>
       </Panel>
 
-      {observations.length === 0 ? <EmptyState message="No observations recorded yet." /> : null}
+      {observations.length === 0 ? (
+        <EmptyState message="No observations recorded yet." />
+      ) : null}
 
       {observations.map((o) => (
         <ObservationCard
@@ -359,7 +439,8 @@ function ObservationCard({
 }) {
   const [draft, setDraft] = useState(row);
   useEffect(() => setDraft(row), [row]);
-  const set = (patch: Partial<CapObservationRow>) => setDraft({ ...draft, ...patch });
+  const set = (patch: Partial<CapObservationRow>) =>
+    setDraft({ ...draft, ...patch });
   const commit = (patch: Partial<CapObservationRow>) => {
     set(patch);
     onSave(patch as Record<string, unknown>);
@@ -378,7 +459,12 @@ function ObservationCard({
             />
           </Field>
         </div>
-        <Button variant="ghost" size="sm" onClick={onDelete} aria-label="Remove observation">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onDelete}
+          aria-label="Remove observation"
+        >
           <Trash2 className="size-4" />
         </Button>
       </div>
@@ -410,7 +496,10 @@ function ObservationCard({
           <Native
             value={draft.frequency ?? ""}
             onChange={(v) => commit({ frequency: v || null })}
-            options={OBSERVATION_FREQUENCIES.map((f) => ({ value: f, label: f }))}
+            options={OBSERVATION_FREQUENCIES.map((f) => ({
+              value: f,
+              label: f,
+            }))}
             placeholder="Select frequency"
           />
         </Field>
@@ -418,15 +507,22 @@ function ObservationCard({
           <Native
             value={draft.severity ?? ""}
             onChange={(v) => commit({ severity: v || null })}
-            options={OBSERVATION_SEVERITIES.map((s) => ({ value: s, label: s }))}
+            options={OBSERVATION_SEVERITIES.map((s) => ({
+              value: s,
+              label: s,
+            }))}
             placeholder="Select severity"
           />
         </Field>
         <Field label="Evidence type">
           <Native
             value={draft.evidence_type ?? ""}
-            onChange={(v) => commit({ evidence_type: (v || null) as CapEvidenceType | null })}
-            options={(Object.keys(EVIDENCE_TYPE_LABELS) as CapEvidenceType[]).map((e) => ({
+            onChange={(v) =>
+              commit({ evidence_type: (v || null) as CapEvidenceType | null })
+            }
+            options={(
+              Object.keys(EVIDENCE_TYPE_LABELS) as CapEvidenceType[]
+            ).map((e) => ({
               value: e,
               label: EVIDENCE_TYPE_LABELS[e],
             }))}
@@ -440,7 +536,9 @@ function ObservationCard({
           <Textarea
             value={draft.performance_effect ?? ""}
             onChange={(e) => set({ performance_effect: e.target.value })}
-            onBlur={() => onSave({ performance_effect: draft.performance_effect })}
+            onBlur={() =>
+              onSave({ performance_effect: draft.performance_effect })
+            }
           />
         </Field>
         <Field label="Evidence detail / attachment reference">
@@ -501,10 +599,16 @@ export function DomainScreenPanel({
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="min-w-0">
                 <p className="eyebrow">{d.verb}</p>
-                <h3 className="text-base font-semibold uppercase tracking-wider">{d.name}</h3>
-                <p className="mt-1 text-xs text-muted-foreground">{d.key_question}</p>
+                <h3 className="text-base font-semibold uppercase tracking-wider">
+                  {d.name}
+                </h3>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {d.key_question}
+                </p>
               </div>
-              <Tag token={token(SCREEN_STATUS_TOKEN[status])}>{SCREEN_STATUS_LABELS[status]}</Tag>
+              <Tag token={token(SCREEN_STATUS_TOKEN[status])}>
+                {SCREEN_STATUS_LABELS[status]}
+              </Tag>
             </div>
 
             <div className="mt-3 flex flex-wrap gap-1.5">
@@ -525,7 +629,9 @@ export function DomainScreenPanel({
             </div>
 
             <div className="mt-3">
-              <p className="eyebrow mb-1.5">Screen items — flag anything that is not performing</p>
+              <p className="eyebrow mb-1.5">
+                Screen items — flag anything that is not performing
+              </p>
               <div className="flex flex-wrap gap-1.5">
                 {items.map((it) => {
                   const on = flagged.includes(it);
@@ -536,7 +642,9 @@ export function DomainScreenPanel({
                       onClick={() =>
                         save.mutate({
                           domain_id: d.id,
-                          screen_items: on ? flagged.filter((x) => x !== it) : [...flagged, it],
+                          screen_items: on
+                            ? flagged.filter((x) => x !== it)
+                            : [...flagged, it],
                         })
                       }
                       className={`rounded-sm border px-2 py-1 text-xs transition-colors ${
@@ -556,7 +664,9 @@ export function DomainScreenPanel({
               className="mt-3"
               defaultValue={row?.notes ?? ""}
               placeholder="Screen notes — what points toward or away from this domain"
-              onBlur={(e) => save.mutate({ domain_id: d.id, notes: e.target.value })}
+              onBlur={(e) =>
+                save.mutate({ domain_id: d.id, notes: e.target.value })
+              }
             />
           </section>
         );
@@ -581,7 +691,9 @@ export function DeepDivePanel({
   screens: CapDomainScreenRow[];
 }) {
   const byDomain = new Map(screens.map((s) => [s.domain_id, s]));
-  const targeted = domains.filter((d) => DEEP_DIVE_TRIGGERS.includes(byDomain.get(d.id)?.status ?? "not_screened"));
+  const targeted = domains.filter((d) =>
+    DEEP_DIVE_TRIGGERS.includes(byDomain.get(d.id)?.status ?? "not_screened"),
+  );
 
   return (
     <div className="grid gap-6">
@@ -591,13 +703,16 @@ export function DeepDivePanel({
       >
         {targeted.length === 0 ? (
           <p className="text-sm text-muted-foreground">
-            No domains are flagged for deep dive. Complete the capability screen first — healthy domains are
-            deliberately left alone.
+            No domains are flagged for deep dive. Complete the capability screen
+            first — healthy domains are deliberately left alone.
           </p>
         ) : (
           <div className="flex flex-wrap gap-2">
             {targeted.map((d) => (
-              <Tag key={d.id} token={token(SCREEN_STATUS_TOKEN[byDomain.get(d.id)!.status])}>
+              <Tag
+                key={d.id}
+                token={token(SCREEN_STATUS_TOKEN[byDomain.get(d.id)!.status])}
+              >
                 {d.name} — {SCREEN_STATUS_LABELS[byDomain.get(d.id)!.status]}
               </Tag>
             ))}
@@ -609,7 +724,9 @@ export function DeepDivePanel({
         <ScoringPanel
           assessmentId={assessmentId}
           domains={targeted}
-          criteria={criteria.filter((c) => targeted.some((d) => d.id === c.domain_id))}
+          criteria={criteria.filter((c) =>
+            targeted.some((d) => d.id === c.domain_id),
+          )}
           scores={scores}
         />
       ) : null}
@@ -627,7 +744,11 @@ export function ConstraintChainPanel({
   chain: CapChainNodeRow[];
 }) {
   const save = useSaveChainNode(assessmentId);
-  const remove = useInvestigationDelete(assessmentId, "cap_chain_nodes", "Chain step cleared");
+  const remove = useInvestigationDelete(
+    assessmentId,
+    "cap_chain_nodes",
+    "Chain step cleared",
+  );
   const byKey = new Map(chain.map((c) => [c.step_key, c]));
 
   return (
@@ -644,7 +765,12 @@ export function ConstraintChainPanel({
                 <div className="flex items-center justify-between gap-2">
                   <p className="eyebrow">{step.label}</p>
                   {row ? (
-                    <Button variant="ghost" size="sm" onClick={() => remove.mutate(row.id)} aria-label="Clear step">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => remove.mutate(row.id)}
+                      aria-label="Clear step"
+                    >
                       <Trash2 className="size-3.5" />
                     </Button>
                   ) : null}
@@ -667,7 +793,10 @@ export function ConstraintChainPanel({
               </div>
               {i < CHAIN_STEPS.length - 1 ? (
                 <div className="flex justify-center py-1">
-                  <ArrowDown className="size-4 text-muted-foreground" aria-hidden />
+                  <ArrowDown
+                    className="size-4 text-muted-foreground"
+                    aria-hidden
+                  />
                 </div>
               ) : null}
             </li>
@@ -699,7 +828,8 @@ export function PrimaryConstraintPanel({
     metric_affected: constraint?.metric_affected ?? "",
     magnitude: constraint?.magnitude ?? "",
     confidence: constraint?.confidence ?? "",
-    validation_status: (constraint?.validation_status ?? "suspected") as ConstraintValidation,
+    validation_status: (constraint?.validation_status ??
+      "suspected") as ConstraintValidation,
   });
   useEffect(() => {
     if (constraint)
@@ -722,7 +852,9 @@ export function PrimaryConstraintPanel({
       <div className="grid gap-3">
         <div className="flex flex-wrap items-center gap-2">
           <span className="eyebrow">Validation status</span>
-          {(["suspected", "probable", "validated"] as ConstraintValidation[]).map((s) => (
+          {(
+            ["suspected", "probable", "validated"] as ConstraintValidation[]
+          ).map((s) => (
             <button
               key={s}
               type="button"
@@ -736,7 +868,9 @@ export function PrimaryConstraintPanel({
               {CONSTRAINT_VALIDATION_LABELS[s]}
             </button>
           ))}
-          <Tag token={token(CONSTRAINT_VALIDATION_TOKEN[draft.validation_status])}>
+          <Tag
+            token={token(CONSTRAINT_VALIDATION_TOKEN[draft.validation_status])}
+          >
             {CONSTRAINT_VALIDATION_LABELS[draft.validation_status]}
           </Tag>
         </div>
@@ -744,14 +878,18 @@ export function PrimaryConstraintPanel({
         <Field label="Primary constraint">
           <Textarea
             value={draft.constraint_text}
-            onChange={(e) => setDraft({ ...draft, constraint_text: e.target.value })}
+            onChange={(e) =>
+              setDraft({ ...draft, constraint_text: e.target.value })
+            }
             placeholder="No controlled standardized fixturing system across machining cells"
           />
         </Field>
         <Field label="Supporting evidence">
           <Textarea
             value={draft.supporting_evidence}
-            onChange={(e) => setDraft({ ...draft, supporting_evidence: e.target.value })}
+            onChange={(e) =>
+              setDraft({ ...draft, supporting_evidence: e.target.value })
+            }
             placeholder="Setup time study, observed cell-to-cell fixture variation, ERP downtime data"
           />
         </Field>
@@ -778,7 +916,9 @@ export function PrimaryConstraintPanel({
           <Field label="Magnitude of impact">
             <Input
               value={draft.magnitude}
-              onChange={(e) => setDraft({ ...draft, magnitude: e.target.value })}
+              onChange={(e) =>
+                setDraft({ ...draft, magnitude: e.target.value })
+              }
               placeholder="≈150 parts/week of lost output"
             />
           </Field>
@@ -839,8 +979,8 @@ export function HealthSweepPanel({
         subtitle="Capture weaknesses that are not causing the current problem. These stay separate from the primary constraint so unrelated issues are never blamed for it."
       >
         <p className="text-sm text-muted-foreground">
-          Classify each domain, including those already screened, so future constraints are visible without
-          competing with the current diagnosis.
+          Classify each domain, including those already screened, so future
+          constraints are visible without competing with the current diagnosis.
         </p>
       </Panel>
       {domains.map((d) => {
@@ -850,10 +990,19 @@ export function HealthSweepPanel({
           <section key={d.id} className="panel p-5">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div>
-                <h3 className="text-sm font-semibold uppercase tracking-wider">{d.name}</h3>
+                <h3 className="text-sm font-semibold uppercase tracking-wider">
+                  {d.name}
+                </h3>
                 <p className="text-xs text-muted-foreground">
-                  Screen: {SCREEN_STATUS_LABELS[byScreen.get(d.id)?.status ?? "not_screened"]}
-                  {constraintDomainId === d.id ? " · holds the primary constraint" : ""}
+                  Screen:{" "}
+                  {
+                    SCREEN_STATUS_LABELS[
+                      byScreen.get(d.id)?.status ?? "not_screened"
+                    ]
+                  }
+                  {constraintDomainId === d.id
+                    ? " · holds the primary constraint"
+                    : ""}
                 </p>
               </div>
               <Tag token={token(SWEEP_TOKEN[cls])}>{SWEEP_LABELS[cls]}</Tag>
@@ -863,7 +1012,9 @@ export function HealthSweepPanel({
                 <button
                   key={c}
                   type="button"
-                  onClick={() => save.mutate({ domain_id: d.id, classification: c })}
+                  onClick={() =>
+                    save.mutate({ domain_id: d.id, classification: c })
+                  }
                   className={`rounded-sm border px-2.5 py-1 font-display text-[11px] font-semibold uppercase tracking-widest ${
                     cls === c
                       ? "border-primary bg-primary text-primary-foreground"
@@ -878,7 +1029,9 @@ export function HealthSweepPanel({
               className="mt-3"
               defaultValue={row?.note ?? ""}
               placeholder="What was seen, and why it matters later"
-              onBlur={(e) => save.mutate({ domain_id: d.id, note: e.target.value })}
+              onBlur={(e) =>
+                save.mutate({ domain_id: d.id, note: e.target.value })
+              }
             />
           </section>
         );
@@ -916,8 +1069,12 @@ export function DomainDashboard({
         return (
           <section key={d.id} className="panel p-4">
             <div className="flex items-start justify-between gap-2">
-              <h3 className="text-sm font-semibold uppercase tracking-wider">{d.name}</h3>
-              <Tag token={token(SCREEN_STATUS_TOKEN[status])}>{SCREEN_STATUS_LABELS[status]}</Tag>
+              <h3 className="text-sm font-semibold uppercase tracking-wider">
+                {d.name}
+              </h3>
+              <Tag token={token(SCREEN_STATUS_TOKEN[status])}>
+                {SCREEN_STATUS_LABELS[status]}
+              </Tag>
             </div>
             <div className="mt-3 grid grid-cols-4 gap-2 text-center">
               <div>
@@ -929,7 +1086,11 @@ export function DomainDashboard({
                 <p className="eyebrow">Findings</p>
               </div>
               <div>
-                <p className={`metric-value text-lg ${f.critical ? "text-critical" : ""}`}>{f.critical}</p>
+                <p
+                  className={`metric-value text-lg ${f.critical ? "text-critical" : ""}`}
+                >
+                  {f.critical}
+                </p>
                 <p className="eyebrow">Critical</p>
               </div>
               <div>
@@ -939,7 +1100,9 @@ export function DomainDashboard({
             </div>
             <p className="mt-2 text-xs text-muted-foreground">
               Confidence: {scoreByDomain[d.id]?.confidence ?? "not assessed"}
-              {bySweep.get(d.id) ? ` · Sweep: ${SWEEP_LABELS[bySweep.get(d.id)!.classification]}` : ""}
+              {bySweep.get(d.id)
+                ? ` · Sweep: ${SWEEP_LABELS[bySweep.get(d.id)!.classification]}`
+                : ""}
             </p>
           </section>
         );
@@ -960,10 +1123,17 @@ export function SummaryPanel({
   firstAction,
   domains,
 }: {
-  problem: { stated_problem: string | null; desired_outcome: string | null } | null;
+  problem: {
+    stated_problem: string | null;
+    desired_outcome: string | null;
+  } | null;
   metrics: CapMetricRow[];
   constraint: CapPrimaryConstraintRow | null;
-  rootGap: { root_gap: string; validated: boolean; operational_consequence: string | null } | null;
+  rootGap: {
+    root_gap: string;
+    validated: boolean;
+    operational_consequence: string | null;
+  } | null;
   contributing: { id: string; title: string }[];
   risks: { id: string; title: string }[];
   firstAction: {
@@ -983,8 +1153,13 @@ export function SummaryPanel({
 
   return (
     <div className="grid gap-4">
-      <Panel title="Customer Problem" subtitle="Customer-Stated Information — not validated root cause">
-        <p className="text-sm text-foreground">{problem?.stated_problem || "Not captured"}</p>
+      <Panel
+        title="Customer Problem"
+        subtitle="Customer-Stated Information — not validated root cause"
+      >
+        <p className="text-sm text-foreground">
+          {problem?.stated_problem || "Not captured"}
+        </p>
         <p className="mt-2 text-xs text-muted-foreground">
           Desired outcome: {problem?.desired_outcome || "—"}
         </p>
@@ -998,12 +1173,22 @@ export function SummaryPanel({
             {metrics.map((m) => {
               const g = metricGap(m);
               return (
-                <li key={m.id} className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-border p-3">
-                  <span className="text-sm">{metricTitle(m, PERF_CATEGORY_LABELS[m.category])}</span>
-                  <span className="text-sm text-muted-foreground">
-                    {m.current_value ?? "—"} → {m.required_value ?? "—"} {m.unit ?? ""}
+                <li
+                  key={m.id}
+                  className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-border p-3"
+                >
+                  <span className="text-sm">
+                    {metricTitle(m, PERF_CATEGORY_LABELS[m.category])}
                   </span>
-                  <span className={`metric-value ${g.met ? "text-success" : "text-critical"}`}>{g.label}</span>
+                  <span className="text-sm text-muted-foreground">
+                    {m.current_value ?? "—"} → {m.required_value ?? "—"}{" "}
+                    {m.unit ?? ""}
+                  </span>
+                  <span
+                    className={`metric-value ${g.met ? "text-success" : "text-critical"}`}
+                  >
+                    {g.label}
+                  </span>
                 </li>
               );
             })}
@@ -1011,19 +1196,30 @@ export function SummaryPanel({
         )}
       </Panel>
 
-      <Panel title="Primary Constraint" subtitle={`Capability domain: ${domainName}`}>
+      <Panel
+        title="Primary Constraint"
+        subtitle={`Capability domain: ${domainName}`}
+      >
         {constraint?.constraint_text ? (
           <>
             <div className="mb-2">
-              <Tag token={token(CONSTRAINT_VALIDATION_TOKEN[constraint.validation_status])}>
+              <Tag
+                token={token(
+                  CONSTRAINT_VALIDATION_TOKEN[constraint.validation_status],
+                )}
+              >
                 {CONSTRAINT_VALIDATION_LABELS[constraint.validation_status]}
               </Tag>
             </div>
             <p className="text-sm">{constraint.constraint_text}</p>
-            <p className="mt-2 text-xs text-muted-foreground">Magnitude: {constraint.magnitude || "—"}</p>
+            <p className="mt-2 text-xs text-muted-foreground">
+              Magnitude: {constraint.magnitude || "—"}
+            </p>
           </>
         ) : (
-          <p className="text-sm text-muted-foreground">Not yet declared by the assessor.</p>
+          <p className="text-sm text-muted-foreground">
+            Not yet declared by the assessor.
+          </p>
         )}
       </Panel>
 
@@ -1032,7 +1228,9 @@ export function SummaryPanel({
           <>
             {!rootGap.validated ? (
               <div className="mb-2">
-                <Tag token="high">Suspected Root Capability Gap — Validation Required</Tag>
+                <Tag token="high">
+                  Suspected Root Capability Gap — Validation Required
+                </Tag>
               </div>
             ) : null}
             <p className="text-sm">{rootGap.root_gap}</p>
@@ -1041,7 +1239,9 @@ export function SummaryPanel({
             </p>
           </>
         ) : (
-          <p className="text-sm text-muted-foreground">No root capability gap recorded.</p>
+          <p className="text-sm text-muted-foreground">
+            No root capability gap recorded.
+          </p>
         )}
       </Panel>
 
@@ -1070,18 +1270,25 @@ export function SummaryPanel({
         </Panel>
       </div>
 
-      <Panel title="Recommended First Action" subtitle="Baseline, target and expected operational benefit">
+      <Panel
+        title="Recommended First Action"
+        subtitle="Baseline, target and expected operational benefit"
+      >
         {firstAction ? (
           <>
             <p className="text-sm">{firstAction.recommended_action}</p>
             <div className="mt-3 grid gap-3 sm:grid-cols-3">
               <div className="rounded-md border border-border p-3 text-center">
                 <p className="eyebrow">Baseline</p>
-                <p className="metric-value text-xl">{firstAction.baseline_value ?? "—"}</p>
+                <p className="metric-value text-xl">
+                  {firstAction.baseline_value ?? "—"}
+                </p>
               </div>
               <div className="rounded-md border border-border p-3 text-center">
                 <p className="eyebrow">Target</p>
-                <p className="metric-value text-xl">{firstAction.target_value ?? "—"}</p>
+                <p className="metric-value text-xl">
+                  {firstAction.target_value ?? "—"}
+                </p>
               </div>
               <div className="rounded-md border border-border p-3 text-center">
                 <p className="eyebrow">Metric</p>
@@ -1095,7 +1302,9 @@ export function SummaryPanel({
             </p>
           </>
         ) : (
-          <p className="text-sm text-muted-foreground">No prioritized restoration action yet.</p>
+          <p className="text-sm text-muted-foreground">
+            No prioritized restoration action yet.
+          </p>
         )}
       </Panel>
     </div>

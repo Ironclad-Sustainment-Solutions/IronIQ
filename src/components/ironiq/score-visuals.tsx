@@ -1,5 +1,9 @@
 import { cn } from "@/lib/utils";
-import { formatScore, readinessToken, type ReadinessLevel } from "@/lib/scoring";
+import {
+  formatScore,
+  readinessToken,
+  type ReadinessLevel,
+} from "@/lib/scoring";
 
 const ringToken: Record<string, string> = {
   critical: "text-critical",
@@ -50,7 +54,10 @@ export function ScoreDial({
             strokeWidth={stroke}
             strokeLinecap="butt"
             strokeDasharray={`${(pct / 100) * c} ${c}`}
-            className={cn("transition-all duration-700", ringToken[token] ?? ringToken.primary)}
+            className={cn(
+              "transition-all duration-700",
+              ringToken[token] ?? ringToken.primary,
+            )}
             stroke="currentColor"
           />
         </svg>
@@ -84,9 +91,13 @@ export function StatCard({
       <p className="eyebrow">{label}</p>
       <p className={cn("metric mt-2 text-3xl font-semibold", ringToken[token])}>
         {value}
-        {unit ? <span className="ml-0.5 text-lg text-muted-foreground">{unit}</span> : null}
+        {unit ? (
+          <span className="ml-0.5 text-lg text-muted-foreground">{unit}</span>
+        ) : null}
       </p>
-      {hint ? <p className="mt-1 text-xs text-muted-foreground">{hint}</p> : null}
+      {hint ? (
+        <p className="mt-1 text-xs text-muted-foreground">{hint}</p>
+      ) : null}
     </div>
   );
 }
@@ -104,7 +115,15 @@ export function CategoryBar({
 }) {
   const pct = score ?? 0;
   const token =
-    score === null ? "steel" : pct >= 80 ? "success" : pct >= 70 ? "medium" : pct >= 60 ? "high" : "critical";
+    score === null
+      ? "steel"
+      : pct >= 80
+        ? "success"
+        : pct >= 70
+          ? "medium"
+          : pct >= 60
+            ? "high"
+            : "critical";
   const bg: Record<string, string> = {
     success: "bg-success",
     medium: "bg-medium",
@@ -130,9 +149,12 @@ export function CategoryBar({
     >
       <div className="flex items-baseline justify-between gap-3">
         <p className="truncate text-sm text-foreground">
-          {name} <span className="text-xs text-muted-foreground">· {weight}%</span>
+          {name}{" "}
+          <span className="text-xs text-muted-foreground">· {weight}%</span>
         </p>
-        <p className="metric text-sm font-semibold text-foreground">{formatScore(score)}</p>
+        <p className="metric text-sm font-semibold text-foreground">
+          {formatScore(score)}
+        </p>
       </div>
       <div className="mt-1.5 h-2 w-full overflow-hidden rounded-sm bg-muted">
         <div

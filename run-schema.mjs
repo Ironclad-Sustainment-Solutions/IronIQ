@@ -176,8 +176,13 @@ const dbDir = new URL("./db/", import.meta.url);
 const allAdditionsOnDisk = readdirSync(dbDir).filter(
   (f) => f.startsWith("schema_additions_") && f.endsWith(".sql"),
 );
-const unlisted = allAdditionsOnDisk.filter((f) => !ORDERED_ADDITIONS.includes(f));
-const filesToApply = [...ORDERED_ADDITIONS.filter((f) => allAdditionsOnDisk.includes(f)), ...unlisted.sort()];
+const unlisted = allAdditionsOnDisk.filter(
+  (f) => !ORDERED_ADDITIONS.includes(f),
+);
+const filesToApply = [
+  ...ORDERED_ADDITIONS.filter((f) => allAdditionsOnDisk.includes(f)),
+  ...unlisted.sort(),
+];
 
 if (unlisted.length > 0) {
   console.warn(
@@ -213,7 +218,10 @@ const client = new pg.Client({
 });
 await client.connect();
 
-const baseSchema = readFileSync(new URL("./db/schema.sql", import.meta.url), "utf8");
+const baseSchema = readFileSync(
+  new URL("./db/schema.sql", import.meta.url),
+  "utf8",
+);
 await applyFile(client, "db/schema.sql", baseSchema);
 
 for (const file of filesToApply) {
@@ -239,4 +247,3 @@ console.log(`Granted to "${connUser}".`);
 
 await client.end();
 console.log("Done.");
-

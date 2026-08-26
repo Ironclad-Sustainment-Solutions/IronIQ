@@ -25,8 +25,18 @@ const tokenClass: Record<string, string> = {
   primary: "border-primary/50 bg-primary/15 text-primary",
 };
 
-export function Tag({ token, children }: { token: keyof typeof tokenClass; children: React.ReactNode }) {
-  return <span className={cn(base, tokenClass[token] ?? tokenClass.steel)}>{children}</span>;
+export function Tag({
+  token,
+  children,
+}: {
+  token: keyof typeof tokenClass;
+  children: React.ReactNode;
+}) {
+  return (
+    <span className={cn(base, tokenClass[token] ?? tokenClass.steel)}>
+      {children}
+    </span>
+  );
 }
 
 export function SeverityBadge({ severity }: { severity: FindingSeverity }) {
@@ -43,19 +53,32 @@ const findingStatusToken: Record<FindingStatus, keyof typeof tokenClass> = {
 };
 
 export function FindingStatusBadge({ status }: { status: FindingStatus }) {
-  return <Tag token={findingStatusToken[status]}>{FINDING_STATUS_LABELS[status]}</Tag>;
+  return (
+    <Tag token={findingStatusToken[status]}>
+      {FINDING_STATUS_LABELS[status]}
+    </Tag>
+  );
 }
 
-const assessmentStatusToken: Record<AssessmentStatus, keyof typeof tokenClass> = {
-  draft: "steel",
-  in_progress: "primary",
-  review: "medium",
-  finalized: "success",
-  reopened: "high",
-};
+const assessmentStatusToken: Record<AssessmentStatus, keyof typeof tokenClass> =
+  {
+    draft: "steel",
+    in_progress: "primary",
+    review: "medium",
+    finalized: "success",
+    reopened: "high",
+  };
 
-export function AssessmentStatusBadge({ status }: { status: AssessmentStatus }) {
-  return <Tag token={assessmentStatusToken[status]}>{ASSESSMENT_STATUS_LABELS[status]}</Tag>;
+export function AssessmentStatusBadge({
+  status,
+}: {
+  status: AssessmentStatus;
+}) {
+  return (
+    <Tag token={assessmentStatusToken[status]}>
+      {ASSESSMENT_STATUS_LABELS[status]}
+    </Tag>
+  );
 }
 
 const projectStatusToken: Record<ProjectStatus, keyof typeof tokenClass> = {
@@ -68,10 +91,16 @@ const projectStatusToken: Record<ProjectStatus, keyof typeof tokenClass> = {
 };
 
 export function ProjectStatusBadge({ status }: { status: ProjectStatus }) {
-  return <Tag token={projectStatusToken[status]}>{PROJECT_STATUS_LABELS[status]}</Tag>;
+  return (
+    <Tag token={projectStatusToken[status]}>
+      {PROJECT_STATUS_LABELS[status]}
+    </Tag>
+  );
 }
 
 export function ReadinessBadge({ level }: { level: ReadinessLevel | null }) {
   if (!level) return <Tag token="steel">Not scored</Tag>;
-  return <Tag token={readinessToken(level) as keyof typeof tokenClass}>{level}</Tag>;
+  return (
+    <Tag token={readinessToken(level) as keyof typeof tokenClass}>{level}</Tag>
+  );
 }

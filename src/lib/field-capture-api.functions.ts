@@ -8,7 +8,11 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireAuth } from "@/lib/auth/auth-middleware";
 import { withUser } from "@/lib/db.server";
-import { getSignedDownloadUrl, uploadObject, deleteObject } from "@/lib/storage.server";
+import {
+  getSignedDownloadUrl,
+  uploadObject,
+  deleteObject,
+} from "@/lib/storage.server";
 import { assertColumnsAllowed } from "@/lib/column-allowlist";
 
 export const EVIDENCE_BUCKET = "field-evidence";
@@ -21,23 +25,25 @@ export const getFieldCapture = createServerFn({ method: "GET" })
   .inputValidator((d: unknown) => fieldIdInput.parse(d))
   .handler(async ({ data, context }) =>
     withUser(context.userId, async (client) => {
-      const [observations, quickCaptures, attachments, gaps] = await Promise.all([
-        client.query(
-          "SELECT * FROM public.field_capture_observations WHERE field_assessment_id = $1 ORDER BY created_at DESC",
-          [data.fieldId],
-        ),
-        client.query(
-          "SELECT * FROM public.field_quick_captures WHERE field_assessment_id = $1 ORDER BY created_at DESC",
-          [data.fieldId],
-        ),
-        client.query("SELECT * FROM public.field_attachments WHERE field_assessment_id = $1", [
-          data.fieldId,
-        ]),
-        client.query(
-          "SELECT * FROM public.field_gaps WHERE field_assessment_id = $1 ORDER BY sort_order",
-          [data.fieldId],
-        ),
-      ]);
+      const [observations, quickCaptures, attachments, gaps] =
+        await Promise.all([
+          client.query(
+            "SELECT * FROM public.field_capture_observations WHERE field_assessment_id = $1 ORDER BY created_at DESC",
+            [data.fieldId],
+          ),
+          client.query(
+            "SELECT * FROM public.field_quick_captures WHERE field_assessment_id = $1 ORDER BY created_at DESC",
+            [data.fieldId],
+          ),
+          client.query(
+            "SELECT * FROM public.field_attachments WHERE field_assessment_id = $1",
+            [data.fieldId],
+          ),
+          client.query(
+            "SELECT * FROM public.field_gaps WHERE field_assessment_id = $1 ORDER BY sort_order",
+            [data.fieldId],
+          ),
+        ]);
       return {
         observations: observations.rows,
         quickCaptures: quickCaptures.rows,
@@ -49,7 +55,10 @@ export const getFieldCapture = createServerFn({ method: "GET" })
 
 // ---- observations ----
 
-const AddObservationInput = z.object({ fieldId: z.string().uuid(), values: z.record(z.any()) });
+const AddObservationInput = z.object({
+  fieldId: z.string().uuid(),
+  values: z.record(z.any()),
+});
 
 export const addObservation = createServerFn({ method: "POST" })
   .middleware([requireAuth])
@@ -59,7 +68,11 @@ export const addObservation = createServerFn({ method: "POST" })
       const valueCols = Object.keys(data.values);
       assertColumnsAllowed("field_capture_observations", valueCols);
       const cols = ["field_assessment_id", ...valueCols, "created_by"];
-      const vals = [data.fieldId, ...Object.values(data.values), context.userId];
+      const vals = [
+        data.fieldId,
+        ...Object.values(data.values),
+        context.userId,
+      ];
       const placeholders = vals.map((_, i) => `$${i + 1}`).join(", ");
       const { rows } = await client.query(
         `INSERT INTO public.field_capture_observations (${cols.join(", ")}) VALUES (${placeholders}) RETURNING id`,
@@ -69,7 +82,10 @@ export const addObservation = createServerFn({ method: "POST" })
     }),
   );
 
-const UpdateRowInput = z.object({ id: z.string().uuid(), values: z.record(z.any()) });
+const UpdateRowInput = z.object({
+  id: z.string().uuid(),
+  values: z.record(z.any()),
+});
 
 export const updateObservation = createServerFn({ method: "POST" })
   .middleware([requireAuth])
@@ -92,13 +108,19 @@ export const removeObservation = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => idInput.parse(d))
   .handler(async ({ data, context }) =>
     withUser(context.userId, (client) =>
-      client.query("DELETE FROM public.field_capture_observations WHERE id = $1", [data.id]),
+      client.query(
+        "DELETE FROM public.field_capture_observations WHERE id = $1",
+        [data.id],
+      ),
     ),
   );
 
 // ---- quick captures ----
 
-const AddQuickCaptureInput = z.object({ fieldId: z.string().uuid(), values: z.record(z.any()) });
+const AddQuickCaptureInput = z.object({
+  fieldId: z.string().uuid(),
+  values: z.record(z.any()),
+});
 
 export const addQuickCapture = createServerFn({ method: "POST" })
   .middleware([requireAuth])
@@ -108,7 +130,11 @@ export const addQuickCapture = createServerFn({ method: "POST" })
       const valueCols = Object.keys(data.values);
       assertColumnsAllowed("field_quick_captures", valueCols);
       const cols = ["field_assessment_id", ...valueCols, "created_by"];
-      const vals = [data.fieldId, ...Object.values(data.values), context.userId];
+      const vals = [
+        data.fieldId,
+        ...Object.values(data.values),
+        context.userId,
+      ];
       const placeholders = vals.map((_, i) => `$${i + 1}`).join(", ");
       const { rows } = await client.query(
         `INSERT INTO public.field_quick_captures (${cols.join(", ")}) VALUES (${placeholders}) RETURNING id`,
@@ -123,7 +149,9 @@ export const removeQuickCapture = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => idInput.parse(d))
   .handler(async ({ data, context }) =>
     withUser(context.userId, (client) =>
-      client.query("DELETE FROM public.field_quick_captures WHERE id = $1", [data.id]),
+      client.query("DELETE FROM public.field_quick_captures WHERE id = $1", [
+        data.id,
+      ]),
     ),
   );
 
@@ -167,7 +195,10 @@ export const convertQuickCapture = createServerFn({ method: "POST" })
 
 // ---- gaps ----
 
-const AddGapInput = z.object({ fieldId: z.string().uuid(), values: z.record(z.any()) });
+const AddGapInput = z.object({
+  fieldId: z.string().uuid(),
+  values: z.record(z.any()),
+});
 
 export const addGap = createServerFn({ method: "POST" })
   .middleware([requireAuth])
@@ -196,10 +227,10 @@ export const updateGap = createServerFn({ method: "POST" })
       if (cols.length === 0) return;
       assertColumnsAllowed("field_gaps", cols);
       const setClause = cols.map((c, i) => `${c} = $${i + 1}`).join(", ");
-      await client.query(`UPDATE public.field_gaps SET ${setClause} WHERE id = $${cols.length + 1}`, [
-        ...Object.values(data.values),
-        data.id,
-      ]);
+      await client.query(
+        `UPDATE public.field_gaps SET ${setClause} WHERE id = $${cols.length + 1}`,
+        [...Object.values(data.values), data.id],
+      );
     }),
   );
 
@@ -207,7 +238,9 @@ export const removeGap = createServerFn({ method: "POST" })
   .middleware([requireAuth])
   .inputValidator((d: unknown) => idInput.parse(d))
   .handler(async ({ data, context }) =>
-    withUser(context.userId, (client) => client.query("DELETE FROM public.field_gaps WHERE id = $1", [data.id])),
+    withUser(context.userId, (client) =>
+      client.query("DELETE FROM public.field_gaps WHERE id = $1", [data.id]),
+    ),
   );
 
 const GapFromObservationInput = z.object({
@@ -221,9 +254,13 @@ export const gapFromObservation = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => GapFromObservationInput.parse(d))
   .handler(async ({ data, context }) => {
     const o = data.observation as Record<string, unknown>;
-    const location = [o.area, o.machine, o.production_cell].filter(Boolean).join(" / ");
+    const location = [o.area, o.machine, o.production_cell]
+      .filter(Boolean)
+      .join(" / ");
     const title =
-      (typeof o.observed_condition === "string" ? o.observed_condition.trim().slice(0, 160) : "") ||
+      (typeof o.observed_condition === "string"
+        ? o.observed_condition.trim().slice(0, 160)
+        : "") ||
       (o.category as string | undefined) ||
       "Capability gap";
     return withUser(context.userId, async (client) => {
@@ -251,7 +288,9 @@ export const gapFromObservation = createServerFn({ method: "POST" })
           o.operational_impact ?? null,
           o.constrained_capability ?? null,
           o.ironclad_support ?? null,
-          o.requires_validation ? "Requires validation before it can be treated as confirmed." : null,
+          o.requires_validation
+            ? "Requires validation before it can be treated as confirmed."
+            : null,
           o.rating ?? null,
           o.observed_condition ?? null,
         ],
@@ -363,10 +402,13 @@ export const deleteEvidence = createServerFn({ method: "POST" })
       );
       return rows[0]?.storage_path ?? null;
     });
-    if (!storagePath) throw new Error("Evidence file not found or not accessible.");
+    if (!storagePath)
+      throw new Error("Evidence file not found or not accessible.");
     await deleteObject(EVIDENCE_BUCKET, storagePath);
     await withUser(context.userId, (client) =>
-      client.query("DELETE FROM public.field_attachments WHERE id = $1", [data.id]),
+      client.query("DELETE FROM public.field_attachments WHERE id = $1", [
+        data.id,
+      ]),
     );
   });
 
@@ -422,7 +464,9 @@ export const convertToFullAssessment = createServerFn({ method: "POST" })
           userId,
           assessment.problem_statement ?? null,
           whereWhen || null,
-          Array.isArray(assessment.impact_tags) ? assessment.impact_tags.join(", ") || null : null,
+          Array.isArray(assessment.impact_tags)
+            ? assessment.impact_tags.join(", ") || null
+            : null,
           assessment.attempted ?? null,
           assessment.improvement_if_resolved ?? null,
         ],
@@ -455,7 +499,8 @@ export const convertToFullAssessment = createServerFn({ method: "POST" })
           [
             capId,
             assessment.organization_id,
-            [o.focus_area, o.area, o.process].filter(Boolean).join(" / ") || null,
+            [o.focus_area, o.area, o.process].filter(Boolean).join(" / ") ||
+              null,
             [o.machine, o.production_cell].filter(Boolean).join(" / ") || null,
             o.observed_condition,
             o.operational_impact ?? null,
@@ -466,7 +511,9 @@ export const convertToFullAssessment = createServerFn({ method: "POST" })
             [
               "Carried forward from the Field Capability Assessment.",
               o.assessor_notes,
-              o.constrained_capability ? `Constrained capability: ${o.constrained_capability}` : null,
+              o.constrained_capability
+                ? `Constrained capability: ${o.constrained_capability}`
+                : null,
             ]
               .filter(Boolean)
               .join(" "),
@@ -483,8 +530,13 @@ export const convertToFullAssessment = createServerFn({ method: "POST" })
            VALUES ($1,$2,$3,$4,'ironclad_validated',$5,$6,$7)`,
           [
             capId,
-            String(g.title ?? g.observed_condition ?? "Field finding").slice(0, 200),
-            [g.observed_condition, g.objective_evidence].filter(Boolean).join("\n\nEvidence: "),
+            String(g.title ?? g.observed_condition ?? "Field finding").slice(
+              0,
+              200,
+            ),
+            [g.observed_condition, g.objective_evidence]
+              .filter(Boolean)
+              .join("\n\nEvidence: "),
             g.is_top_finding ? "primary_constraint" : "contributing_constraint",
             g.confidence === "High Confidence" ? "high" : "low",
             "Carried forward from the Field Capability Assessment. Requires validation.",

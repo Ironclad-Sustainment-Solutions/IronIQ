@@ -31,7 +31,11 @@ export function QuickSelect({
       <div
         className={cn(
           "grid gap-2",
-          columns === 1 ? "grid-cols-1" : columns === 3 ? "grid-cols-2 sm:grid-cols-3" : "grid-cols-2",
+          columns === 1
+            ? "grid-cols-1"
+            : columns === 3
+              ? "grid-cols-2 sm:grid-cols-3"
+              : "grid-cols-2",
         )}
       >
         {options.map((opt) => {
@@ -78,8 +82,13 @@ export function NumberField({
   step?: string;
 }) {
   const id = useId();
-  const [text, setText] = useState(value === null || value === undefined ? "" : String(value));
-  useEffect(() => setText(value === null || value === undefined ? "" : String(value)), [value]);
+  const [text, setText] = useState(
+    value === null || value === undefined ? "" : String(value),
+  );
+  useEffect(
+    () => setText(value === null || value === undefined ? "" : String(value)),
+    [value],
+  );
   const commit = () => {
     const trimmed = text.trim();
     const next = trimmed === "" ? null : Number(trimmed);
@@ -109,7 +118,11 @@ export function NumberField({
           onBlur={commit}
           className="h-11 text-base"
         />
-        {suffix ? <span className="shrink-0 text-xs text-muted-foreground">{suffix}</span> : null}
+        {suffix ? (
+          <span className="shrink-0 text-xs text-muted-foreground">
+            {suffix}
+          </span>
+        ) : null}
       </div>
     </div>
   );
@@ -155,20 +168,41 @@ export function ScorePad({
 }
 
 /** Elapsed time since a start timestamp, ticking once per second. */
-export function LiveTimer({ startedAt, className }: { startedAt?: string | null; className?: string }) {
+export function LiveTimer({
+  startedAt,
+  className,
+}: {
+  startedAt?: string | null;
+  className?: string;
+}) {
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
     if (!startedAt) return;
     const t = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(t);
   }, [startedAt]);
-  if (!startedAt) return <span className={cn("font-mono text-sm text-muted-foreground", className)}>—</span>;
-  const secs = Math.max(0, Math.floor((now - new Date(startedAt).getTime()) / 1000));
+  if (!startedAt)
+    return (
+      <span
+        className={cn("font-mono text-sm text-muted-foreground", className)}
+      >
+        —
+      </span>
+    );
+  const secs = Math.max(
+    0,
+    Math.floor((now - new Date(startedAt).getTime()) / 1000),
+  );
   const h = String(Math.floor(secs / 3600)).padStart(2, "0");
   const m = String(Math.floor((secs % 3600) / 60)).padStart(2, "0");
   const s = String(secs % 60).padStart(2, "0");
   return (
-    <span className={cn("font-mono text-lg font-semibold tabular-nums text-primary", className)}>
+    <span
+      className={cn(
+        "font-mono text-lg font-semibold tabular-nums text-primary",
+        className,
+      )}
+    >
       {h}:{m}:{s}
     </span>
   );
@@ -205,7 +239,9 @@ export function BigAction({
         {icon}
         {label}
       </span>
-      {hint ? <span className="mt-0.5 text-xs text-muted-foreground">{hint}</span> : null}
+      {hint ? (
+        <span className="mt-0.5 text-xs text-muted-foreground">{hint}</span>
+      ) : null}
     </button>
   );
 }
@@ -222,8 +258,12 @@ export function StatTile({
   return (
     <div className="rounded-sm border border-border bg-card p-3">
       <p className="eyebrow">{label}</p>
-      <p className="mt-1 font-mono text-lg font-semibold text-foreground">{value}</p>
-      {hint ? <p className="mt-0.5 text-xs text-muted-foreground">{hint}</p> : null}
+      <p className="mt-1 font-mono text-lg font-semibold text-foreground">
+        {value}
+      </p>
+      {hint ? (
+        <p className="mt-0.5 text-xs text-muted-foreground">{hint}</p>
+      ) : null}
     </div>
   );
 }
@@ -236,9 +276,23 @@ export function InlineNote({ children }: { children: React.ReactNode }) {
   );
 }
 
-export function DeleteButton({ label, onClick, disabled }: { label: string; onClick: () => void; disabled?: boolean }) {
+export function DeleteButton({
+  label,
+  onClick,
+  disabled,
+}: {
+  label: string;
+  onClick: () => void;
+  disabled?: boolean;
+}) {
   return (
-    <Button variant="ghost" size="sm" aria-label={label} disabled={disabled} onClick={onClick}>
+    <Button
+      variant="ghost"
+      size="sm"
+      aria-label={label}
+      disabled={disabled}
+      onClick={onClick}
+    >
       Remove
     </Button>
   );

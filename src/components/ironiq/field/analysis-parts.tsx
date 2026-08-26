@@ -8,8 +8,17 @@ import { Plus } from "lucide-react";
 import { Panel, EmptyState } from "@/components/ironiq/layout-primitives";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { AutoField, EntryCard, TagPicker } from "@/components/ironiq/field/review-parts";
-import { InlineNote, NumberField, QuickSelect, StatTile } from "@/components/ironiq/field/ops-primitives";
+import {
+  AutoField,
+  EntryCard,
+  TagPicker,
+} from "@/components/ironiq/field/review-parts";
+import {
+  InlineNote,
+  NumberField,
+  QuickSelect,
+  StatTile,
+} from "@/components/ironiq/field/ops-primitives";
 import {
   BASELINE_METRIC_PRESETS,
   CAPABILITY_DOMAINS,
@@ -25,7 +34,8 @@ import {
 
 const domainLabels = CAPABILITY_DOMAINS.map((d) => `${d.label} — ${d.verb}`);
 const labelToCode = (label: string) =>
-  CAPABILITY_DOMAINS.find((d) => `${d.label} — ${d.verb}` === label)?.code ?? label;
+  CAPABILITY_DOMAINS.find((d) => `${d.label} — ${d.verb}` === label)?.code ??
+  label;
 const codeToLabel = (code: string) => {
   const d = CAPABILITY_DOMAINS.find((x) => x.code === code);
   return d ? `${d.label} — ${d.verb}` : code;
@@ -70,8 +80,8 @@ export function CausalChainTab({
         }
       >
         <InlineNote>
-          Mark a step Validated only when evidence supports it. Suspected steps stay suspected in the
-          report.
+          Mark a step Validated only when evidence supports it. Suspected steps
+          stay suspected in the report.
         </InlineNote>
       </Panel>
 
@@ -110,7 +120,8 @@ export function CausalChainTab({
                           })
                         }
                       >
-                        <Plus className="size-4" aria-hidden /> Add {level.label.toLowerCase()}
+                        <Plus className="size-4" aria-hidden /> Add{" "}
+                        {level.label.toLowerCase()}
                       </Button>
                     );
                   }
@@ -126,7 +137,9 @@ export function CausalChainTab({
                         value={node.description}
                         multiline
                         disabled={locked}
-                        onCommit={(description) => onUpdate(node.id, { description })}
+                        onCommit={(description) =>
+                          onUpdate(node.id, { description })
+                        }
                       />
                       <div className="grid gap-3 sm:grid-cols-2">
                         <QuickSelect
@@ -135,7 +148,9 @@ export function CausalChainTab({
                           value={node.confidence}
                           disabled={locked}
                           columns={3}
-                          onChange={(confidence) => onUpdate(node.id, { confidence })}
+                          onChange={(confidence) =>
+                            onUpdate(node.id, { confidence })
+                          }
                         />
                         <QuickSelect
                           label="Validation status"
@@ -143,7 +158,9 @@ export function CausalChainTab({
                           value={node.validation_status}
                           disabled={locked}
                           columns={2}
-                          onChange={(validation_status) => onUpdate(node.id, { validation_status })}
+                          onChange={(validation_status) =>
+                            onUpdate(node.id, { validation_status })
+                          }
                         />
                       </div>
                       {level.key === "capability_gap" ? (
@@ -151,10 +168,14 @@ export function CausalChainTab({
                           <TagPicker
                             label="Capability domains"
                             options={domainLabels}
-                            selected={(node.domain_codes ?? []).map(codeToLabel)}
+                            selected={(node.domain_codes ?? []).map(
+                              codeToLabel,
+                            )}
                             disabled={locked}
                             onChange={(next) =>
-                              onUpdate(node.id, { domain_codes: next.map(labelToCode) })
+                              onUpdate(node.id, {
+                                domain_codes: next.map(labelToCode),
+                              })
                             }
                           />
                           <label className="flex min-h-11 items-center gap-2 text-sm text-foreground">
@@ -163,7 +184,11 @@ export function CausalChainTab({
                               className="size-5"
                               checked={node.is_dominant}
                               disabled={locked}
-                              onChange={(e) => onUpdate(node.id, { is_dominant: e.target.checked })}
+                              onChange={(e) =>
+                                onUpdate(node.id, {
+                                  is_dominant: e.target.checked,
+                                })
+                              }
                             />
                             Dominant capability gap for this assessment
                           </label>
@@ -210,7 +235,8 @@ export function SmeTab({
         <div className="grid gap-4">
           {smes.map((s) => {
             const rows = s.method_comparison ?? [];
-            const setRows = (next: typeof rows) => onUpdate(s.id, { method_comparison: next });
+            const setRows = (next: typeof rows) =>
+              onUpdate(s.id, { method_comparison: next });
             return (
               <EntryCard
                 key={s.id}
@@ -237,52 +263,71 @@ export function SmeTab({
                   value={s.does_differently}
                   multiline
                   disabled={locked}
-                  onCommit={(does_differently) => onUpdate(s.id, { does_differently })}
+                  onCommit={(does_differently) =>
+                    onUpdate(s.id, { does_differently })
+                  }
                 />
                 <AutoField
                   label="What decisions do they make?"
                   value={s.decisions_made}
                   multiline
                   disabled={locked}
-                  onCommit={(decisions_made) => onUpdate(s.id, { decisions_made })}
+                  onCommit={(decisions_made) =>
+                    onUpdate(s.id, { decisions_made })
+                  }
                 />
                 <AutoField
                   label="What knowledge is not documented?"
                   value={s.undocumented_knowledge}
                   multiline
                   disabled={locked}
-                  onCommit={(undocumented_knowledge) => onUpdate(s.id, { undocumented_knowledge })}
+                  onCommit={(undocumented_knowledge) =>
+                    onUpdate(s.id, { undocumented_knowledge })
+                  }
                 />
                 <AutoField
                   label="What adjustments are commonly required?"
                   value={s.common_adjustments}
                   multiline
                   disabled={locked}
-                  onCommit={(common_adjustments) => onUpdate(s.id, { common_adjustments })}
+                  onCommit={(common_adjustments) =>
+                    onUpdate(s.id, { common_adjustments })
+                  }
                 />
                 <div className="grid gap-3 sm:grid-cols-2">
                   <AutoField
                     label="How often is assistance needed?"
                     value={s.assistance_frequency}
                     disabled={locked}
-                    onCommit={(assistance_frequency) => onUpdate(s.id, { assistance_frequency })}
+                    onCommit={(assistance_frequency) =>
+                      onUpdate(s.id, { assistance_frequency })
+                    }
                   />
                   <AutoField
                     label="Impact when they are unavailable"
                     value={s.impact_when_absent}
                     disabled={locked}
-                    onCommit={(impact_when_absent) => onUpdate(s.id, { impact_when_absent })}
+                    onCommit={(impact_when_absent) =>
+                      onUpdate(s.id, { impact_when_absent })
+                    }
                   />
                 </div>
 
                 <div className="mt-2 grid gap-2">
                   <div className="flex items-center justify-between">
-                    <p className="eyebrow">Best-known method vs typical method</p>
+                    <p className="eyebrow">
+                      Best-known method vs typical method
+                    </p>
                     <Button
                       size="sm"
                       variant="outline"
                       disabled={locked}
-                      onClick={() => setRows([...rows, { aspect: "", best: "", typical: "" }])}
+                      onClick={() =>
+                        setRows([
+                          ...rows,
+                          { aspect: "", best: "", typical: "" },
+                        ])
+                      }
                     >
                       <Plus className="size-4" aria-hidden /> Add row
                     </Button>
@@ -291,27 +336,44 @@ export function SmeTab({
                     <InlineNote>No comparison rows yet.</InlineNote>
                   ) : (
                     rows.map((r, i) => (
-                      <div key={i} className="grid gap-2 rounded-sm border border-border p-3 sm:grid-cols-3">
+                      <div
+                        key={i}
+                        className="grid gap-2 rounded-sm border border-border p-3 sm:grid-cols-3"
+                      >
                         <AutoField
                           label="Aspect"
                           value={r.aspect}
                           disabled={locked}
                           onCommit={(aspect) =>
-                            setRows(rows.map((x, xi) => (xi === i ? { ...x, aspect } : x)))
+                            setRows(
+                              rows.map((x, xi) =>
+                                xi === i ? { ...x, aspect } : x,
+                              ),
+                            )
                           }
                         />
                         <AutoField
                           label="Best-known method"
                           value={r.best}
                           disabled={locked}
-                          onCommit={(best) => setRows(rows.map((x, xi) => (xi === i ? { ...x, best } : x)))}
+                          onCommit={(best) =>
+                            setRows(
+                              rows.map((x, xi) =>
+                                xi === i ? { ...x, best } : x,
+                              ),
+                            )
+                          }
                         />
                         <AutoField
                           label="Typical method"
                           value={r.typical}
                           disabled={locked}
                           onCommit={(typical) =>
-                            setRows(rows.map((x, xi) => (xi === i ? { ...x, typical } : x)))
+                            setRows(
+                              rows.map((x, xi) =>
+                                xi === i ? { ...x, typical } : x,
+                              ),
+                            )
                           }
                         />
                         <div className="sm:col-span-3">
@@ -319,7 +381,9 @@ export function SmeTab({
                             variant="ghost"
                             size="sm"
                             disabled={locked}
-                            onClick={() => setRows(rows.filter((_, xi) => xi !== i))}
+                            onClick={() =>
+                              setRows(rows.filter((_, xi) => xi !== i))
+                            }
                           >
                             Remove row
                           </Button>
@@ -350,10 +414,15 @@ export function BaselineMetricsTab({
   onUpdate: (id: string, values: Partial<BaselineMetricRow>) => void;
   onDelete: (id: string) => void;
 }) {
-  const validated = metrics.filter((m) => m.data_class === "Validated" || m.data_class === "Observed");
+  const validated = metrics.filter(
+    (m) => m.data_class === "Validated" || m.data_class === "Observed",
+  );
   return (
     <div className="space-y-4">
-      <Panel title="Baseline coverage" subtitle="Every figure is labelled by how it was obtained">
+      <Panel
+        title="Baseline coverage"
+        subtitle="Every figure is labelled by how it was obtained"
+      >
         <div className="grid gap-2 sm:grid-cols-3">
           <StatTile label="Metrics captured" value={String(metrics.length)} />
           <StatTile
@@ -363,7 +432,9 @@ export function BaselineMetricsTab({
           />
           <StatTile
             label="High confidence"
-            value={String(metrics.filter((m) => m.confidence === "High").length)}
+            value={String(
+              metrics.filter((m) => m.confidence === "High").length,
+            )}
           />
         </div>
       </Panel>
@@ -395,7 +466,12 @@ export function BaselineMetricsTab({
             variant="secondary"
             className="min-h-12"
             disabled={locked}
-            onClick={() => onAdd({ metric_name: "Custom metric", sort_order: metrics.length })}
+            onClick={() =>
+              onAdd({
+                metric_name: "Custom metric",
+                sort_order: metrics.length,
+              })
+            }
           >
             <Plus className="size-4" aria-hidden /> Custom metric
           </Button>
@@ -439,7 +515,9 @@ export function BaselineMetricsTab({
                     value={m.measurement_period}
                     disabled={locked}
                     placeholder="e.g. 3 observed changeovers, week of 4 Aug"
-                    onCommit={(measurement_period) => onUpdate(m.id, { measurement_period })}
+                    onCommit={(measurement_period) =>
+                      onUpdate(m.id, { measurement_period })
+                    }
                   />
                   <AutoField
                     label="Source"
@@ -471,9 +549,14 @@ export function BaselineMetricsTab({
                   value={m.evidence_note}
                   multiline
                   disabled={locked}
-                  onCommit={(evidence_note) => onUpdate(m.id, { evidence_note })}
+                  onCommit={(evidence_note) =>
+                    onUpdate(m.id, { evidence_note })
+                  }
                 />
-                <Badge variant="outline" className="w-fit text-[10px] uppercase tracking-wider">
+                <Badge
+                  variant="outline"
+                  className="w-fit text-[10px] uppercase tracking-wider"
+                >
                   {m.data_class}
                 </Badge>
               </EntryCard>

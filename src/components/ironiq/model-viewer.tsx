@@ -7,12 +7,17 @@ import { Loader2 } from "lucide-react";
 /** Amber edge highlight matching the IronIQ accent (three.js cannot parse oklch tokens). */
 const EDGE_COLOR = "#f0a63c";
 
-
 /**
  * Lightweight STL viewer: orbit with drag, zoom with wheel, pan with right-drag.
  * Rendered client-only (lazy-loaded) so three.js never enters the SSR bundle.
  */
-export default function ModelViewer({ url, className }: { url: string; className?: string }) {
+export default function ModelViewer({
+  url,
+  className,
+}: {
+  url: string;
+  className?: string;
+}) {
   const mountRef = useRef<HTMLDivElement | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -84,7 +89,11 @@ export default function ModelViewer({ url, className }: { url: string; className
         const edgeGeom = new THREE.EdgesGeometry(geometry, 25);
         edges = new THREE.LineSegments(
           edgeGeom,
-          new THREE.LineBasicMaterial({ color: new THREE.Color(surface), transparent: true, opacity: 0.5 }),
+          new THREE.LineBasicMaterial({
+            color: new THREE.Color(surface),
+            transparent: true,
+            opacity: 0.5,
+          }),
         );
         edges.rotation.copy(mesh.rotation);
         scene.add(edges);
@@ -127,7 +136,8 @@ export default function ModelViewer({ url, className }: { url: string; className
       (edges?.material as THREE.Material | undefined)?.dispose();
       material.dispose();
       renderer.dispose();
-      if (renderer.domElement.parentNode === mount) mount.removeChild(renderer.domElement);
+      if (renderer.domElement.parentNode === mount)
+        mount.removeChild(renderer.domElement);
     };
   }, [url]);
 
@@ -140,7 +150,8 @@ export default function ModelViewer({ url, className }: { url: string; className
               error
             ) : (
               <>
-                <Loader2 className="size-4 animate-spin" aria-hidden /> Loading geometry…
+                <Loader2 className="size-4 animate-spin" aria-hidden /> Loading
+                geometry…
               </>
             )}
           </div>

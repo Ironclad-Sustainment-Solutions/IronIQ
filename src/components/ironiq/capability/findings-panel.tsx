@@ -11,7 +11,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { SeverityBadge } from "@/components/ironiq/badges";
-import { AiBadge, ClassificationBadge, ConfidenceBadge, FieldLabel, SourceBadge } from "./shared";
+import {
+  AiBadge,
+  ClassificationBadge,
+  ConfidenceBadge,
+  FieldLabel,
+  SourceBadge,
+} from "./shared";
 import {
   CONFIDENCE_LABELS,
   DIMENSIONS,
@@ -28,12 +34,22 @@ import {
   type CapSeverity,
   type CapSource,
 } from "@/lib/capability-domain";
-import { useApproveFinding, useCapDelete, useCapUpsert } from "@/lib/capability-api";
+import {
+  useApproveFinding,
+  useCapDelete,
+  useCapUpsert,
+} from "@/lib/capability-api";
 import { suggestConstraints } from "@/lib/capability-ai.functions";
 import { toast } from "sonner";
 import { Check, Link2, Loader2, Plus, Sparkles, Trash2 } from "lucide-react";
 
-const SEVERITIES: CapSeverity[] = ["critical", "high", "medium", "low", "opportunity"];
+const SEVERITIES: CapSeverity[] = [
+  "critical",
+  "high",
+  "medium",
+  "low",
+  "opportunity",
+];
 const CLASSES = Object.keys(FINDING_CLASS_LABELS) as CapFindingClass[];
 const CONFIDENCES = Object.keys(CONFIDENCE_LABELS) as CapConfidence[];
 
@@ -54,9 +70,13 @@ export function FindingsPanel({
   gaps: CapRootGapRow[];
   aiContext: string;
 }) {
-  const upsert = useCapUpsert<Record<string, unknown>>(assessmentId, "cap_findings", {
-    successMessage: "Finding saved",
-  });
+  const upsert = useCapUpsert<Record<string, unknown>>(
+    assessmentId,
+    "cap_findings",
+    {
+      successMessage: "Finding saved",
+    },
+  );
   const remove = useCapDelete(assessmentId, "cap_findings", "Finding removed");
   const approve = useApproveFinding(assessmentId);
   const [busy, setBusy] = useState(false);
@@ -67,7 +87,9 @@ export function FindingsPanel({
   async function runAi() {
     setBusy(true);
     try {
-      const out = (await suggestConstraints({ data: { context: aiContext } })) as {
+      const out = (await suggestConstraints({
+        data: { context: aiContext },
+      })) as {
         possible_constraints: {
           title: string;
           rationale: string;
@@ -109,12 +131,20 @@ export function FindingsPanel({
         actions={
           <div className="flex gap-2">
             <Button variant="outline" onClick={runAi} disabled={busy}>
-              {busy ? <Loader2 className="size-4 animate-spin" /> : <Sparkles className="size-4" />}
+              {busy ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <Sparkles className="size-4" />
+              )}
               Suggest constraints
             </Button>
             <Button
               onClick={() =>
-                upsert.mutate({ assessment_id: assessmentId, title: "New finding", classification: "risk" })
+                upsert.mutate({
+                  assessment_id: assessmentId,
+                  title: "New finding",
+                  classification: "risk",
+                })
               }
             >
               <Plus className="size-4" /> Add finding
@@ -136,7 +166,13 @@ export function FindingsPanel({
                 links={links.filter((l) => l.parent_finding_id === f.id)}
                 otherFindings={findings.filter((o) => o.id !== f.id)}
                 domainById={domainById}
-                onSave={(values) => upsert.mutate({ id: f.id, assessment_id: assessmentId, ...values })}
+                onSave={(values) =>
+                  upsert.mutate({
+                    id: f.id,
+                    assessment_id: assessmentId,
+                    ...values,
+                  })
+                }
                 onDelete={() => remove.mutate(f.id)}
                 onApprove={(approved) => approve.mutate({ id: f.id, approved })}
               />
@@ -145,7 +181,12 @@ export function FindingsPanel({
         )}
       </Panel>
 
-      <RootGapsPanel assessmentId={assessmentId} domains={domains} gaps={gaps} findings={findings} />
+      <RootGapsPanel
+        assessmentId={assessmentId}
+        domains={domains}
+        gaps={gaps}
+        findings={findings}
+      />
     </div>
   );
 }
@@ -186,16 +227,33 @@ function FindingCard({
     assessor_notes: finding.assessor_notes ?? "",
     client_visible: finding.client_visible,
   });
-  const set = (k: keyof typeof v, val: unknown) => setV((s) => ({ ...s, [k]: val }));
+  const set = (k: keyof typeof v, val: unknown) =>
+    setV((s) => ({ ...s, [k]: val }));
 
-  const addEvidence = useCapUpsert<Record<string, unknown>>(assessmentId, "cap_evidence", {
-    successMessage: "Evidence added",
-  });
-  const removeEvidence = useCapDelete(assessmentId, "cap_evidence", "Evidence removed");
-  const addLink = useCapUpsert<Record<string, unknown>>(assessmentId, "cap_finding_links", {
-    successMessage: "Relationship added",
-  });
-  const removeLink = useCapDelete(assessmentId, "cap_finding_links", "Relationship removed");
+  const addEvidence = useCapUpsert<Record<string, unknown>>(
+    assessmentId,
+    "cap_evidence",
+    {
+      successMessage: "Evidence added",
+    },
+  );
+  const removeEvidence = useCapDelete(
+    assessmentId,
+    "cap_evidence",
+    "Evidence removed",
+  );
+  const addLink = useCapUpsert<Record<string, unknown>>(
+    assessmentId,
+    "cap_finding_links",
+    {
+      successMessage: "Relationship added",
+    },
+  );
+  const removeLink = useCapDelete(
+    assessmentId,
+    "cap_finding_links",
+    "Relationship removed",
+  );
 
   return (
     <div className="rounded-md border border-border">
@@ -204,7 +262,9 @@ function FindingCard({
         onClick={() => setOpen((o) => !o)}
         className="flex w-full flex-wrap items-center gap-2 p-4 text-left"
       >
-        <span className="min-w-48 flex-1 text-sm font-medium text-foreground">{finding.title}</span>
+        <span className="min-w-48 flex-1 text-sm font-medium text-foreground">
+          {finding.title}
+        </span>
         {finding.ai_generated ? <AiBadge label="AI draft" /> : null}
         <SourceBadge value={finding.source} />
         <ClassificationBadge value={finding.classification} />
@@ -226,40 +286,107 @@ function FindingCard({
           <div className="grid gap-3 md:grid-cols-2">
             <div className="md:col-span-2">
               <FieldLabel>Finding</FieldLabel>
-              <Input className="mt-1.5" value={v.title} onChange={(e) => set("title", e.target.value)} />
+              <Input
+                className="mt-1.5"
+                value={v.title}
+                onChange={(e) => set("title", e.target.value)}
+              />
             </div>
             <div className="md:col-span-2">
               <FieldLabel>Detail</FieldLabel>
-              <Textarea className="mt-1.5 min-h-20" value={v.finding_text} onChange={(e) => set("finding_text", e.target.value)} />
+              <Textarea
+                className="mt-1.5 min-h-20"
+                value={v.finding_text}
+                onChange={(e) => set("finding_text", e.target.value)}
+              />
             </div>
-            <Choice label="Capability domain" value={v.domain_id} onChange={(x) => set("domain_id", x)}
-              options={domains.map((d) => ({ value: d.id, label: d.name }))} />
-            <Choice label="Performance dimension" value={v.dimension} onChange={(x) => set("dimension", x)}
-              options={DIMENSIONS.map((d) => ({ value: d.key, label: d.label }))} />
-            <Choice label="Classification" value={v.classification} onChange={(x) => set("classification", x)}
-              options={CLASSES.map((c) => ({ value: c, label: FINDING_CLASS_LABELS[c] }))} />
-            <Choice label="Severity" value={v.severity} onChange={(x) => set("severity", x)}
-              options={SEVERITIES.map((s) => ({ value: s, label: s }))} />
-            <Choice label="Confidence level" value={v.confidence} onChange={(x) => set("confidence", x)}
-              options={CONFIDENCES.map((c) => ({ value: c, label: CONFIDENCE_LABELS[c] }))} />
-            <Choice label="Source" value={v.source} onChange={(x) => set("source", x as CapSource)}
-              options={(Object.keys(SOURCE_LABELS) as CapSource[]).map((s) => ({ value: s, label: SOURCE_LABELS[s] }))} />
+            <Choice
+              label="Capability domain"
+              value={v.domain_id}
+              onChange={(x) => set("domain_id", x)}
+              options={domains.map((d) => ({ value: d.id, label: d.name }))}
+            />
+            <Choice
+              label="Performance dimension"
+              value={v.dimension}
+              onChange={(x) => set("dimension", x)}
+              options={DIMENSIONS.map((d) => ({
+                value: d.key,
+                label: d.label,
+              }))}
+            />
+            <Choice
+              label="Classification"
+              value={v.classification}
+              onChange={(x) => set("classification", x)}
+              options={CLASSES.map((c) => ({
+                value: c,
+                label: FINDING_CLASS_LABELS[c],
+              }))}
+            />
+            <Choice
+              label="Severity"
+              value={v.severity}
+              onChange={(x) => set("severity", x)}
+              options={SEVERITIES.map((s) => ({ value: s, label: s }))}
+            />
+            <Choice
+              label="Confidence level"
+              value={v.confidence}
+              onChange={(x) => set("confidence", x)}
+              options={CONFIDENCES.map((c) => ({
+                value: c,
+                label: CONFIDENCE_LABELS[c],
+              }))}
+            />
+            <Choice
+              label="Source"
+              value={v.source}
+              onChange={(x) => set("source", x as CapSource)}
+              options={(Object.keys(SOURCE_LABELS) as CapSource[]).map((s) => ({
+                value: s,
+                label: SOURCE_LABELS[s],
+              }))}
+            />
             <div className="md:col-span-2">
               <FieldLabel>Assessor notes</FieldLabel>
-              <Textarea className="mt-1.5 min-h-16" value={v.assessor_notes} onChange={(e) => set("assessor_notes", e.target.value)} />
+              <Textarea
+                className="mt-1.5 min-h-16"
+                value={v.assessor_notes}
+                onChange={(e) => set("assessor_notes", e.target.value)}
+              />
             </div>
             <label className="flex items-center gap-2 text-sm text-muted-foreground">
-              <input type="checkbox" checked={v.client_visible} onChange={(e) => set("client_visible", e.target.checked)} />
+              <input
+                type="checkbox"
+                checked={v.client_visible}
+                onChange={(e) => set("client_visible", e.target.checked)}
+              />
               Visible to client
             </label>
           </div>
 
           <div className="flex flex-wrap gap-2">
-            <Button size="sm" onClick={() => onSave({ ...v, domain_id: v.domain_id || null, dimension: v.dimension || null })}>
+            <Button
+              size="sm"
+              onClick={() =>
+                onSave({
+                  ...v,
+                  domain_id: v.domain_id || null,
+                  dimension: v.dimension || null,
+                })
+              }
+            >
               Save finding
             </Button>
-            <Button size="sm" variant={finding.approved ? "outline" : "default"} onClick={() => onApprove(!finding.approved)}>
-              {finding.approved ? "Revoke approval" : "Approve as official finding"}
+            <Button
+              size="sm"
+              variant={finding.approved ? "outline" : "default"}
+              onClick={() => onApprove(!finding.approved)}
+            >
+              {finding.approved
+                ? "Revoke approval"
+                : "Approve as official finding"}
             </Button>
             <Button size="sm" variant="ghost" onClick={onDelete}>
               <Trash2 className="size-4" /> Delete
@@ -268,7 +395,9 @@ function FindingCard({
 
           <EvidenceList
             evidence={evidence}
-            onAdd={(values) => addEvidence.mutate({ finding_id: finding.id, ...values })}
+            onAdd={(values) =>
+              addEvidence.mutate({ finding_id: finding.id, ...values })
+            }
             onRemove={(id) => removeEvidence.mutate(id)}
           />
 
@@ -276,24 +405,38 @@ function FindingCard({
             <FieldLabel>Causal chain — this finding is explained by</FieldLabel>
             <ul className="mt-2 space-y-1 text-sm">
               {links.map((l) => {
-                const child = otherFindings.find((f) => f.id === l.child_finding_id);
+                const child = otherFindings.find(
+                  (f) => f.id === l.child_finding_id,
+                );
                 return (
                   <li key={l.id} className="flex items-center gap-2">
                     <Link2 className="size-3.5 text-muted-foreground" />
-                    <span className="flex-1">{child?.title ?? "Unknown finding"}</span>
-                    <Button size="sm" variant="ghost" onClick={() => removeLink.mutate(l.id)}>
+                    <span className="flex-1">
+                      {child?.title ?? "Unknown finding"}
+                    </span>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => removeLink.mutate(l.id)}
+                    >
                       <Trash2 className="size-3.5" />
                     </Button>
                   </li>
                 );
               })}
-              {links.length === 0 ? <li className="text-muted-foreground">No linked findings.</li> : null}
+              {links.length === 0 ? (
+                <li className="text-muted-foreground">No linked findings.</li>
+              ) : null}
             </ul>
             {otherFindings.length > 0 ? (
               <Select
                 value=""
                 onValueChange={(child) =>
-                  addLink.mutate({ parent_finding_id: finding.id, child_finding_id: child, relation: "caused_by" })
+                  addLink.mutate({
+                    parent_finding_id: finding.id,
+                    child_finding_id: child,
+                    relation: "caused_by",
+                  })
                 }
               >
                 <SelectTrigger className="mt-2 w-72">
@@ -310,7 +453,10 @@ function FindingCard({
             ) : null}
           </div>
           <p className="text-xs text-muted-foreground">
-            Domain: {finding.domain_id ? (domainById.get(finding.domain_id)?.name ?? "—") : "—"}
+            Domain:{" "}
+            {finding.domain_id
+              ? (domainById.get(finding.domain_id)?.name ?? "—")
+              : "—"}
           </p>
         </div>
       ) : null}
@@ -347,19 +493,33 @@ function EvidenceList({
             </Button>
           </li>
         ))}
-        {evidence.length === 0 ? <li className="text-muted-foreground">No evidence attached.</li> : null}
+        {evidence.length === 0 ? (
+          <li className="text-muted-foreground">No evidence attached.</li>
+        ) : null}
       </ul>
       <div className="mt-3 grid gap-2 sm:grid-cols-[12rem_1fr_12rem_auto]">
         <Select value={type} onValueChange={setType}>
-          <SelectTrigger><SelectValue /></SelectTrigger>
+          <SelectTrigger>
+            <SelectValue />
+          </SelectTrigger>
           <SelectContent>
             {Object.entries(EVIDENCE_TYPE_LABELS).map(([k, label]) => (
-              <SelectItem key={k} value={k}>{label}</SelectItem>
+              <SelectItem key={k} value={k}>
+                {label}
+              </SelectItem>
             ))}
           </SelectContent>
         </Select>
-        <Input placeholder="What was observed or reviewed" value={description} onChange={(e) => setDescription(e.target.value)} />
-        <Input placeholder="Source" value={source} onChange={(e) => setSource(e.target.value)} />
+        <Input
+          placeholder="What was observed or reviewed"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+        />
+        <Input
+          placeholder="Source"
+          value={source}
+          onChange={(e) => setSource(e.target.value)}
+        />
         <Button
           variant="outline"
           onClick={() => {
@@ -387,10 +547,18 @@ function RootGapsPanel({
   gaps: CapRootGapRow[];
   findings: CapFindingRow[];
 }) {
-  const upsert = useCapUpsert<Record<string, unknown>>(assessmentId, "cap_root_gaps", {
-    successMessage: "Root capability gap saved",
-  });
-  const remove = useCapDelete(assessmentId, "cap_root_gaps", "Root capability gap removed");
+  const upsert = useCapUpsert<Record<string, unknown>>(
+    assessmentId,
+    "cap_root_gaps",
+    {
+      successMessage: "Root capability gap saved",
+    },
+  );
+  const remove = useCapDelete(
+    assessmentId,
+    "cap_root_gaps",
+    "Root capability gap removed",
+  );
 
   return (
     <Panel
@@ -420,7 +588,13 @@ function RootGapsPanel({
               gap={g}
               domains={domains}
               findings={findings}
-              onSave={(values) => upsert.mutate({ id: g.id, assessment_id: assessmentId, ...values })}
+              onSave={(values) =>
+                upsert.mutate({
+                  id: g.id,
+                  assessment_id: assessmentId,
+                  ...values,
+                })
+              }
               onDelete={() => remove.mutate(g.id)}
             />
           ))}
@@ -455,7 +629,8 @@ function GapCard({
     validated: gap.validated,
     primary_finding_id: gap.primary_finding_id ?? "",
   });
-  const set = (k: keyof typeof v, val: unknown) => setV((s) => ({ ...s, [k]: val }));
+  const set = (k: keyof typeof v, val: unknown) =>
+    setV((s) => ({ ...s, [k]: val }));
 
   return (
     <div className="rounded-md border border-border p-4">
@@ -474,22 +649,52 @@ function GapCard({
             ["operational_consequence", "Operational consequence"],
           ] as const
         ).map(([key, label]) => (
-          <div key={key} className={key === "root_gap" ? "md:col-span-2" : undefined}>
+          <div
+            key={key}
+            className={key === "root_gap" ? "md:col-span-2" : undefined}
+          >
             <FieldLabel>{label}</FieldLabel>
-            <Textarea className="mt-1.5 min-h-16" value={v[key]} onChange={(e) => set(key, e.target.value)} />
+            <Textarea
+              className="mt-1.5 min-h-16"
+              value={v[key]}
+              onChange={(e) => set(key, e.target.value)}
+            />
           </div>
         ))}
-        <Choice label="Capability domain" value={v.domain_id} onChange={(x) => set("domain_id", x)}
-          options={domains.map((d) => ({ value: d.id, label: d.name }))} />
-        <Choice label="Performance dimension" value={v.dimension} onChange={(x) => set("dimension", x)}
-          options={DIMENSIONS.map((d) => ({ value: d.key, label: d.label }))} />
-        <Choice label="Confidence" value={v.confidence} onChange={(x) => set("confidence", x)}
-          options={CONFIDENCES.map((c) => ({ value: c, label: CONFIDENCE_LABELS[c] }))} />
-        <Choice label="Primary supporting finding" value={v.primary_finding_id} onChange={(x) => set("primary_finding_id", x)}
-          options={findings.map((f) => ({ value: f.id, label: f.title }))} />
+        <Choice
+          label="Capability domain"
+          value={v.domain_id}
+          onChange={(x) => set("domain_id", x)}
+          options={domains.map((d) => ({ value: d.id, label: d.name }))}
+        />
+        <Choice
+          label="Performance dimension"
+          value={v.dimension}
+          onChange={(x) => set("dimension", x)}
+          options={DIMENSIONS.map((d) => ({ value: d.key, label: d.label }))}
+        />
+        <Choice
+          label="Confidence"
+          value={v.confidence}
+          onChange={(x) => set("confidence", x)}
+          options={CONFIDENCES.map((c) => ({
+            value: c,
+            label: CONFIDENCE_LABELS[c],
+          }))}
+        />
+        <Choice
+          label="Primary supporting finding"
+          value={v.primary_finding_id}
+          onChange={(x) => set("primary_finding_id", x)}
+          options={findings.map((f) => ({ value: f.id, label: f.title }))}
+        />
       </div>
       <label className="mt-3 flex items-center gap-2 text-sm text-muted-foreground">
-        <input type="checkbox" checked={v.validated} onChange={(e) => set("validated", e.target.checked)} />
+        <input
+          type="checkbox"
+          checked={v.validated}
+          onChange={(e) => set("validated", e.target.checked)}
+        />
         Evidence is sufficient — treat as validated root capability gap
       </label>
       <div className="mt-3 flex gap-2">

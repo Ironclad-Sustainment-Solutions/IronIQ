@@ -12,7 +12,10 @@ import { z } from "zod";
 import { requireAuth } from "@/lib/auth/auth-middleware";
 import { withUser } from "@/lib/db.server";
 import { captureFromCncChangeLog } from "@/lib/intelligence-capture.server";
-import { assertProductAllowed, assertProductAllowedForCncLogEntry } from "@/lib/product-access-check.server";
+import {
+  assertProductAllowed,
+  assertProductAllowedForCncLogEntry,
+} from "@/lib/product-access-check.server";
 
 const CHANGE_CATEGORIES = [
   "feed_speed",

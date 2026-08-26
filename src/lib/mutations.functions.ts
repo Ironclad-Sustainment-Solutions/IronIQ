@@ -183,13 +183,23 @@ export const saveCorrectiveAction = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => SaveCorrectiveActionInput.parse(d))
   .handler(async ({ data, context }) => {
     if (data.id) {
-      await assertProductAllowedForCorrectiveAction(context.userId, data.id, "assessment");
+      await assertProductAllowedForCorrectiveAction(
+        context.userId,
+        data.id,
+        "assessment",
+      );
     } else {
       const findingId = data.values["finding_id"];
       if (typeof findingId !== "string") {
-        throw new Error("finding_id is required to create a corrective action.");
+        throw new Error(
+          "finding_id is required to create a corrective action.",
+        );
       }
-      await assertProductAllowedForFinding(context.userId, findingId, "assessment");
+      await assertProductAllowedForFinding(
+        context.userId,
+        findingId,
+        "assessment",
+      );
     }
     const { rows } = await withUser(context.userId, async (client) => {
       if (data.id) {
@@ -222,7 +232,11 @@ export const deleteCorrectiveAction = createServerFn({ method: "POST" })
   .middleware([requireAuth])
   .inputValidator((d: unknown) => DeleteCorrectiveActionInput.parse(d))
   .handler(async ({ data, context }) => {
-    await assertProductAllowedForCorrectiveAction(context.userId, data.id, "assessment");
+    await assertProductAllowedForCorrectiveAction(
+      context.userId,
+      data.id,
+      "assessment",
+    );
     await withUser(context.userId, (client) =>
       client.query("DELETE FROM public.corrective_actions WHERE id = $1", [
         data.id,
@@ -241,11 +255,17 @@ export const saveImprovementProject = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => SaveImprovementProjectInput.parse(d))
   .handler(async ({ data, context }) => {
     if (data.id) {
-      await assertProductAllowedForImprovementProject(context.userId, data.id, "assessment");
+      await assertProductAllowedForImprovementProject(
+        context.userId,
+        data.id,
+        "assessment",
+      );
     } else {
       const organizationId = data.values["organization_id"];
       if (typeof organizationId !== "string") {
-        throw new Error("organization_id is required to create an improvement project.");
+        throw new Error(
+          "organization_id is required to create an improvement project.",
+        );
       }
       await assertProductAllowed(context.userId, organizationId, "assessment");
     }
@@ -280,7 +300,11 @@ export const deleteImprovementProject = createServerFn({ method: "POST" })
   .middleware([requireAuth])
   .inputValidator((d: unknown) => DeleteImprovementProjectInput.parse(d))
   .handler(async ({ data, context }) => {
-    await assertProductAllowedForImprovementProject(context.userId, data.id, "assessment");
+    await assertProductAllowedForImprovementProject(
+      context.userId,
+      data.id,
+      "assessment",
+    );
     await withUser(context.userId, (client) =>
       client.query("DELETE FROM public.improvement_projects WHERE id = $1", [
         data.id,

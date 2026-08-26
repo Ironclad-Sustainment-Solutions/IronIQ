@@ -7,12 +7,7 @@
  */
 
 export type CapAssessmentStatus =
-  | "draft"
-  | "intake"
-  | "in_progress"
-  | "review"
-  | "finalized"
-  | "reopened";
+  "draft" | "intake" | "in_progress" | "review" | "finalized" | "reopened";
 
 export const CAP_STATUS_LABELS: Record<CapAssessmentStatus, string> = {
   draft: "Draft",
@@ -52,14 +47,12 @@ export const PERF_CATEGORY_LABELS: Record<CapPerfCategory, string> = {
   reliability: "Reliability",
 };
 
-export const PERF_CATEGORIES = Object.keys(PERF_CATEGORY_LABELS) as CapPerfCategory[];
+export const PERF_CATEGORIES = Object.keys(
+  PERF_CATEGORY_LABELS,
+) as CapPerfCategory[];
 
 export type CapDimension =
-  | "availability"
-  | "capability"
-  | "consistency"
-  | "control"
-  | "sustainability";
+  "availability" | "capability" | "consistency" | "control" | "sustainability";
 
 export const DIMENSIONS: {
   key: CapDimension;
@@ -74,22 +67,26 @@ export const DIMENSIONS: {
   {
     key: "capability",
     label: "Capability",
-    question: "Can it actually perform the required function and achieve the required result?",
+    question:
+      "Can it actually perform the required function and achieve the required result?",
   },
   {
     key: "consistency",
     label: "Consistency",
-    question: "Does it produce repeatable results across jobs, shifts, machines, operators and time?",
+    question:
+      "Does it produce repeatable results across jobs, shifts, machines, operators and time?",
   },
   {
     key: "control",
     label: "Control",
-    question: "Is it documented, controlled, measurable and protected from uncontrolled variation?",
+    question:
+      "Is it documented, controlled, measurable and protected from uncontrolled variation?",
   },
   {
     key: "sustainability",
     label: "Sustainability",
-    question: "Can the organization maintain the capability through personnel, workload and equipment change?",
+    question:
+      "Can the organization maintain the capability through personnel, workload and equipment change?",
   },
 ];
 
@@ -98,36 +95,51 @@ export const DIMENSION_LABELS = Object.fromEntries(
 ) as Record<CapDimension, string>;
 
 /** 0–5 maturity / performance scale. */
-export const MATURITY_SCALE: { value: number; label: string; description: string; token: string }[] = [
-  { value: 0, label: "Absent", description: "Required capability does not exist.", token: "critical" },
+export const MATURITY_SCALE: {
+  value: number;
+  label: string;
+  description: string;
+  token: string;
+}[] = [
+  {
+    value: 0,
+    label: "Absent",
+    description: "Required capability does not exist.",
+    token: "critical",
+  },
   {
     value: 1,
     label: "Critical",
-    description: "Exists minimally or informally but cannot reliably support production.",
+    description:
+      "Exists minimally or informally but cannot reliably support production.",
     token: "critical",
   },
   {
     value: 2,
     label: "Constrained",
-    description: "Functions in some situations but regularly creates performance limitations.",
+    description:
+      "Functions in some situations but regularly creates performance limitations.",
     token: "high",
   },
   {
     value: 3,
     label: "Functional",
-    description: "Generally supports requirements but contains measurable weaknesses or variability.",
+    description:
+      "Generally supports requirements but contains measurable weaknesses or variability.",
     token: "medium",
   },
   {
     value: 4,
     label: "Controlled",
-    description: "Reliable, documented, measured and consistently supports operational requirements.",
+    description:
+      "Reliable, documented, measured and consistently supports operational requirements.",
     token: "success",
   },
   {
     value: 5,
     label: "Resilient",
-    description: "Optimized, sustainable, measured, continuously improved and resistant to disruption.",
+    description:
+      "Optimized, sustainable, measured, continuously improved and resistant to disruption.",
     token: "success",
   },
 ];
@@ -248,15 +260,30 @@ export const VALIDATION_RESULT_LABELS: Record<CapValidationResult, string> = {
   performance_degraded: "Performance Degraded",
 };
 
-export type CapSeverity = "critical" | "high" | "medium" | "low" | "opportunity";
+export type CapSeverity =
+  "critical" | "high" | "medium" | "low" | "opportunity";
 
 /** The five discovery questions asked at the start of every assessment. */
 export const INTAKE_QUESTIONS: { key: IntakeKey; label: string }[] = [
-  { key: "q_greatest_impact", label: "What problem is having the greatest impact on your operation right now?" },
-  { key: "q_where_when", label: "Where and when does the problem become most visible?" },
-  { key: "q_effect", label: "How is it affecting production, quality, cost, delivery or workforce performance?" },
+  {
+    key: "q_greatest_impact",
+    label:
+      "What problem is having the greatest impact on your operation right now?",
+  },
+  {
+    key: "q_where_when",
+    label: "Where and when does the problem become most visible?",
+  },
+  {
+    key: "q_effect",
+    label:
+      "How is it affecting production, quality, cost, delivery or workforce performance?",
+  },
   { key: "q_tried", label: "What have you already tried, and what happened?" },
-  { key: "q_if_resolved", label: "What would improve if this problem were successfully resolved?" },
+  {
+    key: "q_if_resolved",
+    label: "What would improve if this problem were successfully resolved?",
+  },
 ];
 
 export type IntakeKey =

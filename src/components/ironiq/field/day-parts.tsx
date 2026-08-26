@@ -7,7 +7,12 @@
 import { Panel } from "@/components/ironiq/layout-primitives";
 import { Badge } from "@/components/ui/badge";
 import { AutoField } from "@/components/ironiq/field/review-parts";
-import { InlineNote, NumberField, QuickSelect, StatTile } from "@/components/ironiq/field/ops-primitives";
+import {
+  InlineNote,
+  NumberField,
+  QuickSelect,
+  StatTile,
+} from "@/components/ironiq/field/ops-primitives";
 import {
   DAY_FOCUS,
   DEFAULT_OPERATIONAL_QUESTION,
@@ -60,7 +65,9 @@ export function FieldViewTab({
   pilots: PilotRow[];
 }) {
   const totalLost = delays.reduce((sum, d) => sum + delayMinutes(d), 0);
-  const validatedCauses = causes.filter((c) => c.validation_status === "Validated").length;
+  const validatedCauses = causes.filter(
+    (c) => c.validation_status === "Validated",
+  ).length;
   const dominant = causes.find((c) => c.is_dominant);
   const activeDay = setup.day_focus ?? "day1";
 
@@ -80,7 +87,9 @@ export function FieldViewTab({
       validatedCauses > 0,
     ],
     day3: [
-      metrics.some((m) => m.data_class === "Validated" || m.data_class === "Observed"),
+      metrics.some(
+        (m) => m.data_class === "Validated" || m.data_class === "Observed",
+      ),
       delays.length > 0,
       Boolean(dominant),
       pilots.length > 0,
@@ -91,18 +100,25 @@ export function FieldViewTab({
 
   return (
     <div className="space-y-4">
-      <Panel title="Live field snapshot" subtitle="What has been captured so far">
+      <Panel
+        title="Live field snapshot"
+        subtitle="What has been captured so far"
+      >
         <div className="grid gap-2 sm:grid-cols-3 lg:grid-cols-6">
           <StatTile label="Events" value={String(events.length)} />
           <StatTile label="Delays" value={String(delays.length)} />
-          <StatTile label="Time lost" value={formatMinutes(totalLost || null)} />
+          <StatTile
+            label="Time lost"
+            value={formatMinutes(totalLost || null)}
+          />
           <StatTile label="Evidence" value={String(evidence.length)} />
           <StatTile label="Validated causes" value={String(validatedCauses)} />
           <StatTile label="Baseline metrics" value={String(metrics.length)} />
         </div>
         {dominant ? (
           <p className="mt-3 rounded-sm border border-primary/40 bg-primary/10 px-3 py-2 text-sm text-foreground">
-            Dominant capability gap: {dominant.description || "described in the causal chain"}
+            Dominant capability gap:{" "}
+            {dominant.description || "described in the causal chain"}
           </p>
         ) : (
           <div className="mt-3">
@@ -111,7 +127,10 @@ export function FieldViewTab({
         )}
       </Panel>
 
-      <Panel title="Assessment setup" subtitle="Who is on site, what is being answered and by when">
+      <Panel
+        title="Assessment setup"
+        subtitle="Who is on site, what is being answered and by when"
+      >
         <div className="grid gap-3 sm:grid-cols-2">
           <AutoField
             label="Assessment name"
@@ -158,11 +177,15 @@ export function FieldViewTab({
           />
           <AutoField
             label="Primary operational question"
-            value={setup.primary_operational_question ?? DEFAULT_OPERATIONAL_QUESTION}
+            value={
+              setup.primary_operational_question ?? DEFAULT_OPERATIONAL_QUESTION
+            }
             multiline
             rows={4}
             disabled={locked}
-            onCommit={(primary_operational_question) => set({ primary_operational_question })}
+            onCommit={(primary_operational_question) =>
+              set({ primary_operational_question })
+            }
           />
         </div>
       </Panel>
@@ -209,20 +232,26 @@ export function FieldViewTab({
         </div>
         <div className="mt-3">
           <InlineNote>
-            Everything on this panel is client reported. It is carried into the report labelled as
-            unvalidated until Ironclad measures it.
+            Everything on this panel is client reported. It is carried into the
+            report labelled as unvalidated until Ironclad measures it.
           </InlineNote>
         </div>
       </Panel>
 
-      <Panel title="Field day focus" subtitle="Guidance for where the assessment is today">
+      <Panel
+        title="Field day focus"
+        subtitle="Guidance for where the assessment is today"
+      >
         <QuickSelect
           options={DAY_FOCUS.map((d) => d.label)}
           value={DAY_FOCUS.find((d) => d.key === activeDay)?.label ?? null}
           disabled={locked}
           columns={3}
           onChange={(label) =>
-            set({ day_focus: DAY_FOCUS.find((d) => d.label === label)?.key ?? "day1" })
+            set({
+              day_focus:
+                DAY_FOCUS.find((d) => d.label === label)?.key ?? "day1",
+            })
           }
         />
         <div className="mt-4 grid gap-3 lg:grid-cols-3">
@@ -242,7 +271,10 @@ export function FieldViewTab({
                   <p className="font-display text-xs font-semibold uppercase tracking-widest text-foreground">
                     {day.label}
                   </p>
-                  <Badge variant={done === marks.length ? "default" : "outline"} className="text-[10px]">
+                  <Badge
+                    variant={done === marks.length ? "default" : "outline"}
+                    className="text-[10px]"
+                  >
                     {done}/{marks.length}
                   </Badge>
                 </div>
@@ -257,7 +289,9 @@ export function FieldViewTab({
                   {day.indicators.map((ind, i) => (
                     <li
                       key={ind}
-                      className={cn(marks[i] ? "text-foreground" : "text-muted-foreground")}
+                      className={cn(
+                        marks[i] ? "text-foreground" : "text-muted-foreground",
+                      )}
                     >
                       {marks[i] ? "✓" : "○"} {ind}
                     </li>

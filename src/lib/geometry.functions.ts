@@ -22,8 +22,12 @@ export const submitGeometryAnalysis = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => submitSchema.parse(data))
   .handler(async ({ data, context }) => {
     const { userId } = context;
-    const { runProviderAnalysis, featureRows, GEOMETRY_PROVIDER, GEOMETRY_PROVIDER_VERSION } =
-      await import("./geometry.server");
+    const {
+      runProviderAnalysis,
+      featureRows,
+      GEOMETRY_PROVIDER,
+      GEOMETRY_PROVIDER_VERSION,
+    } = await import("./geometry.server");
 
     return withUser(userId, async (client) => {
       const { rows: partRows } = await client.query(
@@ -45,7 +49,14 @@ export const submitGeometryAnalysis = createServerFn({ method: "POST" })
         `INSERT INTO public.geometry_analysis_runs
            (rfq_part_id, rfq_file_id, organization_id, provider, provider_version, status, created_by)
          VALUES ($1,$2,$3,$4,$5,'running',$6) RETURNING id`,
-        [part.id, file.id, part.organization_id, GEOMETRY_PROVIDER, GEOMETRY_PROVIDER_VERSION, userId],
+        [
+          part.id,
+          file.id,
+          part.organization_id,
+          GEOMETRY_PROVIDER,
+          GEOMETRY_PROVIDER_VERSION,
+          userId,
+        ],
       );
       const run = runRows[0];
 
@@ -54,7 +65,11 @@ export const submitGeometryAnalysis = createServerFn({ method: "POST" })
         // provider is in place, a missing storage object must not block analysis.
         let signedUrl = "";
         try {
-          signedUrl = await getSignedDownloadUrl(file.bucket, file.storage_path, 300);
+          signedUrl = await getSignedDownloadUrl(
+            file.bucket,
+            file.storage_path,
+            300,
+          );
         } catch {
           // storage not configured yet / object missing — mock provider tolerates this
         }
@@ -67,7 +82,8 @@ export const submitGeometryAnalysis = createServerFn({ method: "POST" })
         });
 
         const manualReview =
-          analysis.result.manual_review_flags.length > 0 || analysis.uncertainty > 0.25;
+          analysis.result.manual_review_flags.length > 0 ||
+          analysis.uncertainty > 0.25;
 
         await client.query(
           `UPDATE public.geometry_analysis_runs
@@ -106,7 +122,9 @@ export const submitGeometryAnalysis = createServerFn({ method: "POST" })
            SET status = 'failed', completed_at = now(), manual_review_required = true, warnings = $1
            WHERE id = $2`,
           [
-            JSON.stringify([error instanceof Error ? error.message : "Analysis failed."]),
+            JSON.stringify([
+              error instanceof Error ? error.message : "Analysis failed.",
+            ]),
             run.id,
           ],
         );

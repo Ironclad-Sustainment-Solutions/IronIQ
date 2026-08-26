@@ -43,14 +43,19 @@ export function useCapAssessments(organizationId?: string) {
   return useQuery({
     queryKey: ["cap-assessments", organizationId ?? "all"],
     queryFn: () =>
-      fn.fetchCapAssessments({ data: { id: organizationId } }) as Promise<CapAssessmentRow[]>,
+      fn.fetchCapAssessments({ data: { id: organizationId } }) as Promise<
+        CapAssessmentRow[]
+      >,
   });
 }
 
 export function useCapAssessment(id: string) {
   return useQuery({
     queryKey: ["cap-assessment", id],
-    queryFn: () => fn.fetchCapAssessment({ data: { id } }) as Promise<CapAssessmentRow | null>,
+    queryFn: () =>
+      fn.fetchCapAssessment({
+        data: { id },
+      }) as Promise<CapAssessmentRow | null>,
   });
 }
 
@@ -74,7 +79,9 @@ export function useCapWorkspace(assessmentId: string) {
   });
 }
 
-export type CapWorkspace = NonNullable<ReturnType<typeof useCapWorkspace>["data"]>;
+export type CapWorkspace = NonNullable<
+  ReturnType<typeof useCapWorkspace>["data"]
+>;
 
 /* ---------- Generic write helpers ---------- */
 
@@ -100,21 +107,29 @@ export function useCapUpsert<T extends Record<string, unknown>>(
     },
     onSuccess: () => {
       invalidate();
-      if (options?.successMessage !== "") toast.success(options?.successMessage ?? "Saved");
+      if (options?.successMessage !== "")
+        toast.success(options?.successMessage ?? "Saved");
     },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Could not save"),
+    onError: (e) =>
+      toast.error(e instanceof Error ? e.message : "Could not save"),
   });
 }
 
-export function useCapDelete(assessmentId: string, tableName: string, label = "Deleted") {
+export function useCapDelete(
+  assessmentId: string,
+  tableName: string,
+  label = "Deleted",
+) {
   const invalidate = useWorkspaceInvalidator(assessmentId);
   return useMutation({
-    mutationFn: async (id: string) => fn.capDelete({ data: { table: tableName, id } }),
+    mutationFn: async (id: string) =>
+      fn.capDelete({ data: { table: tableName, id } }),
     onSuccess: () => {
       invalidate();
       toast.success(label);
     },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Could not delete"),
+    onError: (e) =>
+      toast.error(e instanceof Error ? e.message : "Could not delete"),
   });
 }
 
@@ -130,7 +145,8 @@ export function useCreateCapAssessment() {
       lead_assessor?: string | null;
       scope?: string | null;
     }) => {
-      if (!input.organization_id) throw new Error("Select an organization first.");
+      if (!input.organization_id)
+        throw new Error("Select an organization first.");
       if (!input.name.trim()) throw new Error("Assessment name is required.");
       return fn.createCapAssessment({ data: input });
     },
@@ -138,14 +154,19 @@ export function useCreateCapAssessment() {
       void qc.invalidateQueries({ queryKey: ["cap-assessments"] });
       toast.success("Capability assessment created");
     },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Could not create assessment"),
+    onError: (e) =>
+      toast.error(
+        e instanceof Error ? e.message : "Could not create assessment",
+      ),
   });
 }
 
 export function useSaveCapScore(assessmentId: string) {
   const invalidate = useWorkspaceInvalidator(assessmentId);
   return useMutation({
-    mutationFn: async (input: Partial<CapScoreRow> & { criterion_id: string; dimension: string }) =>
+    mutationFn: async (
+      input: Partial<CapScoreRow> & { criterion_id: string; dimension: string },
+    ) =>
       fn.saveCapScore({
         data: {
           assessmentId,
@@ -158,14 +179,20 @@ export function useSaveCapScore(assessmentId: string) {
         },
       }),
     onSuccess: invalidate,
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Could not save rating"),
+    onError: (e) =>
+      toast.error(e instanceof Error ? e.message : "Could not save rating"),
   });
 }
 
 export function useSetAssessmentScore(assessmentId: string) {
   return useMutation({
-    mutationFn: async ({ overall, status }: { overall: number | null; status?: string }) =>
-      fn.setAssessmentScore({ data: { assessmentId, overall, status } }),
+    mutationFn: async ({
+      overall,
+      status,
+    }: {
+      overall: number | null;
+      status?: string;
+    }) => fn.setAssessmentScore({ data: { assessmentId, overall, status } }),
   });
 }
 
@@ -178,6 +205,7 @@ export function useApproveFinding(assessmentId: string) {
       invalidate();
       toast.success("Finding updated");
     },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Could not update finding"),
+    onError: (e) =>
+      toast.error(e instanceof Error ? e.message : "Could not update finding"),
   });
 }

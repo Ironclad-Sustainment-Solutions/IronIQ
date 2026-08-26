@@ -22,7 +22,8 @@ export const FIELD_DOMAINS: FieldDomain[] = [
     code: "production_operations",
     number: 1,
     title: "Production Operations",
-    question: "Can the operation consistently execute the required production plan?",
+    question:
+      "Can the operation consistently execute the required production plan?",
     categories: [
       "Production Flow",
       "Machine Utilization",
@@ -42,7 +43,8 @@ export const FIELD_DOMAINS: FieldDomain[] = [
     code: "tooling_fixturing",
     number: 2,
     title: "Tooling & Fixturing",
-    question: "Does production have standardized, repeatable tooling and workholding support?",
+    question:
+      "Does production have standardized, repeatable tooling and workholding support?",
     categories: [
       "Fixture Availability",
       "Fixture Standardization",
@@ -61,7 +63,8 @@ export const FIELD_DOMAINS: FieldDomain[] = [
     code: "digital_manufacturing",
     number: 3,
     title: "Digital Manufacturing / CNC Programming",
-    question: "Can digital manufacturing support production without becoming a constraint?",
+    question:
+      "Can digital manufacturing support production without becoming a constraint?",
     categories: [
       "Programming Capacity",
       "Program Standardization",
@@ -80,7 +83,8 @@ export const FIELD_DOMAINS: FieldDomain[] = [
     code: "production_support",
     number: 4,
     title: "Production Support",
-    question: "Does production have everything required before work reaches the machine?",
+    question:
+      "Does production have everything required before work reaches the machine?",
     categories: [
       "Setup Planning",
       "Tooling Availability",
@@ -98,7 +102,8 @@ export const FIELD_DOMAINS: FieldDomain[] = [
     code: "technical_data",
     number: 5,
     title: "Technical Data",
-    question: "Can the organization clearly define what needs to be manufactured and how?",
+    question:
+      "Can the organization clearly define what needs to be manufactured and how?",
     categories: [
       "Engineering Drawings",
       "Specifications",
@@ -116,7 +121,8 @@ export const FIELD_DOMAINS: FieldDomain[] = [
     code: "equipment_infrastructure",
     number: 6,
     title: "Equipment & Infrastructure",
-    question: "Are machines and supporting systems capable of meeting production requirements?",
+    question:
+      "Are machines and supporting systems capable of meeting production requirements?",
     categories: [
       "Machine Availability",
       "Machine Condition",
@@ -153,7 +159,8 @@ export const FIELD_DOMAINS: FieldDomain[] = [
     code: "performance_data",
     number: 8,
     title: "Performance Data & Process Control",
-    question: "Can the organization see, measure, and control actual production performance?",
+    question:
+      "Can the organization see, measure, and control actual production performance?",
     categories: [
       "Production Output",
       "Downtime",
@@ -187,7 +194,12 @@ export const ASSESSMENT_STATUSES = [
   "Converted to Full Assessment",
 ];
 
-export const EVIDENCE_CLASSES = ["Observed", "Reported", "Inferred", "Requires Validation"];
+export const EVIDENCE_CLASSES = [
+  "Observed",
+  "Reported",
+  "Inferred",
+  "Requires Validation",
+];
 
 export const PROBLEM_IMPACT_OPTIONS = [
   "Production Output",
@@ -230,8 +242,19 @@ export const PRODUCTION_IMPACT_OPTIONS = [
 ];
 
 export const GAP_SEVERITY = ["Critical", "High", "Moderate", "Low"];
-export const GAP_FREQUENCY = ["Continuous", "Daily", "Weekly", "Intermittent", "One-Time", "Unknown"];
-export const ASSESSOR_CONFIDENCE = ["High Confidence", "Moderate Confidence", "Requires Validation"];
+export const GAP_FREQUENCY = [
+  "Continuous",
+  "Daily",
+  "Weekly",
+  "Intermittent",
+  "One-Time",
+  "Unknown",
+];
+export const ASSESSOR_CONFIDENCE = [
+  "High Confidence",
+  "Moderate Confidence",
+  "Requires Validation",
+];
 
 export const ROOT_CAPABILITY_DOMAINS = [
   "Technical Data",
@@ -277,7 +300,12 @@ export const IRONCLAD_FIT = [
   "Requires Partner",
   "Requires Further Assessment",
 ];
-export const PRIORITY_CODES = ["P1 — Immediate", "P2 — High", "P3 — Moderate", "P4 — Future"];
+export const PRIORITY_CODES = [
+  "P1 — Immediate",
+  "P2 — High",
+  "P3 — Moderate",
+  "P4 — Future",
+];
 export const PRIORITY_CLASSES = [
   "Immediate Stabilization",
   "Capability Restoration",
@@ -286,11 +314,14 @@ export const PRIORITY_CLASSES = [
 ];
 
 export const PRIORITY_CLASS_HELP: Record<string, string> = {
-  "Immediate Stabilization": "Something currently causing active production loss.",
-  "Capability Restoration": "A missing, degraded or unreliable capability needs to be rebuilt.",
+  "Immediate Stabilization":
+    "Something currently causing active production loss.",
+  "Capability Restoration":
+    "A missing, degraded or unreliable capability needs to be rebuilt.",
   "Capability Strengthening":
     "The capability exists but needs greater standardization, consistency, capacity or control.",
-  Sustainment: "The capability needs documentation, measurement, knowledge preservation or ongoing control.",
+  Sustainment:
+    "The capability needs documentation, measurement, knowledge preservation or ongoing control.",
 };
 
 /** Grede-specific template — customer scoped, never applied globally. */
@@ -343,7 +374,6 @@ export interface FieldCaptureObservationRow {
   ironclad_support: string | null;
   requires_validation: boolean;
 }
-
 
 export interface FieldQuickCaptureRow {
   id: string;
@@ -426,7 +456,6 @@ export interface FieldCapabilityGap {
   opp_next_action: string | null;
 }
 
-
 /* ------------------------------ baseline maths ---------------------------- */
 
 const round1 = (n: number) => Math.round(n * 10) / 10;
@@ -488,24 +517,43 @@ export function domainBaseline(
   gaps: FieldCapabilityGap[],
 ): DomainBaseline {
   const rows = observations.filter((o) => o.domain_code === domain.code);
-  const rated = rows.filter((o) => !o.not_observed && typeof o.rating === "number");
+  const rated = rows.filter(
+    (o) => !o.not_observed && typeof o.rating === "number",
+  );
   const average = rated.length
-    ? round1(rated.reduce((sum, o) => sum + (o.rating as number), 0) / rated.length)
+    ? round1(
+        rated.reduce((sum, o) => sum + (o.rating as number), 0) / rated.length,
+      )
     : null;
 
   const covered = new Set(
-    rows.map((o) => o.category).filter((c): c is string => Boolean(c && domain.categories.includes(c))),
+    rows
+      .map((o) => o.category)
+      .filter((c): c is string => Boolean(c && domain.categories.includes(c))),
   );
-  const coveragePct = Math.round((covered.size / domain.categories.length) * 100);
+  const coveragePct = Math.round(
+    (covered.size / domain.categories.length) * 100,
+  );
 
   const domainGaps = gaps.filter((g) => g.domain_code === domain.code);
-  const criticalGaps = domainGaps.filter((g) => g.severity === "Critical").length;
+  const criticalGaps = domainGaps.filter(
+    (g) => g.severity === "Critical",
+  ).length;
   const highPriorityGaps = domainGaps.filter(
-    (g) => g.severity === "High" || g.priority_code?.startsWith("P1") || g.priority_code?.startsWith("P2"),
+    (g) =>
+      g.severity === "High" ||
+      g.priority_code?.startsWith("P1") ||
+      g.priority_code?.startsWith("P2"),
   ).length;
 
   const confidence: DomainBaseline["confidence"] =
-    coveragePct >= 70 ? "High" : coveragePct >= 40 ? "Moderate" : coveragePct > 0 ? "Low" : "Requires Full Assessment";
+    coveragePct >= 70
+      ? "High"
+      : coveragePct >= 40
+        ? "Moderate"
+        : coveragePct > 0
+          ? "Low"
+          : "Requires Full Assessment";
 
   return {
     domain,
@@ -532,12 +580,18 @@ export function fieldBaseline(
   observations: FieldCaptureObservationRow[],
   gaps: FieldCapabilityGap[],
 ): FieldBaseline {
-  const domains = FIELD_DOMAINS.map((d) => domainBaseline(d, observations, gaps));
-  const rated = observations.filter((o) => !o.not_observed && typeof o.rating === "number");
+  const domains = FIELD_DOMAINS.map((d) =>
+    domainBaseline(d, observations, gaps),
+  );
+  const rated = observations.filter(
+    (o) => !o.not_observed && typeof o.rating === "number",
+  );
   return {
     domains,
     overallRating: rated.length
-      ? round1(rated.reduce((s, o) => s + (o.rating as number), 0) / rated.length)
+      ? round1(
+          rated.reduce((s, o) => s + (o.rating as number), 0) / rated.length,
+        )
       : null,
     overallCoveragePct: Math.round(
       domains.reduce((s, d) => s + d.coveragePct, 0) / (domains.length || 1),
@@ -549,7 +603,8 @@ export function fieldBaseline(
 
 /** Suggested priority code from impact + effort + urgency. Assessor may override. */
 export function suggestedPriority(gap: FieldCapabilityGap): string {
-  if (gap.severity === "Critical" || gap.urgency === "Immediate") return "P1 — Immediate";
+  if (gap.severity === "Critical" || gap.urgency === "Immediate")
+    return "P1 — Immediate";
   if (gap.operational_impact === "High") return "P2 — High";
   if (gap.operational_impact === "Medium") return "P3 — Moderate";
   return "P4 — Future";

@@ -16,7 +16,9 @@ export const fetchJobs = createServerFn({ method: "GET" })
             "SELECT * FROM public.jobs WHERE organization_id = $1 ORDER BY created_at DESC",
             [data.id],
           )
-        : await client.query("SELECT * FROM public.jobs ORDER BY created_at DESC");
+        : await client.query(
+            "SELECT * FROM public.jobs ORDER BY created_at DESC",
+          );
       return rows;
     }),
   );
@@ -28,7 +30,10 @@ export const fetchJob = createServerFn({ method: "GET" })
   .inputValidator((d: unknown) => jobIdInput.parse(d))
   .handler(({ data, context }) =>
     withUser(context.userId, async (client) => {
-      const { rows } = await client.query("SELECT * FROM public.jobs WHERE id = $1", [data.jobId]);
+      const { rows } = await client.query(
+        "SELECT * FROM public.jobs WHERE id = $1",
+        [data.jobId],
+      );
       return rows[0] ?? null;
     }),
   );
@@ -56,14 +61,17 @@ export const fetchJobDetail = createServerFn({ method: "GET" })
         proveOuts,
         files,
       ] = await Promise.all([
-        client.query("SELECT * FROM public.intake_reviews WHERE job_id = $1", [jobId]),
+        client.query("SELECT * FROM public.intake_reviews WHERE job_id = $1", [
+          jobId,
+        ]),
         client.query(
           "SELECT * FROM public.intake_exceptions WHERE job_id = $1 ORDER BY created_at DESC",
           [jobId],
         ),
-        client.query("SELECT * FROM public.ai_plans WHERE job_id = $1 ORDER BY generated_at DESC", [
-          jobId,
-        ]),
+        client.query(
+          "SELECT * FROM public.ai_plans WHERE job_id = $1 ORDER BY generated_at DESC",
+          [jobId],
+        ),
         client.query(
           "SELECT * FROM public.plan_reviews WHERE job_id = $1 ORDER BY reviewed_at DESC",
           [jobId],
@@ -72,7 +80,9 @@ export const fetchJobDetail = createServerFn({ method: "GET" })
           "SELECT * FROM public.operations WHERE job_id = $1 ORDER BY setup_number, sequence",
           [jobId],
         ),
-        client.query("SELECT * FROM public.mastercam_jobs WHERE job_id = $1", [jobId]),
+        client.query("SELECT * FROM public.mastercam_jobs WHERE job_id = $1", [
+          jobId,
+        ]),
         client.query(
           "SELECT * FROM public.automated_checks WHERE job_id = $1 ORDER BY run_at DESC",
           [jobId],
@@ -93,12 +103,18 @@ export const fetchJobDetail = createServerFn({ method: "GET" })
           "SELECT * FROM public.setup_sheets WHERE job_id = $1 ORDER BY created_at DESC",
           [jobId],
         ),
-        client.query("SELECT * FROM public.release_packages WHERE job_id = $1", [jobId]),
+        client.query(
+          "SELECT * FROM public.release_packages WHERE job_id = $1",
+          [jobId],
+        ),
         client.query(
           "SELECT * FROM public.prove_out_results WHERE job_id = $1 ORDER BY created_at DESC",
           [jobId],
         ),
-        client.query("SELECT * FROM public.job_files WHERE job_id = $1 ORDER BY created_at", [jobId]),
+        client.query(
+          "SELECT * FROM public.job_files WHERE job_id = $1 ORDER BY created_at",
+          [jobId],
+        ),
       ]);
 
       return {
@@ -125,7 +141,9 @@ export const fetchMachineProfiles = createServerFn({ method: "GET" })
   .inputValidator((d: unknown) => optionalId.parse(d))
   .handler(({ context }) =>
     withUser(context.userId, async (client) => {
-      const { rows } = await client.query("SELECT * FROM public.machine_profiles ORDER BY make");
+      const { rows } = await client.query(
+        "SELECT * FROM public.machine_profiles ORDER BY make",
+      );
       return rows;
     }),
   );
@@ -145,7 +163,9 @@ export const fetchPostProcessors = createServerFn({ method: "GET" })
   .middleware([requireAuth])
   .handler(({ context }) =>
     withUser(context.userId, async (client) => {
-      const { rows } = await client.query("SELECT * FROM public.post_processors ORDER BY name");
+      const { rows } = await client.query(
+        "SELECT * FROM public.post_processors ORDER BY name",
+      );
       return rows;
     }),
   );
@@ -154,7 +174,9 @@ export const fetchProgrammerCapabilities = createServerFn({ method: "GET" })
   .middleware([requireAuth])
   .handler(({ context }) =>
     withUser(context.userId, async (client) => {
-      const { rows } = await client.query("SELECT * FROM public.programmer_capabilities");
+      const { rows } = await client.query(
+        "SELECT * FROM public.programmer_capabilities",
+      );
       return rows;
     }),
   );
@@ -178,9 +200,9 @@ export const advanceStatus = createServerFn({ method: "POST" })
       const cols = Object.keys(patch);
       assertColumnsAllowed("jobs", cols);
       const setClause = cols.map((c, i) => `${c} = $${i + 1}`).join(", ");
-      await client.query(`UPDATE public.jobs SET ${setClause} WHERE id = $${cols.length + 1}`, [
-        ...Object.values(patch),
-        data.jobId,
-      ]);
+      await client.query(
+        `UPDATE public.jobs SET ${setClause} WHERE id = $${cols.length + 1}`,
+        [...Object.values(patch), data.jobId],
+      );
     }),
   );

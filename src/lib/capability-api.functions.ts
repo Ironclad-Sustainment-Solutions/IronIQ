@@ -3,7 +3,10 @@ import { z } from "zod";
 import { requireAuth } from "@/lib/auth/auth-middleware";
 import { withUser } from "@/lib/db.server";
 import { assertColumnsAllowed } from "@/lib/column-allowlist";
-import { assertProductAllowed, assertProductAllowedForCapAssessment } from "@/lib/product-access-check.server";
+import {
+  assertProductAllowed,
+  assertProductAllowedForCapAssessment,
+} from "@/lib/product-access-check.server";
 
 // Every table name reachable through the generic upsert/delete helpers below.
 // This allowlist is the only thing standing between client-supplied table
@@ -54,9 +57,14 @@ async function assertProductAllowedForCapRow(
   id: string,
 ): Promise<void> {
   const query = CAP_TABLE_ORG_QUERIES[table];
-  if (!query) throw new Error(`No product-restriction lookup configured for table "${table}".`);
+  if (!query)
+    throw new Error(
+      `No product-restriction lookup configured for table "${table}".`,
+    );
   const organizationId = await withUser(userId, async (client) => {
-    const { rows } = await client.query<{ organization_id: string }>(query, [id]);
+    const { rows } = await client.query<{ organization_id: string }>(query, [
+      id,
+    ]);
     return rows[0]?.organization_id ?? null;
   });
   if (!organizationId) throw new Error("Record not found or not accessible.");
@@ -68,7 +76,10 @@ async function assertProductAllowedForCapRow(
 // finding, cap_results/cap_validations reference an action, neither of
 // which is assessment_id directly. Both resolve to organization_id one
 // join further out than assertProductAllowedForCapAssessment handles.
-async function resolveCapFindingOrg(userId: string, findingId: string): Promise<string | null> {
+async function resolveCapFindingOrg(
+  userId: string,
+  findingId: string,
+): Promise<string | null> {
   return withUser(userId, async (client) => {
     const { rows } = await client.query<{ organization_id: string }>(
       `SELECT a.organization_id FROM public.cap_assessments a JOIN public.cap_findings f ON f.assessment_id = a.id WHERE f.id = $1`,
@@ -78,7 +89,10 @@ async function resolveCapFindingOrg(userId: string, findingId: string): Promise<
   });
 }
 
-async function resolveCapActionOrg(userId: string, actionId: string): Promise<string | null> {
+async function resolveCapActionOrg(
+  userId: string,
+  actionId: string,
+): Promise<string | null> {
   return withUser(userId, async (client) => {
     const { rows } = await client.query<{ organization_id: string }>(
       `SELECT a.organization_id FROM public.cap_assessments a JOIN public.cap_actions ac ON ac.assessment_id = a.id WHERE ac.id = $1`,
@@ -230,7 +244,8 @@ export const capUpsert = createServerFn({ method: "POST" })
       // what previously made this branch stop short -- now resolved via
       // resolveCapFindingOrg/resolveCapActionOrg.
       const assessmentId = data.values["assessment_id"];
-      const findingId = data.values["finding_id"] ?? data.values["parent_finding_id"];
+      const findingId =
+        data.values["finding_id"] ?? data.values["parent_finding_id"];
       const actionId = data.values["action_id"];
 
       let organizationId: string | null = null;
@@ -249,7 +264,11 @@ export const capUpsert = createServerFn({ method: "POST" })
       }
 
       if (organizationId) {
-        await assertProductAllowed(context.userId, organizationId, "assessment");
+        await assertProductAllowed(
+          context.userId,
+          organizationId,
+          "assessment",
+        );
       }
       // If none of assessment_id/finding_id/parent_finding_id/action_id
       // was supplied, there's no parent to resolve an org from -- the
@@ -305,7 +324,11 @@ export const createCapAssessment = createServerFn({ method: "POST" })
   .middleware([requireAuth])
   .inputValidator((d: unknown) => CreateCapAssessmentInput.parse(d))
   .handler(async ({ data, context }) => {
-    await assertProductAllowed(context.userId, data.organization_id, "assessment");
+    await assertProductAllowed(
+      context.userId,
+      data.organization_id,
+      "assessment",
+    );
     return withUser(context.userId, async (client) => {
       const { rows } = await client.query(
         `INSERT INTO public.cap_assessments
@@ -343,7 +366,11 @@ export const saveCapScore = createServerFn({ method: "POST" })
   .middleware([requireAuth])
   .inputValidator((d: unknown) => SaveCapScoreInput.parse(d))
   .handler(async ({ data, context }) => {
-    await assertProductAllowedForCapAssessment(context.userId, data.assessmentId, "assessment");
+    await assertProductAllowedForCapAssessment(
+      context.userId,
+      data.assessmentId,
+      "assessment",
+    );
     await withUser(context.userId, (client) =>
       client.query(
         `INSERT INTO public.cap_scores
@@ -375,7 +402,11 @@ export const setAssessmentScore = createServerFn({ method: "POST" })
   .middleware([requireAuth])
   .inputValidator((d: unknown) => SetAssessmentScoreInput.parse(d))
   .handler(async ({ data, context }) => {
-    await assertProductAllowedForCapAssessment(context.userId, data.assessmentId, "assessment");
+    await assertProductAllowedForCapAssessment(
+      context.userId,
+      data.assessmentId,
+      "assessment",
+    );
     await withUser(context.userId, (client) =>
       data.status
         ? client.query(

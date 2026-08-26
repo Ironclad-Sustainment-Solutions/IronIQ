@@ -14,7 +14,10 @@ export function useFacilityResult(facilityId?: string): {
   loading: boolean;
 } {
   const assessmentsQuery = useAssessments(facilityId);
-  const assessments = useMemo(() => assessmentsQuery.data ?? [], [assessmentsQuery.data]);
+  const assessments = useMemo(
+    () => assessmentsQuery.data ?? [],
+    [assessmentsQuery.data],
+  );
 
   const assessment = useMemo(() => {
     if (assessments.length === 0) return null;
@@ -26,14 +29,19 @@ export function useFacilityResult(facilityId?: string): {
 
   const result = useMemo(() => {
     if (!content.data || !responses.data) return null;
-    return computeAssessmentResult(content.data.categories, content.data.questions, responses.data);
+    return computeAssessmentResult(
+      content.data.categories,
+      content.data.questions,
+      responses.data,
+    );
   }, [content.data, responses.data]);
 
   return {
     assessment,
     assessments,
     result,
-    loading: assessmentsQuery.isLoading || content.isLoading || responses.isLoading,
+    loading:
+      assessmentsQuery.isLoading || content.isLoading || responses.isLoading,
   };
 }
 
@@ -43,7 +51,11 @@ export function useAssessmentResult(assessment: Assessment | null | undefined) {
 
   const result = useMemo(() => {
     if (!content.data || !responses.data) return null;
-    return computeAssessmentResult(content.data.categories, content.data.questions, responses.data);
+    return computeAssessmentResult(
+      content.data.categories,
+      content.data.questions,
+      responses.data,
+    );
   }, [content.data, responses.data]);
 
   return {

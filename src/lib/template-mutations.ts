@@ -15,13 +15,25 @@ import type {
   EvidenceType,
   FindingSeverity,
 } from "./domain";
-import { buildVersionCopy, validateCategoryInput, validateQuestionInput } from "./template-validation";
+import {
+  buildVersionCopy,
+  validateCategoryInput,
+  validateQuestionInput,
+} from "./template-validation";
 
-const LIBRARY_KEYS = ["template-library", "templates", "template-content", "audit-log"];
+const LIBRARY_KEYS = [
+  "template-library",
+  "templates",
+  "template-content",
+  "audit-log",
+];
 
 function useInvalidator() {
   const queryClient = useQueryClient();
-  return () => LIBRARY_KEYS.forEach((key) => queryClient.invalidateQueries({ queryKey: [key] }));
+  return () =>
+    LIBRARY_KEYS.forEach((key) =>
+      queryClient.invalidateQueries({ queryKey: [key] }),
+    );
 }
 
 export interface TemplateInput {
@@ -42,7 +54,8 @@ export function useSaveTemplate() {
   return useMutation({
     mutationFn: async (input: TemplateInput) => {
       if (!input.name?.trim()) throw new Error("Template name is required.");
-      if (!input.template_code?.trim()) throw new Error("Template ID is required.");
+      if (!input.template_code?.trim())
+        throw new Error("Template ID is required.");
 
       const values = {
         name: input.name.trim(),
@@ -62,7 +75,8 @@ export function useSaveTemplate() {
       invalidate();
       toast.success("Template saved");
     },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Could not save template"),
+    onError: (e) =>
+      toast.error(e instanceof Error ? e.message : "Could not save template"),
   });
 }
 
@@ -75,7 +89,8 @@ export function useArchiveTemplate() {
       invalidate();
       toast.success("Template updated");
     },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Could not update template"),
+    onError: (e) =>
+      toast.error(e instanceof Error ? e.message : "Could not update template"),
   });
 }
 
@@ -121,32 +136,48 @@ export function useDuplicateTemplate() {
       invalidate();
       toast.success("Template duplicated as a new draft");
     },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Could not duplicate template"),
+    onError: (e) =>
+      toast.error(
+        e instanceof Error ? e.message : "Could not duplicate template",
+      ),
   });
 }
 
 export function useCreateTemplateVersion() {
   const invalidate = useInvalidator();
   return useMutation({
-    mutationFn: async ({ versionId, notes }: { versionId: string; notes?: string }) =>
+    mutationFn: async ({
+      versionId,
+      notes,
+    }: {
+      versionId: string;
+      notes?: string;
+    }) =>
       fn.createTemplateVersion({ data: { versionId, notes: notes ?? null } }),
     onSuccess: () => {
       invalidate();
       toast.success("New draft version created");
     },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Could not create a new version"),
+    onError: (e) =>
+      toast.error(
+        e instanceof Error ? e.message : "Could not create a new version",
+      ),
   });
 }
 
 export function usePublishTemplateVersion() {
   const invalidate = useInvalidator();
   return useMutation({
-    mutationFn: async (versionId: string) => fn.publishTemplateVersion({ data: { versionId } }),
+    mutationFn: async (versionId: string) =>
+      fn.publishTemplateVersion({ data: { versionId } }),
     onSuccess: () => {
       invalidate();
       toast.success("Template version published and locked");
     },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Could not publish this version"),
+    onError: (e) =>
+      toast.error(
+        e instanceof Error ? e.message : "Could not publish this version",
+      ),
   });
 }
 
@@ -154,14 +185,18 @@ export function useDeleteDraftVersion() {
   const invalidate = useInvalidator();
   return useMutation({
     mutationFn: async (version: AssessmentTemplateVersion) => {
-      if (version.status === "published") throw new Error("Published versions cannot be deleted.");
+      if (version.status === "published")
+        throw new Error("Published versions cannot be deleted.");
       return fn.deleteDraftVersion({ data: { versionId: version.id } });
     },
     onSuccess: () => {
       invalidate();
       toast.success("Draft version deleted");
     },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Could not delete this version"),
+    onError: (e) =>
+      toast.error(
+        e instanceof Error ? e.message : "Could not delete this version",
+      ),
   });
 }
 
@@ -202,7 +237,8 @@ export function useSaveCategory() {
       invalidate();
       toast.success("Category saved");
     },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Could not save category"),
+    onError: (e) =>
+      toast.error(e instanceof Error ? e.message : "Could not save category"),
   });
 }
 
@@ -239,7 +275,8 @@ export function useCategoryRowAction() {
       });
     },
     onSuccess: () => invalidate(),
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Could not update category"),
+    onError: (e) =>
+      toast.error(e instanceof Error ? e.message : "Could not update category"),
   });
 }
 
@@ -289,7 +326,8 @@ export function useSaveQuestion() {
       invalidate();
       toast.success("Question saved");
     },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Could not save question"),
+    onError: (e) =>
+      toast.error(e instanceof Error ? e.message : "Could not save question"),
   });
 }
 
@@ -308,11 +346,15 @@ export function useQuestionRowAction() {
       versionQuestions: AssessmentQuestion[];
     }) => {
       if (action === "delete" || action === "archive" || action === "restore") {
-        return fn.questionRowAction({ data: { questionId: question.id, action } });
+        return fn.questionRowAction({
+          data: { questionId: question.id, action },
+        });
       }
       if (action === "duplicate") {
         let suffix = 2;
-        const taken = new Set(versionQuestions.map((q) => q.question_code.toLowerCase()));
+        const taken = new Set(
+          versionQuestions.map((q) => q.question_code.toLowerCase()),
+        );
         let code = `${question.question_code}-${suffix}`;
         while (taken.has(code.toLowerCase())) {
           suffix += 1;
@@ -356,6 +398,7 @@ export function useQuestionRowAction() {
       });
     },
     onSuccess: () => invalidate(),
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Could not update question"),
+    onError: (e) =>
+      toast.error(e instanceof Error ? e.message : "Could not update question"),
   });
 }

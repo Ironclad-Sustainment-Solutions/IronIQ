@@ -1,4 +1,11 @@
-import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from "react";
 import { getCurrentUser } from "@/lib/auth/auth.functions";
 import type { AppRole, Facility, Organization, Profile } from "@/lib/domain";
 import { useFacilities, useOrganizations } from "@/lib/api";

@@ -13,7 +13,11 @@ import {
   AlertDialogFooter,
   AlertDialogAction,
 } from "@/components/ui/alert-dialog";
-import { PageHeader, Panel, EmptyState } from "@/components/ironiq/layout-primitives";
+import {
+  PageHeader,
+  Panel,
+  EmptyState,
+} from "@/components/ironiq/layout-primitives";
 
 import { Tag } from "@/components/ironiq/badges";
 import { Button } from "@/components/ui/button";
@@ -50,7 +54,6 @@ import { cn } from "@/lib/utils";
 
 const ModelViewer = lazy(() => import("@/components/ironiq/model-viewer"));
 
-
 export const Route = createFileRoute("/_authenticated/estimates")({
   head: () => ({
     meta: [
@@ -81,11 +84,14 @@ const confidenceToken: Record<EstimateConfidence, string> = {
 
 function EstimatesPage() {
   const { organization, facility, roles } = useApp();
-  const internal = roles.some((r) => r === "ironiq_admin" || r === "consultant");
+  const internal = roles.some(
+    (r) => r === "ironiq_admin" || r === "consultant",
+  );
   const partsQuery = useEstimatingParts(organization?.id);
   const parts = partsQuery.data ?? [];
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const selected = parts.find((p) => p.part.id === selectedId) ?? parts[0] ?? null;
+  const selected =
+    parts.find((p) => p.part.id === selectedId) ?? parts[0] ?? null;
 
   return (
     <div className="mx-auto max-w-7xl space-y-8">
@@ -122,9 +128,12 @@ function EstimatesPage() {
                     {item.part.part_number}
                     {item.part.revision ? ` rev ${item.part.revision}` : ""}
                   </p>
-                  <p className="truncate text-xs text-muted-foreground">{item.rfq.rfq_number} · {item.rfq.title}</p>
+                  <p className="truncate text-xs text-muted-foreground">
+                    {item.rfq.rfq_number} · {item.rfq.title}
+                  </p>
                   <p className="mt-1 text-[10px] uppercase tracking-wider text-muted-foreground">
-                    {RFQ_STATUS_LABELS[item.rfq.status]} · Qty {item.part.quantity}
+                    {RFQ_STATUS_LABELS[item.rfq.status]} · Qty{" "}
+                    {item.part.quantity}
                   </p>
                 </button>
               );
@@ -132,7 +141,11 @@ function EstimatesPage() {
           </nav>
 
           {selected ? (
-            <EstimateWorkspace key={selected.part.id} item={selected} facilityId={facility?.id} />
+            <EstimateWorkspace
+              key={selected.part.id}
+              item={selected}
+              facilityId={facility?.id}
+            />
           ) : null}
         </div>
       )}
@@ -140,7 +153,13 @@ function EstimatesPage() {
   );
 }
 
-function EstimateWorkspace({ item, facilityId }: { item: EstimatingPart; facilityId?: string }) {
+function EstimateWorkspace({
+  item,
+  facilityId,
+}: {
+  item: EstimatingPart;
+  facilityId?: string;
+}) {
   const queryClient = useQueryClient();
   const runAnalysis = useServerFn(submitGeometryAnalysis);
   const attestAccess = useServerFn(attestExportControlledAccess);
@@ -172,7 +191,9 @@ function EstimateWorkspace({ item, facilityId }: { item: EstimatingPart; facilit
       setAttested(true);
     } catch (error) {
       toast.error(
-        error instanceof Error ? error.message : "Could not confirm access — try again.",
+        error instanceof Error
+          ? error.message
+          : "Could not confirm access — try again.",
       );
     } finally {
       setAttesting(false);
@@ -189,7 +210,8 @@ function EstimateWorkspace({ item, facilityId }: { item: EstimatingPart; facilit
   // during an eslint cleanup pass -- a real bug this introduced, not just
   // lint noise, since it could cause React to misattribute hook state
   // across renders once a user actually attests.
-  const latestRun = (runsQuery.data ?? []).find((r) => r.status === "complete") ?? null;
+  const latestRun =
+    (runsQuery.data ?? []).find((r) => r.status === "complete") ?? null;
   const geometry: GeometryResult | null = latestRun?.result ?? null;
   const warnings = latestRun?.warnings ?? [];
 
@@ -203,7 +225,8 @@ function EstimateWorkspace({ item, facilityId }: { item: EstimatingPart; facilit
     machines.find((m) => m.machine_type === req?.requested_machine_type) ??
     machines[0] ??
     null;
-  const machine = machines.find((m) => m.id === machineOverride) ?? suggestedMachine;
+  const machine =
+    machines.find((m) => m.id === machineOverride) ?? suggestedMachine;
   const material = materials.find((m) => m.id === req?.material_id) ?? null;
 
   const estimate = useMemo(
@@ -214,7 +237,12 @@ function EstimateWorkspace({ item, facilityId }: { item: EstimatingPart; facilit
         material,
         geometry,
         stock: req
-          ? { a: req.stock_dim_a, b: req.stock_dim_b, c: req.stock_dim_c, units: req.units }
+          ? {
+              a: req.stock_dim_a,
+              b: req.stock_dim_b,
+              c: req.stock_dim_c,
+              units: req.units,
+            }
           : null,
         customerSuppliedMaterial: req?.customer_supplied_material ?? false,
         hasDrawing: Boolean(drawing),
@@ -229,12 +257,24 @@ function EstimateWorkspace({ item, facilityId }: { item: EstimatingPart; facilit
         expedite: (req?.requested_turnaround_days ?? 99) < 21,
         existingProgram: req?.existing_program ?? false,
         existingFixture: req?.existing_fixture ?? false,
-        exportControlled: item.rfq.export_controlled || item.rfq.itar || item.rfq.cui,
+        exportControlled:
+          item.rfq.export_controlled || item.rfq.itar || item.rfq.cui,
         stockNote: req?.stock_shape ?? null,
         targetMargin: margin / 100,
         programmingRate,
       }),
-    [quantity, machine, material, geometry, req, drawing, model, item.rfq, margin, programmingRate],
+    [
+      quantity,
+      machine,
+      material,
+      geometry,
+      req,
+      drawing,
+      model,
+      item.rfq,
+      margin,
+      programmingRate,
+    ],
   );
 
   if (flagged && !attested) {
@@ -253,23 +293,30 @@ function EstimateWorkspace({ item, facilityId }: { item: EstimatingPart; facilit
               {item.rfq.rfq_number} is flagged {flags.join(" · ")}
             </p>
             <p className="max-w-md text-sm text-muted-foreground">
-              Confirm you're authorized to view export-controlled data before this RFQ's
-              details, drawings, and cost build-up are shown. This confirmation is logged.
+              Confirm you're authorized to view export-controlled data before
+              this RFQ's details, drawings, and cost build-up are shown. This
+              confirmation is logged.
             </p>
           </div>
         </Panel>
         <AlertDialog open onOpenChange={() => {}}>
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>Export-controlled data — {flags.join(" · ")}</AlertDialogTitle>
+              <AlertDialogTitle>
+                Export-controlled data — {flags.join(" · ")}
+              </AlertDialogTitle>
               <AlertDialogDescription>
-                {item.rfq.rfq_number} ({item.rfq.title}) is flagged as {flags.join(", ")}.
-                By continuing, you confirm you are authorized to view export-controlled
-                data for this RFQ. This access is recorded in the audit log.
+                {item.rfq.rfq_number} ({item.rfq.title}) is flagged as{" "}
+                {flags.join(", ")}. By continuing, you confirm you are
+                authorized to view export-controlled data for this RFQ. This
+                access is recorded in the audit log.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogAction disabled={attesting} onClick={() => void confirmAttestation()}>
+              <AlertDialogAction
+                disabled={attesting}
+                onClick={() => void confirmAttestation()}
+              >
                 {attesting ? (
                   <Loader2 className="size-4 animate-spin" aria-hidden />
                 ) : null}
@@ -289,11 +336,17 @@ function EstimateWorkspace({ item, facilityId }: { item: EstimatingPart; facilit
     }
     setRunning(true);
     try {
-      await runAnalysis({ data: { rfqPartId: item.part.id, rfqFileId: model.id } });
-      await queryClient.invalidateQueries({ queryKey: ["geometry-runs", item.part.id] });
+      await runAnalysis({
+        data: { rfqPartId: item.part.id, rfqFileId: model.id },
+      });
+      await queryClient.invalidateQueries({
+        queryKey: ["geometry-runs", item.part.id],
+      });
       toast.success("Geometry analysis complete — cost build-up refreshed.");
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Geometry analysis failed.");
+      toast.error(
+        error instanceof Error ? error.message : "Geometry analysis failed.",
+      );
     } finally {
       setRunning(false);
     }
@@ -312,10 +365,14 @@ function EstimateWorkspace({ item, facilityId }: { item: EstimatingPart; facilit
           subtitle={`${model?.file_name} · drag to orbit, scroll to zoom, right-drag to pan`}
         >
           <ClientOnly
-            fallback={<div className="h-[380px] rounded-sm border border-border bg-card/40" />}
+            fallback={
+              <div className="h-[380px] rounded-sm border border-border bg-card/40" />
+            }
           >
             <Suspense
-              fallback={<div className="h-[380px] rounded-sm border border-border bg-card/40" />}
+              fallback={
+                <div className="h-[380px] rounded-sm border border-border bg-card/40" />
+              }
             >
               <ModelViewer
                 url={meshUrl}
@@ -335,7 +392,11 @@ function EstimateWorkspace({ item, facilityId }: { item: EstimatingPart; facilit
         }
         actions={
           <Button size="sm" onClick={() => void analyse()} disabled={running}>
-            {running ? <Loader2 className="size-4 animate-spin" aria-hidden /> : <Ruler className="size-4" aria-hidden />}
+            {running ? (
+              <Loader2 className="size-4 animate-spin" aria-hidden />
+            ) : (
+              <Ruler className="size-4" aria-hidden />
+            )}
             {latestRun ? "Re-run analysis" : "Run analysis"}
           </Button>
         }
@@ -343,25 +404,58 @@ function EstimateWorkspace({ item, facilityId }: { item: EstimatingPart; facilit
         {geometry ? (
           <div className="space-y-5">
             <div className="grid gap-4 sm:grid-cols-3 lg:grid-cols-4">
-              <Metric label="Bounding box" value={`${geometry.bounding_box.x} × ${geometry.bounding_box.y} × ${geometry.bounding_box.z} ${geometry.bounding_box.units}`} />
+              <Metric
+                label="Bounding box"
+                value={`${geometry.bounding_box.x} × ${geometry.bounding_box.y} × ${geometry.bounding_box.z} ${geometry.bounding_box.units}`}
+              />
               <Metric label="Volume" value={`${geometry.volume_in3} in³`} />
-              <Metric label="Surface area" value={`${geometry.surface_area_in2} in²`} />
-              <Metric label="Finished weight" value={`${geometry.estimated_finished_weight_lb} lb`} />
-              <Metric label="Removal ratio" value={`${Math.round(geometry.material_removal_ratio * 100)}%`} />
-              <Metric label="Holes / pockets / slots" value={`${geometry.hole_count} / ${geometry.pocket_count} / ${geometry.slot_count}`} />
+              <Metric
+                label="Surface area"
+                value={`${geometry.surface_area_in2} in²`}
+              />
+              <Metric
+                label="Finished weight"
+                value={`${geometry.estimated_finished_weight_lb} lb`}
+              />
+              <Metric
+                label="Removal ratio"
+                value={`${Math.round(geometry.material_removal_ratio * 100)}%`}
+              />
+              <Metric
+                label="Holes / pockets / slots"
+                value={`${geometry.hole_count} / ${geometry.pocket_count} / ${geometry.slot_count}`}
+              />
               <Metric label="Undercuts" value={String(geometry.undercuts)} />
-              <Metric label="Thin walls" value={geometry.thin_wall_indicator ? "Detected" : "None"} />
-              <Metric label="Suggested setups" value={String(geometry.suggested_setups)} />
-              <Metric label="Suggested machine" value={MACHINE_TYPE_LABELS[geometry.suggested_machine_type]} />
-              <Metric label="Complexity score" value={`${geometry.complexity_score}/100`} />
-              <Metric label="Uncertainty" value={`${Math.round((latestRun?.uncertainty ?? 0) * 100)}%`} />
+              <Metric
+                label="Thin walls"
+                value={geometry.thin_wall_indicator ? "Detected" : "None"}
+              />
+              <Metric
+                label="Suggested setups"
+                value={String(geometry.suggested_setups)}
+              />
+              <Metric
+                label="Suggested machine"
+                value={MACHINE_TYPE_LABELS[geometry.suggested_machine_type]}
+              />
+              <Metric
+                label="Complexity score"
+                value={`${geometry.complexity_score}/100`}
+              />
+              <Metric
+                label="Uncertainty"
+                value={`${Math.round((latestRun?.uncertainty ?? 0) * 100)}%`}
+              />
             </div>
 
             {warnings.length > 0 ? (
               <ul className="space-y-2 rounded-sm border border-medium/40 bg-medium/10 p-4">
                 {warnings.map((w) => (
                   <li key={w} className="flex gap-2 text-sm text-foreground">
-                    <AlertTriangle className="mt-0.5 size-4 shrink-0 text-medium" aria-hidden />
+                    <AlertTriangle
+                      className="mt-0.5 size-4 shrink-0 text-medium"
+                      aria-hidden
+                    />
                     {w}
                   </li>
                 ))}
@@ -379,7 +473,10 @@ function EstimateWorkspace({ item, facilityId }: { item: EstimatingPart; facilit
         )}
       </Panel>
 
-      <Panel title="Estimating inputs" subtitle="Machine and material are prefilled from the analysis and the part requirements.">
+      <Panel
+        title="Estimating inputs"
+        subtitle="Machine and material are prefilled from the analysis and the part requirements."
+      >
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <div className="space-y-1.5">
             <Label htmlFor="machine">Machine</Label>
@@ -393,13 +490,17 @@ function EstimateWorkspace({ item, facilityId }: { item: EstimatingPart; facilit
               <SelectContent>
                 {machines.map((m) => (
                   <SelectItem key={m.id} value={m.id}>
-                    {m.manufacturer} {m.model} — {MACHINE_TYPE_LABELS[m.machine_type]}
+                    {m.manufacturer} {m.model} —{" "}
+                    {MACHINE_TYPE_LABELS[m.machine_type]}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
-            {geometry && machine?.machine_type === geometry.suggested_machine_type ? (
-              <p className="text-[11px] text-muted-foreground">Matches the suggested machine type.</p>
+            {geometry &&
+            machine?.machine_type === geometry.suggested_machine_type ? (
+              <p className="text-[11px] text-muted-foreground">
+                Matches the suggested machine type.
+              </p>
             ) : null}
           </div>
           <div className="space-y-1.5">
@@ -409,7 +510,9 @@ function EstimateWorkspace({ item, facilityId }: { item: EstimatingPart; facilit
               type="number"
               min={1}
               value={quantity}
-              onChange={(e) => setQuantity(Math.max(1, Number(e.target.value) || 1))}
+              onChange={(e) =>
+                setQuantity(Math.max(1, Number(e.target.value) || 1))
+              }
             />
           </div>
           <div className="space-y-1.5">
@@ -420,7 +523,11 @@ function EstimateWorkspace({ item, facilityId }: { item: EstimatingPart; facilit
               min={0}
               max={85}
               value={margin}
-              onChange={(e) => setMargin(Math.min(85, Math.max(0, Number(e.target.value) || 0)))}
+              onChange={(e) =>
+                setMargin(
+                  Math.min(85, Math.max(0, Number(e.target.value) || 0)),
+                )
+              }
             />
           </div>
           <div className="space-y-1.5">
@@ -430,23 +537,45 @@ function EstimateWorkspace({ item, facilityId }: { item: EstimatingPart; facilit
               type="number"
               min={0}
               value={programmingRate}
-              onChange={(e) => setProgrammingRate(Math.max(0, Number(e.target.value) || 0))}
+              onChange={(e) =>
+                setProgrammingRate(Math.max(0, Number(e.target.value) || 0))
+              }
             />
           </div>
         </div>
 
         <div className="mt-5 grid gap-4 sm:grid-cols-4">
-          <Metric label="Material" value={material ? `${material.family} ${material.grade}` : req?.material_text ?? "Not identified"} />
-          <Metric label="Programming hours" value={`${estimate.programmingHours} h`} />
-          <Metric label="Setups" value={`${estimate.setupCount} (${estimate.setupHours} h)`} />
-          <Metric label="Cycle time" value={`${estimate.cycleTimeMinutes} min/pc`} />
+          <Metric
+            label="Material"
+            value={
+              material
+                ? `${material.family} ${material.grade}`
+                : (req?.material_text ?? "Not identified")
+            }
+          />
+          <Metric
+            label="Programming hours"
+            value={`${estimate.programmingHours} h`}
+          />
+          <Metric
+            label="Setups"
+            value={`${estimate.setupCount} (${estimate.setupHours} h)`}
+          />
+          <Metric
+            label="Cycle time"
+            value={`${estimate.cycleTimeMinutes} min/pc`}
+          />
         </div>
       </Panel>
 
       <Panel
         title="Cost build-up"
         subtitle="Every line carries the source it was derived from and the assumption applied."
-        actions={<Tag token={confidenceToken[estimate.confidence]}>{CONFIDENCE_LABELS[estimate.confidence]}</Tag>}
+        actions={
+          <Tag token={confidenceToken[estimate.confidence]}>
+            {CONFIDENCE_LABELS[estimate.confidence]}
+          </Tag>
+        }
       >
         <div className="overflow-x-auto">
           <table className="w-full min-w-[720px] text-sm">
@@ -460,22 +589,46 @@ function EstimateWorkspace({ item, facilityId }: { item: EstimatingPart; facilit
             </thead>
             <tbody>
               {costLines.map((line) => (
-                <tr key={line.line_key} className="border-b border-border/60 align-top">
-                  <td className={cn("py-2.5 pr-4", line.line_key === "total_cost" && "font-semibold")}>
+                <tr
+                  key={line.line_key}
+                  className="border-b border-border/60 align-top"
+                >
+                  <td
+                    className={cn(
+                      "py-2.5 pr-4",
+                      line.line_key === "total_cost" && "font-semibold",
+                    )}
+                  >
                     {line.label}
                   </td>
-                  <td className="py-2.5 pr-4 text-xs text-muted-foreground">{line.source}</td>
-                  <td className="py-2.5 pr-4 text-xs text-muted-foreground">{line.assumption}</td>
-                  <td className={cn("py-2.5 text-right tabular-nums", line.line_key === "total_cost" && "font-semibold")}>
+                  <td className="py-2.5 pr-4 text-xs text-muted-foreground">
+                    {line.source}
+                  </td>
+                  <td className="py-2.5 pr-4 text-xs text-muted-foreground">
+                    {line.assumption}
+                  </td>
+                  <td
+                    className={cn(
+                      "py-2.5 text-right tabular-nums",
+                      line.line_key === "total_cost" && "font-semibold",
+                    )}
+                  >
                     {currency(line.value)}
                   </td>
                 </tr>
               ))}
               {priceLines.map((line) => (
-                <tr key={line.line_key} className="border-b border-border/60 align-top">
+                <tr
+                  key={line.line_key}
+                  className="border-b border-border/60 align-top"
+                >
                   <td className="py-2.5 pr-4 font-semibold">{line.label}</td>
-                  <td className="py-2.5 pr-4 text-xs text-muted-foreground">{line.source}</td>
-                  <td className="py-2.5 pr-4 text-xs text-muted-foreground">{line.assumption}</td>
+                  <td className="py-2.5 pr-4 text-xs text-muted-foreground">
+                    {line.source}
+                  </td>
+                  <td className="py-2.5 pr-4 text-xs text-muted-foreground">
+                    {line.assumption}
+                  </td>
                   <td className="py-2.5 text-right font-semibold tabular-nums">
                     {line.line_key === "target_margin"
                       ? `${Math.round(line.value * 100)}%`
@@ -488,19 +641,25 @@ function EstimateWorkspace({ item, facilityId }: { item: EstimatingPart; facilit
         </div>
       </Panel>
 
-      {(estimate.manualReviewReasons.length > 0 || estimate.assumptions.length > 0) && (
+      {(estimate.manualReviewReasons.length > 0 ||
+        estimate.assumptions.length > 0) && (
         <Panel title="Risk & review">
           {estimate.manualReviewReasons.length > 0 ? (
             <ul className="space-y-2">
               {estimate.manualReviewReasons.map((reason) => (
                 <li key={reason} className="flex gap-2 text-sm text-foreground">
-                  <ShieldAlert className="mt-0.5 size-4 shrink-0 text-critical" aria-hidden />
+                  <ShieldAlert
+                    className="mt-0.5 size-4 shrink-0 text-critical"
+                    aria-hidden
+                  />
                   {reason}
                 </li>
               ))}
             </ul>
           ) : (
-            <p className="text-sm text-muted-foreground">No manual-review triggers on this estimate.</p>
+            <p className="text-sm text-muted-foreground">
+              No manual-review triggers on this estimate.
+            </p>
           )}
           {estimate.assumptions.length > 0 ? (
             <ul className="mt-4 space-y-1.5 text-xs text-muted-foreground">

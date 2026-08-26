@@ -24,7 +24,8 @@ function hash(input: string): number {
   return Math.abs(h);
 }
 
-const pick = <T,>(seed: number, options: T[]): T => options[seed % options.length]!;
+const pick = <T>(seed: number, options: T[]): T =>
+  options[seed % options.length]!;
 const between = (seed: number, min: number, max: number, decimals = 2) => {
   const span = max - min;
   const v = min + ((seed % 1000) / 1000) * span;
@@ -44,7 +45,9 @@ export interface ProviderResponse {
   uncertainty: number;
 }
 
-export async function runProviderAnalysis(req: ProviderRequest): Promise<ProviderResponse> {
+export async function runProviderAnalysis(
+  req: ProviderRequest,
+): Promise<ProviderResponse> {
   const seed = hash(`${req.fileName}:${req.fileSize}:${req.partId}`);
   const s = (n: number) => hash(`${seed}:${n}`);
 
@@ -66,7 +69,11 @@ export async function runProviderAnalysis(req: ProviderRequest): Promise<Provide
       ? "mill_5axis"
       : x / Math.max(y, 0.001) > 3 && y / Math.max(z, 0.001) < 1.4
         ? "lathe"
-        : pick(s(11), ["mill_3axis", "mill_3axis", "mill_4axis"] as MachineType[]);
+        : pick(s(11), [
+            "mill_3axis",
+            "mill_3axis",
+            "mill_4axis",
+          ] as MachineType[]);
 
   const suggestedSetups =
     suggestedMachine === "mill_5axis" ? 2 : undercuts > 0 ? 3 : 1 + (s(12) % 2);
@@ -84,11 +91,22 @@ export async function runProviderAnalysis(req: ProviderRequest): Promise<Provide
   );
 
   const warnings: string[] = [];
-  if (thinWall) warnings.push("Thin-wall sections detected — distortion risk during machining.");
-  if (undercuts > 0) warnings.push("Undercut geometry detected — special tooling may be required.");
-  if (removalRatio > 0.75) warnings.push("High material removal ratio — cycle time is sensitive to stock size.");
+  if (thinWall)
+    warnings.push(
+      "Thin-wall sections detected — distortion risk during machining.",
+    );
+  if (undercuts > 0)
+    warnings.push(
+      "Undercut geometry detected — special tooling may be required.",
+    );
+  if (removalRatio > 0.75)
+    warnings.push(
+      "High material removal ratio — cycle time is sensitive to stock size.",
+    );
   if (!/\.(step|stp|x_t|x_b|iges|igs|stl)$/i.test(req.fileName))
-    warnings.push("Source file is not a recognised 3D model format — analysis is approximate.");
+    warnings.push(
+      "Source file is not a recognised 3D model format — analysis is approximate.",
+    );
 
   const manualFlags: string[] = [];
   if (undercuts > 0) manualFlags.push("Undercuts detected.");
@@ -98,7 +116,8 @@ export async function runProviderAnalysis(req: ProviderRequest): Promise<Provide
   const result: GeometryResult = {
     bounding_box: { x, y, z, units: "in" },
     volume_in3: volume,
-    surface_area_in2: Math.round(stockVolume * between(s(13), 1.8, 4.5) * 100) / 100,
+    surface_area_in2:
+      Math.round(stockVolume * between(s(13), 1.8, 4.5) * 100) / 100,
     estimated_finished_weight_lb: Math.round(volume * 0.098 * 100) / 100,
     material_removal_ratio: removalRatio,
     hole_count: holeCount,
@@ -115,16 +134,32 @@ export async function runProviderAnalysis(req: ProviderRequest): Promise<Provide
   return {
     result,
     warnings,
-    uncertainty: Math.round((0.08 + complexity / 400 + (thinWall ? 0.05 : 0)) * 100) / 100,
+    uncertainty:
+      Math.round((0.08 + complexity / 400 + (thinWall ? 0.05 : 0)) * 100) / 100,
   };
 }
 
 /** Feature rows written alongside a completed run. */
 export function featureRows(runId: string, result: GeometryResult) {
   return [
-    { geometry_analysis_run_id: runId, feature_type: "hole", count: result.hole_count, detail: {} },
-    { geometry_analysis_run_id: runId, feature_type: "pocket", count: result.pocket_count, detail: {} },
-    { geometry_analysis_run_id: runId, feature_type: "slot", count: result.slot_count, detail: {} },
+    {
+      geometry_analysis_run_id: runId,
+      feature_type: "hole",
+      count: result.hole_count,
+      detail: {},
+    },
+    {
+      geometry_analysis_run_id: runId,
+      feature_type: "pocket",
+      count: result.pocket_count,
+      detail: {},
+    },
+    {
+      geometry_analysis_run_id: runId,
+      feature_type: "slot",
+      count: result.slot_count,
+      detail: {},
+    },
     {
       geometry_analysis_run_id: runId,
       feature_type: "undercut",
