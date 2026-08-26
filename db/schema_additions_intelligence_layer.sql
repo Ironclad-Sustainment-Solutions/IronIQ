@@ -134,8 +134,21 @@ CREATE TABLE IF NOT EXISTS public.intelligence_patterns (
 
 CREATE INDEX IF NOT EXISTS idx_intelligence_patterns_status ON public.intelligence_patterns(status);
 CREATE INDEX IF NOT EXISTS idx_intelligence_patterns_product ON public.intelligence_patterns(product);
--- ivfflat requires ANALYZE after enough rows exist to build meaningful
--- clusters; harmless on an empty/small table, just not yet useful.
+-- SUPERSEDED — do not treat this as the current index. ivfflat with
+-- lists = 100 turned out to be a real, live bug: under RLS (the app_user
+-- role every real query runs as, not a superuser), the query planner can
+-- choose this index and silently return fewer matches than requested
+-- even when clearly relevant rows exist with valid embeddings — the
+-- default probes = 1 only inspects one of ~100 mostly-empty clusters at
+-- low row counts, which describes this table for most of its realistic
+-- lifetime. Confirmed via EXPLAIN and a direct reproduction under
+-- app_user. Dropped and replaced with an HNSW index in
+-- db/schema_additions_intelligence_pattern_hnsw_index.sql, applied right
+-- after this file by run-schema.mjs's ORDERED_ADDITIONS. Left the
+-- original CREATE INDEX statement below as-is (rather than editing this
+-- file in place) so this file still matches its own history — the fix
+-- lives in its own file, which DROPs this index before creating the
+-- replacement.
 CREATE INDEX IF NOT EXISTS idx_intelligence_patterns_embedding
   ON public.intelligence_patterns USING ivfflat (embedding vector_cosine_ops)
   WITH (lists = 100);
