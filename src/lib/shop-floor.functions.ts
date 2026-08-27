@@ -1,16 +1,20 @@
 /**
- * Facility-scoped shop-floor machines and manual/CSV run events.
- * No live machine protocol client lives here.
+ * Facility-scoped shop-floor machines and manual/CSV run events, plus a
+ * real MTConnect live sync (mtconnect-client.server.ts) -- no OPC-UA or
+ * Fanuc FOCAS client, which need a binary protocol stack / vendor SDK
+ * respectively rather than plain HTTP+XML.
  */
 
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireAuth } from "@/lib/auth/auth-middleware";
 import { withUser } from "@/lib/db.server";
+import { mtconnectCurrent } from "@/lib/mtconnect-client.server";
 import {
   CONNECTION_STATUSES,
   MACHINE_CONTROLS,
   MACHINE_PROTOCOLS,
+  PROTOCOL_LABELS,
   parseRunCsv,
   type MachineRunEvent,
   type ShopMachine,
@@ -32,6 +36,9 @@ const MachineWrite = z.object({
   control: z.enum(MACHINE_CONTROLS),
   protocol: z.enum(MACHINE_PROTOCOLS),
   location: z.string().optional(),
+  mtconnectAgentUrl: z.string().optional(),
+  mtconnectDeviceName: z.string().optional(),
+  currentPartNumber: z.string().optional(),
 });
 
 function asIso(value: unknown): string {
@@ -53,6 +60,14 @@ function mapMachine(row: Record<string, unknown>): ShopMachine {
     connection_status:
       row.connection_status as ShopMachine["connection_status"],
     location: row.location == null ? null : String(row.location),
+    mtconnect_agent_url:
+      row.mtconnect_agent_url == null ? null : String(row.mtconnect_agent_url),
+    mtconnect_device_name:
+      row.mtconnect_device_name == null
+        ? null
+        : String(row.mtconnect_device_name),
+    current_part_number:
+      row.current_part_number == null ? null : String(row.current_part_number),
     created_at: asIso(row.created_at),
     updated_at: asIso(row.updated_at),
   };
@@ -118,8 +133,9 @@ export const createShopMachine = createServerFn({ method: "POST" })
       try {
         const { rows } = await client.query(
           `INSERT INTO public.shop_machines
-             (organization_id, facility_id, asset_id, name, make, model, control, protocol, location)
-           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+             (organization_id, facility_id, asset_id, name, make, model, control, protocol, location,
+              mtconnect_agent_url, mtconnect_device_name, current_part_number)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
            RETURNING *`,
           [
             data.organizationId,
@@ -131,6 +147,9 @@ export const createShopMachine = createServerFn({ method: "POST" })
             data.control,
             data.protocol,
             data.location?.trim() || null,
+            data.mtconnectAgentUrl?.trim() || null,
+            data.mtconnectDeviceName?.trim() || null,
+            data.currentPartNumber?.trim() || null,
           ],
         );
         return mapMachine(rows[0] as Record<string, unknown>);
@@ -163,8 +182,12 @@ export const updateShopMachine = createServerFn({ method: "POST" })
   )
   .handler(async ({ data, context }) => {
     if (data.connectionStatus === "live") {
+      // Still not user-settable through this form -- connection_status
+      // 'live' is only ever set by syncMachineMtconnect after an actual
+      // successful poll, so it's real evidence the connection works, not
+      // just a claim. Use "Sync now" on the machine detail page instead.
       throw new Error(
-        "Live machine connections are not implemented. Use not_connected or manual.",
+        'Live status is set automatically by a successful MTConnect sync, not manually. Use "Sync now" instead.',
       );
     }
     return withUser(context.userId, async (client) => {
@@ -172,7 +195,8 @@ export const updateShopMachine = createServerFn({ method: "POST" })
         `UPDATE public.shop_machines
             SET asset_id = $2, name = $3, make = $4, model = $5,
                 control = $6, protocol = $7, location = $8,
-                connection_status = COALESCE($9::public.shop_machine_connection, connection_status)
+                mtconnect_agent_url = $9, mtconnect_device_name = $10, current_part_number = $11,
+                connection_status = COALESCE($12::public.shop_machine_connection, connection_status)
           WHERE id = $1
           RETURNING *`,
         [
@@ -184,6 +208,9 @@ export const updateShopMachine = createServerFn({ method: "POST" })
           data.control,
           data.protocol,
           data.location?.trim() || null,
+          data.mtconnectAgentUrl?.trim() || null,
+          data.mtconnectDeviceName?.trim() || null,
+          data.currentPartNumber?.trim() || null,
           data.connectionStatus ?? null,
         ],
       );
@@ -201,6 +228,204 @@ export const deleteShopMachine = createServerFn({ method: "POST" })
     await withUser(context.userId, (client) =>
       client.query(`DELETE FROM public.shop_machines WHERE id = $1`, [data.id]),
     );
+  });
+
+// ---- MTConnect live sync ----
+//
+// "Sync now" rather than a continuous background poller: this app has no
+// persistent worker process (TanStack Start on Render is request/response,
+// same reasoning already applied elsewhere in this codebase for why
+// there's no cron-style job scheduler). A user or an external scheduled
+// caller (e.g. a cron hitting this endpoint) triggers one poll at a time.
+//
+// Each sync reads the agent's /current snapshot and attributes the whole
+// elapsed time since the last sync to whatever state was JUST read --
+// a real simplification of point-sampling vs continuous streaming (MTConnect's
+// own /sample endpoint would let a future version attribute state changes
+// within the window instead of just the latest snapshot), but a
+// defensible, honestly-documented one for a periodic "sync now" model.
+const SyncMachineInput = z.object({ machineId: z.string().uuid() });
+
+// Never let one long gap between syncs (the pilot went a weekend without
+// clicking sync, a laptop was closed, etc.) get attributed entirely to
+// whatever state happened to be true at the moment of the next sync --
+// caps the single largest correctly-attributable window.
+const MAX_ATTRIBUTABLE_MINUTES = 24 * 60;
+
+export const syncMachineMtconnect = createServerFn({ method: "POST" })
+  .middleware([requireAuth])
+  .inputValidator((d: unknown) => SyncMachineInput.parse(d))
+  .handler(async ({ data, context }) => {
+    const machine = await withUser(context.userId, async (client) => {
+      const { rows } = await client.query(
+        `SELECT * FROM public.shop_machines WHERE id = $1`,
+        [data.machineId],
+      );
+      return rows[0] ? mapMachine(rows[0] as Record<string, unknown>) : null;
+    });
+    if (!machine) throw new Error("Machine not found or not accessible.");
+    if (machine.protocol !== "mtconnect") {
+      throw new Error(
+        `This machine is configured for "${PROTOCOL_LABELS[machine.protocol]}", not MTConnect.`,
+      );
+    }
+
+    const config = await withUser(context.userId, async (client) => {
+      const { rows } = await client.query<{
+        mtconnect_agent_url: string | null;
+        mtconnect_device_name: string | null;
+        current_part_number: string | null;
+      }>(
+        `SELECT mtconnect_agent_url, mtconnect_device_name, current_part_number
+           FROM public.shop_machines WHERE id = $1`,
+        [data.machineId],
+      );
+      return rows[0] ?? null;
+    });
+    if (!config?.mtconnect_agent_url) {
+      throw new Error(
+        "Set an MTConnect agent URL for this machine before syncing.",
+      );
+    }
+
+    const lastState = await withUser(context.userId, async (client) => {
+      const { rows } = await client.query<{
+        last_polled_at: string | null;
+        last_part_count: string | null;
+        last_part_number: string | null;
+      }>(
+        `SELECT last_polled_at, last_part_count, last_part_number
+           FROM public.shop_machine_live_state WHERE machine_id = $1`,
+        [data.machineId],
+      );
+      return rows[0] ?? null;
+    });
+
+    let reading;
+    try {
+      reading = await mtconnectCurrent(
+        config.mtconnect_agent_url,
+        config.mtconnect_device_name,
+      );
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      await withUser(context.userId, (client) =>
+        client.query(
+          `INSERT INTO public.shop_machine_live_state (machine_id, last_polled_at, last_error)
+           VALUES ($1, now(), $2)
+           ON CONFLICT (machine_id) DO UPDATE SET last_polled_at = now(), last_error = $2`,
+          [data.machineId, message],
+        ),
+      );
+      throw new Error(`MTConnect sync failed: ${message}`);
+    }
+
+    const now = new Date(reading.timestamp);
+    const lastPolledAt = lastState?.last_polled_at
+      ? new Date(lastState.last_polled_at)
+      : null;
+    const elapsedMinutes = lastPolledAt
+      ? Math.max(0, (now.getTime() - lastPolledAt.getTime()) / 60_000)
+      : 0;
+    const attributedMinutes = Math.min(
+      elapsedMinutes,
+      MAX_ATTRIBUTABLE_MINUTES,
+    );
+
+    const lastPartCount =
+      lastState?.last_part_count != null
+        ? Number(lastState.last_part_count)
+        : null;
+    const cyclesDelta =
+      lastPartCount != null && reading.partCount != null
+        ? Math.max(0, reading.partCount - lastPartCount)
+        : 0;
+
+    const partNumber =
+      reading.partNumber ||
+      config.current_part_number ||
+      lastState?.last_part_number ||
+      "unspecified";
+
+    // Only record a run event once there's a real prior poll to delta
+    // against -- the very first sync just establishes the baseline.
+    if (lastState?.last_polled_at) {
+      await withUser(context.userId, (client) =>
+        client.query(
+          `INSERT INTO public.shop_machine_run_events
+             (machine_id, organization_id, facility_id, occurred_at, part_number,
+              cycles, runtime_minutes, idle_minutes, downtime_minutes, source)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,'live')`,
+          [
+            data.machineId,
+            machine.organization_id,
+            machine.facility_id,
+            reading.timestamp,
+            partNumber,
+            cyclesDelta,
+            reading.state === "active" ? attributedMinutes : 0,
+            reading.state === "idle" ? attributedMinutes : 0,
+            reading.state === "down" ? attributedMinutes : 0,
+          ],
+        ),
+      );
+    }
+
+    await withUser(context.userId, async (client) => {
+      await client.query(
+        `INSERT INTO public.shop_machine_live_state
+           (machine_id, last_polled_at, last_sequence, last_execution, last_part_count, last_part_number, last_error)
+         VALUES ($1, $2, $3, $4, $5, $6, NULL)
+         ON CONFLICT (machine_id) DO UPDATE
+           SET last_polled_at = $2, last_sequence = $3, last_execution = $4,
+               last_part_count = $5, last_part_number = $6, last_error = NULL`,
+        [
+          data.machineId,
+          reading.timestamp,
+          reading.sequence,
+          reading.rawExecution,
+          reading.partCount,
+          partNumber,
+        ],
+      );
+      await client.query(
+        `UPDATE public.shop_machines SET connection_status = 'live' WHERE id = $1`,
+        [data.machineId],
+      );
+    });
+
+    return {
+      reading,
+      recordedRunEvent: Boolean(lastState?.last_polled_at),
+      attributedMinutes: lastState?.last_polled_at ? attributedMinutes : 0,
+      cyclesDelta,
+    };
+  });
+
+export const getMachineLiveState = createServerFn({ method: "GET" })
+  .middleware([requireAuth])
+  .inputValidator((d: unknown) => SyncMachineInput.parse(d))
+  .handler(async ({ data, context }) => {
+    return withUser(context.userId, async (client) => {
+      const { rows } = await client.query(
+        `SELECT * FROM public.shop_machine_live_state WHERE machine_id = $1`,
+        [data.machineId],
+      );
+      const row = rows[0];
+      if (!row) return null;
+      return {
+        last_polled_at: row.last_polled_at ? asIso(row.last_polled_at) : null,
+        last_sequence:
+          row.last_sequence == null ? null : Number(row.last_sequence),
+        last_execution:
+          row.last_execution == null ? null : String(row.last_execution),
+        last_part_count:
+          row.last_part_count == null ? null : Number(row.last_part_count),
+        last_part_number:
+          row.last_part_number == null ? null : String(row.last_part_number),
+        last_error: row.last_error == null ? null : String(row.last_error),
+      };
+    });
   });
 
 const ListRunsInput = z.object({ machineId: z.string().uuid() });

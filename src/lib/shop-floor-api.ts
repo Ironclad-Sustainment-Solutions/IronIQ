@@ -50,6 +50,47 @@ export function useMachineRuns(machineId?: string | null) {
   });
 }
 
+export interface MachineLiveState {
+  last_polled_at: string | null;
+  last_sequence: number | null;
+  last_execution: string | null;
+  last_part_count: number | null;
+  last_part_number: string | null;
+  last_error: string | null;
+}
+
+export function useMachineLiveState(machineId?: string | null) {
+  return useQuery({
+    queryKey: ["shop-machine-live-state", machineId],
+    enabled: Boolean(machineId),
+    queryFn: () =>
+      fn.getMachineLiveState({
+        data: { machineId: machineId as string },
+      }) as Promise<MachineLiveState | null>,
+  });
+}
+
+export function useSyncMachineMtconnect(machineId?: string | null) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () =>
+      fn.syncMachineMtconnect({ data: { machineId: machineId as string } }),
+    onSuccess: (result) => {
+      void qc.invalidateQueries({ queryKey: ["shop-machine", machineId] });
+      void qc.invalidateQueries({ queryKey: ["shop-machine-runs", machineId] });
+      void qc.invalidateQueries({
+        queryKey: ["shop-machine-live-state", machineId],
+      });
+      toast.success(
+        result.recordedRunEvent
+          ? `Synced — ${result.reading.state} (${Math.round(result.attributedMinutes)} min, +${result.cyclesDelta} parts)`
+          : "Synced — baseline established, run data starts from the next sync",
+      );
+    },
+    onError: (e) => toast.error(e instanceof Error ? e.message : "Sync failed"),
+  });
+}
+
 function invalidateMachines(
   qc: ReturnType<typeof useQueryClient>,
   organizationId?: string | null,
@@ -80,6 +121,9 @@ export function useCreateShopMachine(
       control: MachineControl;
       protocol: MachineProtocol;
       location?: string;
+      mtconnectAgentUrl?: string;
+      mtconnectDeviceName?: string;
+      currentPartNumber?: string;
     }) => {
       if (!organizationId || !facilityId) {
         throw new Error("Select an organization and facility first.");
@@ -112,6 +156,9 @@ export function useUpdateShopMachine(
       control: MachineControl;
       protocol: MachineProtocol;
       location?: string;
+      mtconnectAgentUrl?: string;
+      mtconnectDeviceName?: string;
+      currentPartNumber?: string;
       connectionStatus?: ConnectionStatus;
     }) => fn.updateShopMachine({ data: input }),
     onSuccess: (_data, input) => {

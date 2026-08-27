@@ -25,8 +25,10 @@ import {
 import {
   useCreateMachineRun,
   useImportMachineRunsCsv,
+  useMachineLiveState,
   useMachineRuns,
   useShopMachine,
+  useSyncMachineMtconnect,
   useUpdateShopMachine,
 } from "@/lib/shop-floor-api";
 import {
@@ -61,6 +63,8 @@ function MachineDetailPage() {
   const update = useUpdateShopMachine(organization?.id, facility?.id);
   const logRun = useCreateMachineRun(machineId);
   const importCsv = useImportMachineRunsCsv(machineId);
+  const liveState = useMachineLiveState(machineId).data ?? null;
+  const sync = useSyncMachineMtconnect(machineId);
   const [editing, setEditing] = useState(false);
   const [selectedPart, setSelectedPart] = useState<string>("all");
   const [runForm, setRunForm] = useState({
@@ -133,6 +137,47 @@ function MachineDetailPage() {
           {machine.location ? ` · ${machine.location}` : ""}
         </span>
       </div>
+
+      {machine.protocol === "mtconnect" ? (
+        <Panel title="MTConnect live sync">
+          {machine.mtconnect_agent_url ? (
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="text-sm text-muted-foreground">
+                <p>
+                  Agent:{" "}
+                  <span className="text-foreground">
+                    {machine.mtconnect_agent_url}
+                  </span>
+                  {machine.mtconnect_device_name
+                    ? ` · device: ${machine.mtconnect_device_name}`
+                    : ""}
+                </p>
+                {liveState?.last_polled_at ? (
+                  <p className="mt-1">
+                    Last synced {formatDate(liveState.last_polled_at)} —{" "}
+                    {liveState.last_execution ?? "unknown state"}
+                    {liveState.last_part_count != null
+                      ? ` · part count ${liveState.last_part_count}`
+                      : ""}
+                  </p>
+                ) : (
+                  <p className="mt-1">Never synced yet.</p>
+                )}
+                {liveState?.last_error ? (
+                  <p className="mt-1 text-destructive">
+                    Last sync failed: {liveState.last_error}
+                  </p>
+                ) : null}
+              </div>
+              <Button onClick={() => sync.mutate()} disabled={sync.isPending}>
+                {sync.isPending ? "Syncing…" : "Sync now"}
+              </Button>
+            </div>
+          ) : (
+            <EmptyState message="Add an MTConnect agent URL under Edit to enable live sync." />
+          )}
+        </Panel>
+      ) : null}
 
       {editing ? (
         <Panel title="Edit machine">

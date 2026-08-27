@@ -27,6 +27,9 @@ export interface MachineDraft {
   control: MachineControl;
   protocol: MachineProtocol;
   location: string;
+  mtconnectAgentUrl: string;
+  mtconnectDeviceName: string;
+  currentPartNumber: string;
 }
 
 export function emptyMachineDraft(): MachineDraft {
@@ -38,6 +41,9 @@ export function emptyMachineDraft(): MachineDraft {
     control: "fanuc",
     protocol: "none",
     location: "",
+    mtconnectAgentUrl: "",
+    mtconnectDeviceName: "",
+    currentPartNumber: "",
   };
 }
 
@@ -50,6 +56,9 @@ export function draftFromMachine(machine: ShopMachine): MachineDraft {
     control: machine.control,
     protocol: machine.protocol,
     location: machine.location ?? "",
+    mtconnectAgentUrl: machine.mtconnect_agent_url ?? "",
+    mtconnectDeviceName: machine.mtconnect_device_name ?? "",
+    currentPartNumber: machine.current_part_number ?? "",
   };
 }
 
@@ -161,6 +170,44 @@ export function ShopMachineForm({
           />
         </Field>
       </div>
+      {draft.protocol === "mtconnect" ? (
+        <>
+          <div className="sm:col-span-2">
+            <Field label="MTConnect agent URL">
+              <Input
+                value={draft.mtconnectAgentUrl}
+                onChange={(e) => set("mtconnectAgentUrl", e.target.value)}
+                placeholder="http://192.168.1.50:5000"
+              />
+              <p className="mt-1 text-xs text-muted-foreground">
+                The base URL of the MTConnect agent on your network — the one
+                that answers /probe and /current, usually running alongside the
+                control or on a small on-prem gateway.
+              </p>
+            </Field>
+          </div>
+          <Field label="Device name (optional)">
+            <Input
+              value={draft.mtconnectDeviceName}
+              onChange={(e) => set("mtconnectDeviceName", e.target.value)}
+              placeholder="VMC-3Axis"
+            />
+            <p className="mt-1 text-xs text-muted-foreground">
+              Leave blank if the agent only serves one device.
+            </p>
+          </Field>
+          <Field label="Current part number (fallback)">
+            <Input
+              value={draft.currentPartNumber}
+              onChange={(e) => set("currentPartNumber", e.target.value)}
+              placeholder="1004-A"
+            />
+            <p className="mt-1 text-xs text-muted-foreground">
+              Used only when the agent doesn't report a part number itself.
+            </p>
+          </Field>
+        </>
+      ) : null}
       <div className="flex gap-2 sm:col-span-2">
         <Button type="submit" disabled={!ready || busy}>
           {submitLabel}
