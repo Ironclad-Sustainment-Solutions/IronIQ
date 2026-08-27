@@ -460,9 +460,17 @@ export function QuickCaptureDialog({
   const [listening, setListening] = useState(false);
 
   const dictate = () => {
+    interface MinimalSpeechRecognition {
+      continuous: boolean;
+      interimResults: boolean;
+      onresult:
+        ((e: { results: { 0: { 0: { transcript: string } } } }) => void) | null;
+      onend: (() => void) | null;
+      start: () => void;
+    }
     const w = window as unknown as {
-      webkitSpeechRecognition?: new () => any;
-      SpeechRecognition?: new () => any;
+      webkitSpeechRecognition?: new () => MinimalSpeechRecognition;
+      SpeechRecognition?: new () => MinimalSpeechRecognition;
     };
     const Ctor = w.SpeechRecognition ?? w.webkitSpeechRecognition;
     if (!Ctor) return;

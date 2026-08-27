@@ -647,6 +647,29 @@ export function NextStepPanel({
 
 /* ------------------------ 5. findings review meeting ---------------------- */
 
+// Exactly the fields this component reads/writes via assessment["..."]
+// bracket access, each mirroring AssessmentExtras' real field types
+// (src/routes/_authenticated/field/$fieldId.tsx) -- not imported directly
+// from there to avoid a route file becoming a dependency of a shared
+// component. A concrete object with more fields than this (like the
+// route's actual FieldAssessmentRow & AssessmentExtras) satisfies this
+// structurally without needing an index signature, unlike
+// Record<string, ...> would.
+interface MeetingReviewFields {
+  review_meeting_date: string | null;
+  review_attendees: string | null;
+  review_notes: string | null;
+  meeting_new_info: string | null;
+  meeting_new_gaps: string | null;
+  meeting_data_promised: string | null;
+  meeting_scope: string | null;
+  meeting_projects: string | null;
+  meeting_decision: string | null;
+  meeting_next_action: string | null;
+  meeting_owner: string | null;
+  meeting_target_date: string | null;
+}
+
 export function ReviewMeetingTab({
   assessment,
   findings,
@@ -654,7 +677,7 @@ export function ReviewMeetingTab({
   set,
   onUpdateFinding,
 }: {
-  assessment: Record<string, any>;
+  assessment: MeetingReviewFields;
   findings: FieldCapabilityGap[];
   locked: boolean;
   set: (values: Record<string, unknown>) => void;

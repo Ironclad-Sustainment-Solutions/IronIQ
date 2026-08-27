@@ -1,21 +1,23 @@
 name: CI
 
-# Runs on every PR and push to main: typecheck, unit tests, production
-# build, and a full schema-application check against a real Postgres
-# instance. Nothing enforced tsc/build/tests on PRs before this -- several
-# real bugs fixed this session (a pilot_id regression in a column
-# allowlist, a broken production build under certain environments, a
-# schema-loading tool that never worked against a fresh database) were
-# only caught by manual review, not automated checks. This closes that gap
-# going forward for the categories of mistakes that ARE automatable.
+# Runs on every PR and push to main: lint, typecheck, unit tests,
+# production build, and a full schema-application check against a real
+# Postgres instance. Nothing enforced tsc/build/tests on PRs before this
+# was first added -- several real bugs fixed this session (a pilot_id
+# regression in a column allowlist, a broken production build under
+# certain environments, a schema-loading tool that never worked against
+# a fresh database) were only caught by manual review, not automated
+# checks. This closes that gap going forward for the categories of
+# mistakes that ARE automatable.
 #
-# Deliberately does NOT run `eslint .` yet -- the existing codebase has
-# ~8500 pre-existing Prettier-only formatting findings unrelated to any
-# given PR's diff. Gating CI on that right now would fail every PR for
-# reasons that have nothing to do with what changed, which trains people
-# to ignore red CI checks rather than trust them. Run a dedicated
-# `eslint --fix` cleanup pass first, then add lint as its own required
-# check in a follow-up.
+# Lint was deliberately left out when this workflow was first added --
+# at the time the codebase had ~8500 pre-existing Prettier-only
+# formatting findings unrelated to any given PR's diff, and gating CI on
+# that would have failed every PR for reasons that had nothing to do
+# with what changed. A dedicated `prettier --write .` cleanup pass fixed
+# that (down to 17 real findings, all @typescript-eslint/no-explicit-any,
+# plus a handful of warnings), so lint is now added as a real, meaningful
+# check.
 
 on:
   pull_request:
@@ -35,6 +37,9 @@ jobs:
           cache: "npm"
 
       - run: npm ci
+
+      - name: Lint
+        run: npm run lint
 
       - name: Typecheck
         run: npm run typecheck

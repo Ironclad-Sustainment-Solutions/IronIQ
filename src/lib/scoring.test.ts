@@ -9,46 +9,59 @@ import {
   autoFindingSeverity,
   generateFindings,
 } from "@/lib/scoring";
+import type {
+  AssessmentCategory,
+  AssessmentQuestion,
+  AssessmentResponse,
+} from "@/lib/domain";
+import type { ScoredQuestion } from "@/lib/scoring";
 
-const cat = (id: string, weight: number, order = 1) =>
-  ({
-    id,
-    template_version_id: "t",
-    code: id,
-    name: id,
-    description: null,
-    weight,
-    sort_order: order,
-    created_at: "",
-  }) as any;
-const q = (id: string, category_id: string, weight = 1, is_critical = false) =>
-  ({
-    id,
-    category_id,
-    question_code: id,
-    question_text: id,
-    guidance_text: null,
-    weight,
-    is_critical,
-    required_evidence: null,
-    sort_order: 1,
-    created_at: "",
-  }) as any;
-const r = (question_id: string, score: number | null, extra: any = {}) =>
-  ({
-    id: question_id,
-    assessment_id: "a",
-    question_id,
-    score,
-    not_applicable: false,
-    comments: null,
-    evidence_type: "document",
-    answered_at: null,
-    answered_by: null,
-    created_at: "",
-    updated_at: "",
-    ...extra,
-  }) as any;
+const cat = (id: string, weight: number, order = 1): AssessmentCategory => ({
+  id,
+  template_version_id: "t",
+  code: id,
+  name: id,
+  description: null,
+  weight,
+  sort_order: order,
+  archived: false,
+});
+const q = (
+  id: string,
+  category_id: string,
+  weight = 1,
+  is_critical = false,
+): AssessmentQuestion => ({
+  id,
+  category_id,
+  question_code: id,
+  question_text: id,
+  guidance_text: null,
+  weight,
+  is_critical,
+  required_evidence: null,
+  sort_order: 1,
+  is_required: true,
+  allow_not_applicable: false,
+  auto_finding: false,
+  default_severity: "medium",
+  archived: false,
+});
+const r = (
+  question_id: string,
+  score: number | null,
+  extra: Partial<AssessmentResponse> = {},
+): AssessmentResponse => ({
+  id: question_id,
+  assessment_id: "a",
+  question_id,
+  score,
+  not_applicable: false,
+  comments: null,
+  evidence_type: "document",
+  evidence_description: null,
+  ...extra,
+});
 
 describe("scoring engine", () => {
   it("validates 0..5 only", () => {
@@ -245,17 +258,17 @@ describe("auto-generated findings", () => {
   it("lists generated findings with category context", () => {
     const cats = [cat("A", 100)];
     const qs = [q("c", "A", 1, true), q("n", "A"), q("ok", "A")];
-    const byId: Record<string, any> = {
+    const byId: Record<string, AssessmentResponse> = {
       c: r("c", 1),
       n: r("n", 2),
       ok: r("ok", 5),
     };
-    const items = qs.map((question) => ({
+    const items: ScoredQuestion[] = qs.map((question) => ({
       question,
       response: byId[question.id],
     }));
 
-    const out = generateFindings(items as any, () => cats[0].name);
+    const out = generateFindings(items, () => cats[0].name);
     expect(out.map((f) => f.severity)).toEqual(["critical", "medium"]);
     expect(out[0].categoryName).toBe("A");
   });
