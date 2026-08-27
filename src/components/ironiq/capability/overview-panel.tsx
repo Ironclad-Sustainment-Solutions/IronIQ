@@ -27,8 +27,11 @@ import {
 } from "@/lib/capability-scoring";
 import { AlertTriangle, ArrowDown, ChevronDown } from "lucide-react";
 import { useState } from "react";
+import { usePartOutcomeCards } from "@/lib/shop-floor-api";
+import { beforeAfterDeltas, formatDelta } from "@/lib/shop-floor";
 
 export function OverviewPanel({
+  organizationId,
   result,
   problem,
   impacts,
@@ -40,6 +43,7 @@ export function OverviewPanel({
   domains,
   evidence,
 }: {
+  organizationId?: string | null;
   result: CapabilityResult;
   problem: CapProblemRow | null;
   impacts: CapImpactRow[];
@@ -51,6 +55,9 @@ export function OverviewPanel({
   domains: CapDomainRow[];
   evidence: CapEvidenceRow[];
 }) {
+  const partCards = usePartOutcomeCards(organizationId).data ?? [];
+  const latestCard = partCards[0] ?? null;
+  const cardDeltas = latestCard ? beforeAfterDeltas(latestCard) : null;
   const primary =
     findings.find(
       (f) => f.classification === "primary_constraint" && f.approved,
@@ -475,25 +482,42 @@ function CapabilityMap({
     },
     {
       label: "Measured Result",
-      value: imp
-        ? `${formatValue(imp.baseline, action?.unit)} → ${formatValue(imp.target, action?.unit)} → ${formatValue(imp.actual, action?.unit)}`
-        : "Not measured",
-      facts: imp
+      value: latestCard
+        ? `${latestCard.part_number}: cycle ${latestCard.cycle_time_sec_before}→${latestCard.cycle_time_sec_after}s`
+        : imp
+          ? `${formatValue(imp.baseline, action?.unit)} → ${formatValue(imp.target, action?.unit)} → ${formatValue(imp.actual, action?.unit)}`
+          : "Not measured",
+      facts: latestCard
         ? [
             {
-              label: "Absolute improvement",
-              value: formatValue(imp.absolute, action?.unit),
+              label: "Setup",
+              value: `${latestCard.setup_min_before} → ${latestCard.setup_min_after} min (${formatDelta(cardDeltas?.setup_min ?? null, "min")})`,
             },
             {
-              label: "Percent improvement",
-              value: imp.percent === null ? "—" : `${imp.percent}%`,
+              label: "Hours on part",
+              value: `${latestCard.hours_on_part_before} → ${latestCard.hours_on_part_after} h (${formatDelta(cardDeltas?.hours_on_part ?? null, "h")})`,
             },
             {
-              label: "Target achieved",
-              value: imp.targetAchieved ? "Yes" : "Not yet",
+              label: "What changed",
+              value: latestCard.what_changed,
             },
           ]
-        : [],
+        : imp
+          ? [
+              {
+                label: "Absolute improvement",
+                value: formatValue(imp.absolute, action?.unit),
+              },
+              {
+                label: "Percent improvement",
+                value: imp.percent === null ? "—" : `${imp.percent}%`,
+              },
+              {
+                label: "Target achieved",
+                value: imp.targetAchieved ? "Yes" : "Not yet",
+              },
+            ]
+          : [],
     },
     {
       label: "Sustained Capability",

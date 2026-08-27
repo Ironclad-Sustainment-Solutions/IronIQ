@@ -113,6 +113,18 @@ function AskIronIQPage() {
       {ask.data ? (
         <Panel title="Answer">
           <div className="space-y-4">
+            {ask.data.noMatchingPrecedent && !ask.data.usedExternalKnowledge ? (
+              <div className="rounded-md border border-border bg-muted/20 p-3">
+                <p className="text-xs font-semibold uppercase tracking-wide text-foreground">
+                  No matching precedent
+                </p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  IronIQ has no reviewed cycle/runtime history for this
+                  question. This is not generic model knowledge presented as
+                  IronIQ data.
+                </p>
+              </div>
+            ) : null}
             {ask.data.usedExternalKnowledge ? (
               <div className="flex items-start gap-2 rounded-md border border-primary/40 bg-primary/10 p-3">
                 <Globe

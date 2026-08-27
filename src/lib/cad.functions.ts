@@ -18,6 +18,8 @@ import {
   assertProductAllowedForCadJob,
   assertProductAllowedForCadField,
 } from "@/lib/product-access-check.server";
+import { upsertShopPart } from "@/lib/shop-floor.server";
+import { looksLikePartNumberField } from "@/lib/shop-floor";
 
 export const CAD_BUCKET = "cad-drawings";
 const MAX_FILE_BYTES = 25 * 1024 * 1024; // 25MB, same cap as Bulk Intake
@@ -80,7 +82,7 @@ export const listCadJobs = createServerFn({ method: "GET" })
     return withUser(context.userId, async (client) => {
       const { rows } = await client.query(
         `SELECT id, original_filename, mime_type, byte_size, source_type, status, failure_reason,
-                storage_path, created_at
+                storage_path, part_number, part_id, created_at
            FROM public.cad_jobs
           WHERE organization_id = $1
           ORDER BY created_at DESC`,
@@ -209,29 +211,61 @@ export const updateCadFieldStatus = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => UpdateCadFieldInput.parse(d))
   .handler(async ({ data, context }) => {
     await assertProductAllowedForCadField(context.userId, data.id, "cad");
-    await withUser(context.userId, (client) =>
-      data.status === "edited" && data.editedValue !== undefined
-        ? client.query(
-            `UPDATE public.cad_extracted_fields
-                SET status = $2, field_value = $3, field_name = COALESCE($4, field_name),
-                    field_type = COALESCE($5, field_type), location_hint = COALESCE($6, location_hint),
-                    reviewed_by = $7
+    await withUser(context.userId, async (client) => {
+      if (data.status === "edited" && data.editedValue !== undefined) {
+        await client.query(
+          `UPDATE public.cad_extracted_fields
+              SET status = $2, field_value = $3, field_name = COALESCE($4, field_name),
+                  field_type = COALESCE($5, field_type), location_hint = COALESCE($6, location_hint),
+                  reviewed_by = $7
+            WHERE id = $1`,
+          [
+            data.id,
+            data.status,
+            data.editedValue,
+            data.editedFieldName ?? null,
+            data.editedFieldType ?? null,
+            data.editedLocationHint ?? null,
+            context.userId,
+          ],
+        );
+      } else {
+        await client.query(
+          `UPDATE public.cad_extracted_fields SET status = $2, reviewed_by = $3 WHERE id = $1`,
+          [data.id, data.status, context.userId],
+        );
+      }
+
+      if (data.status === "accepted" || data.status === "edited") {
+        const { rows } = await client.query<{
+          field_name: string;
+          field_value: string;
+          job_id: string;
+          organization_id: string;
+          facility_id: string | null;
+        }>(
+          `SELECT f.field_name, f.field_value, f.job_id, j.organization_id, j.facility_id
+             FROM public.cad_extracted_fields f
+             JOIN public.cad_jobs j ON j.id = f.job_id
+            WHERE f.id = $1`,
+          [data.id],
+        );
+        const field = rows[0];
+        if (field && looksLikePartNumberField(field.field_name)) {
+          const part = await upsertShopPart(client, {
+            organizationId: field.organization_id,
+            facilityId: field.facility_id,
+            partNumber: field.field_value,
+          });
+          await client.query(
+            `UPDATE public.cad_jobs
+                SET part_number = $2, part_id = $3
               WHERE id = $1`,
-            [
-              data.id,
-              data.status,
-              data.editedValue,
-              data.editedFieldName ?? null,
-              data.editedFieldType ?? null,
-              data.editedLocationHint ?? null,
-              context.userId,
-            ],
-          )
-        : client.query(
-            `UPDATE public.cad_extracted_fields SET status = $2, reviewed_by = $3 WHERE id = $1`,
-            [data.id, data.status, context.userId],
-          ),
-    );
+            [field.job_id, part.part_number, part.id],
+          );
+        }
+      }
+    });
   });
 
 const DeleteCadJobInput = z.object({

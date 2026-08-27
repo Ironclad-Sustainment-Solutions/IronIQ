@@ -9,6 +9,7 @@ export interface CncChangeLogRow {
   id: string;
   machine_id: string | null;
   machine_name: string;
+  part_number: string | null;
   program_identifier: string | null;
   change_category: CncChangeCategory;
   change_description: string;
@@ -35,6 +36,7 @@ export function useCreateCncLogEntry(organizationId?: string | null) {
     mutationFn: (input: {
       facilityId?: string | null;
       machineId: string;
+      partNumber?: string;
       programIdentifier?: string;
       changeCategory: CncChangeCategory;
       changeDescription: string;
@@ -59,13 +61,28 @@ export function useVerifyCncLogEntry(organizationId?: string | null) {
   return useMutation({
     mutationFn: (input: {
       id: string;
-      outcomeDescription: string;
+      partNumber: string;
+      whatChanged: string;
+      cycleTimeSecBefore: number;
+      cycleTimeSecAfter: number;
+      setupMinBefore: number;
+      setupMinAfter: number;
+      hoursOnPartBefore: number;
+      hoursOnPartAfter: number;
+      partsPerShiftBefore?: number | null;
+      partsPerShiftAfter?: number | null;
+      downtimeMinBefore?: number | null;
+      downtimeMinAfter?: number | null;
+      beforeAt?: string;
+      afterAt?: string;
       contributeToIntelligence?: boolean;
     }) => fn.verifyCncChangeLogEntry({ data: input }),
     onSuccess: () => {
       void qc.invalidateQueries({
         queryKey: ["cnc-change-log", organizationId],
       });
+      void qc.invalidateQueries({ queryKey: ["part-outcome-cards"] });
+      void qc.invalidateQueries({ queryKey: ["shop-parts"] });
       toast.success("Marked verified");
     },
     onError: (e) =>

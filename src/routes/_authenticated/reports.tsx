@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { Printer } from "lucide-react";
 import {
@@ -8,13 +9,16 @@ import {
 } from "@/components/ironiq/layout-primitives";
 import { ReadinessBadge, SeverityBadge } from "@/components/ironiq/badges";
 import { CategoryBar } from "@/components/ironiq/score-visuals";
+import { PartOutcomeCardView } from "@/components/ironiq/part-outcome-card";
 import { useApp } from "@/context/app-context";
 import { useFacilityResult } from "@/lib/use-facility-result";
 import { useFindings, useProjects } from "@/lib/api";
+import { usePartOutcomeCards } from "@/lib/shop-floor-api";
 import { formatScore } from "@/lib/scoring";
 import { SEVERITY_ORDER } from "@/lib/domain";
 import { formatDate } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/reports")({
   head: () => ({
@@ -42,6 +46,9 @@ function ReportsPage() {
   const { assessment, result } = useFacilityResult(facility?.id);
   const findings = useFindings(facility?.id).data ?? [];
   const projects = useProjects(facility?.id).data ?? [];
+  const partCards =
+    usePartOutcomeCards(organization?.id, facility?.id).data ?? [];
+  const [printCardId, setPrintCardId] = useState<string | null>(null);
 
   const ranked = [...findings].sort(
     (a, b) =>
@@ -50,6 +57,7 @@ function ReportsPage() {
 
   return (
     <div className="mx-auto max-w-4xl space-y-8">
+      <div className={cn(printCardId && "no-print")}>
       <PageHeader
         eyebrow={organization?.name ?? "Report"}
         title="Readiness Report"
@@ -166,6 +174,54 @@ function ReportsPage() {
           </Panel>
         </>
       )}
+      </div>
+
+      <Panel
+        title="Part before / after cards"
+        subtitle="One named part, structured numbers, printable as a single page"
+        className={cn(printCardId && "no-print")}
+      >
+        {partCards.length === 0 ? (
+          <EmptyState message="No part cards yet. Verify a CNC change with before/after numbers, or record a measured result on a capability action." />
+        ) : (
+          <ul className="space-y-2">
+            {partCards.map((card) => (
+              <li
+                key={card.id}
+                className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-border px-3 py-2"
+              >
+                <span className="text-sm">
+                  {card.part_number}
+                  {card.machine_label ? ` · ${card.machine_label}` : ""}
+                </span>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    setPrintCardId(card.id);
+                    window.setTimeout(() => window.print(), 50);
+                  }}
+                >
+                  <Printer className="size-4" aria-hidden />
+                  Print card
+                </Button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </Panel>
+
+      {partCards.map((card) => (
+        <div
+          key={card.id}
+          className={cn(printCardId && printCardId !== card.id && "no-print")}
+        >
+          <PartOutcomeCardView
+            card={card}
+            printable={printCardId === card.id || !printCardId}
+          />
+        </div>
+      ))}
     </div>
   );
 }

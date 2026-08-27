@@ -103,3 +103,84 @@ ALTER TABLE public.cnc_change_log
 
 CREATE INDEX IF NOT EXISTS idx_cnc_change_log_machine
   ON public.cnc_change_log(machine_id);
+
+ALTER TABLE public.cnc_change_log
+  ADD COLUMN IF NOT EXISTS part_number TEXT;
+
+-- Thin part master. CAD extracts join here when a title-block part number
+-- is accepted. CNC before/after cards and run events share the same string.
+CREATE TABLE IF NOT EXISTS public.shop_parts (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  organization_id UUID NOT NULL REFERENCES public.organizations(id) ON DELETE CASCADE,
+  facility_id UUID REFERENCES public.facilities(id) ON DELETE SET NULL,
+  part_number TEXT NOT NULL,
+  description TEXT,
+  drawing_ref TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE (organization_id, part_number)
+);
+
+CREATE INDEX IF NOT EXISTS idx_shop_parts_org
+  ON public.shop_parts(organization_id);
+
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.shop_parts TO app_user;
+GRANT ALL ON public.shop_parts TO app_admin;
+ALTER TABLE public.shop_parts ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "shop_parts org access" ON public.shop_parts;
+CREATE POLICY "shop_parts org access" ON public.shop_parts FOR ALL TO app_user
+  USING (private.has_org_access(public.current_user_id(), organization_id))
+  WITH CHECK (private.has_org_access(public.current_user_id(), organization_id));
+
+DROP TRIGGER IF EXISTS t_shop_parts_upd ON public.shop_parts;
+CREATE TRIGGER t_shop_parts_upd BEFORE UPDATE ON public.shop_parts
+  FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+
+CREATE TABLE IF NOT EXISTS public.part_outcome_cards (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  organization_id UUID NOT NULL REFERENCES public.organizations(id) ON DELETE CASCADE,
+  facility_id UUID REFERENCES public.facilities(id) ON DELETE SET NULL,
+  part_id UUID NOT NULL REFERENCES public.shop_parts(id) ON DELETE CASCADE,
+  machine_id UUID REFERENCES public.shop_machines(id) ON DELETE SET NULL,
+  cnc_change_log_id UUID REFERENCES public.cnc_change_log(id) ON DELETE SET NULL,
+  capability_action_id UUID,
+  what_changed TEXT NOT NULL,
+  cycle_time_sec_before NUMERIC NOT NULL,
+  cycle_time_sec_after NUMERIC NOT NULL,
+  setup_min_before NUMERIC NOT NULL,
+  setup_min_after NUMERIC NOT NULL,
+  hours_on_part_before NUMERIC NOT NULL,
+  hours_on_part_after NUMERIC NOT NULL,
+  parts_per_shift_before NUMERIC,
+  parts_per_shift_after NUMERIC,
+  downtime_min_before NUMERIC,
+  downtime_min_after NUMERIC,
+  before_at DATE,
+  after_at DATE,
+  created_by UUID,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_part_outcome_cards_org
+  ON public.part_outcome_cards(organization_id);
+CREATE INDEX IF NOT EXISTS idx_part_outcome_cards_part
+  ON public.part_outcome_cards(part_id);
+
+GRANT SELECT, INSERT, UPDATE, DELETE ON public.part_outcome_cards TO app_user;
+GRANT ALL ON public.part_outcome_cards TO app_admin;
+ALTER TABLE public.part_outcome_cards ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "part_outcome_cards org access" ON public.part_outcome_cards;
+CREATE POLICY "part_outcome_cards org access" ON public.part_outcome_cards FOR ALL TO app_user
+  USING (private.has_org_access(public.current_user_id(), organization_id))
+  WITH CHECK (private.has_org_access(public.current_user_id(), organization_id));
+
+DROP TRIGGER IF EXISTS t_part_outcome_cards_upd ON public.part_outcome_cards;
+CREATE TRIGGER t_part_outcome_cards_upd BEFORE UPDATE ON public.part_outcome_cards
+  FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
+
+ALTER TABLE public.cad_jobs
+  ADD COLUMN IF NOT EXISTS part_number TEXT,
+  ADD COLUMN IF NOT EXISTS part_id UUID REFERENCES public.shop_parts(id) ON DELETE SET NULL;

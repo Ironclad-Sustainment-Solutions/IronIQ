@@ -37,6 +37,11 @@ import {
 import { useShopMachines } from "@/lib/shop-floor-api";
 import { machineLabel } from "@/lib/shop-floor";
 import { useDraftFromPrecedent } from "@/lib/precedent-draft-api";
+import {
+  PartOutcomeFields,
+  draftToNumbers,
+  emptyBeforeAfterDraft,
+} from "@/components/ironiq/part-outcome-fields";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/cnc")({
@@ -77,6 +82,7 @@ function CncChangeLogPage() {
   const draftAI = useDraftFromPrecedent();
 
   const [machineId, setMachineId] = useState("");
+  const [partNumber, setPartNumber] = useState("");
   const [programIdentifier, setProgramIdentifier] = useState("");
   const [category, setCategory] = useState<CncChangeCategory>("feed_speed");
   const [changeDescription, setChangeDescription] = useState("");
@@ -102,6 +108,7 @@ function CncChangeLogPage() {
       {
         facilityId: facility?.id,
         machineId,
+        partNumber: partNumber || undefined,
         programIdentifier: programIdentifier || undefined,
         changeCategory: category,
         changeDescription,
@@ -110,6 +117,7 @@ function CncChangeLogPage() {
       {
         onSuccess: () => {
           setMachineId("");
+          setPartNumber("");
           setProgramIdentifier("");
           setChangeDescription("");
           setReason("");
@@ -150,6 +158,11 @@ function CncChangeLogPage() {
               </p>
             ) : null}
           </div>
+          <Input
+            placeholder="Part number (e.g. HUB-4410)"
+            value={partNumber}
+            onChange={(e) => setPartNumber(e.target.value)}
+          />
           <Input
             placeholder="Program # (optional)"
             value={programIdentifier}
@@ -315,7 +328,12 @@ function ChangeLogRow({
   const verify = useVerifyCncLogEntry(organizationId);
   const remove = useDeleteCncLogEntry(organizationId);
   const update = useUpdateCncLogEntry(organizationId);
-  const [outcome, setOutcome] = useState("");
+  const [outcomeDraft, setOutcomeDraft] = useState(
+    emptyBeforeAfterDraft({
+      partNumber: entry.part_number ?? "",
+      whatChanged: entry.change_description,
+    }),
+  );
   const [contribute, setContribute] = useState(false);
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState({
@@ -469,12 +487,7 @@ function ChangeLogRow({
 
       {isVerifying ? (
         <div className="mt-4 space-y-3 border-t border-border pt-4">
-          <Textarea
-            placeholder="What actually happened (e.g. cycle time down from 145s to 128s, chatter eliminated)"
-            rows={2}
-            value={outcome}
-            onChange={(e) => setOutcome(e.target.value)}
-          />
+          <PartOutcomeFields draft={outcomeDraft} onChange={setOutcomeDraft} />
           <div className="flex items-start gap-2 rounded-md border border-border bg-muted/20 p-3">
             <Checkbox
               id={`contribute-cnc-${entry.id}`}
@@ -494,17 +507,45 @@ function ChangeLogRow({
           <div className="flex gap-2">
             <Button
               size="sm"
-              disabled={!outcome.trim() || verify.isPending}
-              onClick={() =>
-                verify.mutate(
-                  {
-                    id: entry.id,
-                    outcomeDescription: outcome,
-                    contributeToIntelligence: contribute,
-                  },
-                  { onSuccess: onCancelVerify },
-                )
-              }
+              disabled={verify.isPending}
+              onClick={() => {
+                try {
+                  const numbers = draftToNumbers(outcomeDraft);
+                  if (!outcomeDraft.partNumber.trim()) {
+                    throw new Error("Part number is required");
+                  }
+                  if (!outcomeDraft.whatChanged.trim()) {
+                    throw new Error("What changed is required");
+                  }
+                  verify.mutate(
+                    {
+                      id: entry.id,
+                      partNumber: outcomeDraft.partNumber,
+                      whatChanged: outcomeDraft.whatChanged,
+                      cycleTimeSecBefore: numbers.cycle_time_sec_before,
+                      cycleTimeSecAfter: numbers.cycle_time_sec_after,
+                      setupMinBefore: numbers.setup_min_before,
+                      setupMinAfter: numbers.setup_min_after,
+                      hoursOnPartBefore: numbers.hours_on_part_before,
+                      hoursOnPartAfter: numbers.hours_on_part_after,
+                      partsPerShiftBefore: numbers.parts_per_shift_before,
+                      partsPerShiftAfter: numbers.parts_per_shift_after,
+                      downtimeMinBefore: numbers.downtime_min_before,
+                      downtimeMinAfter: numbers.downtime_min_after,
+                      beforeAt: outcomeDraft.beforeAt || undefined,
+                      afterAt: outcomeDraft.afterAt || undefined,
+                      contributeToIntelligence: contribute,
+                    },
+                    { onSuccess: onCancelVerify },
+                  );
+                } catch (error) {
+                  toast.error(
+                    error instanceof Error
+                      ? error.message
+                      : "Enter the required before/after numbers",
+                  );
+                }
+              }}
             >
               Save outcome
             </Button>

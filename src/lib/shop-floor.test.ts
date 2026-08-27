@@ -6,6 +6,7 @@ import {
   beforeAfterDeltas,
   formatDelta,
   isCycleRuntimeQuestion,
+  looksLikePartNumberField,
   parseRunCsv,
   summarizeMachineRuns,
   type MachineRunEvent,
@@ -114,6 +115,14 @@ describe("beforeAfterDeltas", () => {
     expect(deltas.parts_per_shift).toBe(16);
     expect(deltas.downtime_min).toBe(-18);
     expect(formatDelta(deltas.cycle_time_sec, "sec")).toBe("-17 sec");
+  });
+});
+
+describe("looksLikePartNumberField", () => {
+  it("joins title-block part number fields", () => {
+    expect(looksLikePartNumberField("Part Number")).toBe(true);
+    expect(looksLikePartNumberField("P/N")).toBe(true);
+    expect(looksLikePartNumberField("Material")).toBe(false);
   });
 });
 

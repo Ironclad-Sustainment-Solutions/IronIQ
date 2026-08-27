@@ -6,7 +6,9 @@ import type {
   MachineControl,
   MachineProtocol,
   MachineRunEvent,
+  PartOutcomeCard,
   ShopMachine,
+  ShopPart,
 } from "@/lib/shop-floor";
 
 export function useShopMachines(
@@ -177,5 +179,87 @@ export function useImportMachineRunsCsv(machineId?: string | null) {
     },
     onError: (e) =>
       toast.error(e instanceof Error ? e.message : "Could not import CSV"),
+  });
+}
+
+export function useShopParts(
+  organizationId?: string | null,
+  facilityId?: string | null,
+) {
+  return useQuery({
+    queryKey: ["shop-parts", organizationId, facilityId],
+    enabled: Boolean(organizationId),
+    queryFn: () =>
+      fn.listShopParts({
+        data: {
+          organizationId: organizationId as string,
+          facilityId: facilityId ?? undefined,
+        },
+      }) as Promise<ShopPart[]>,
+  });
+}
+
+export function usePartOutcomeCards(
+  organizationId?: string | null,
+  facilityId?: string | null,
+) {
+  return useQuery({
+    queryKey: ["part-outcome-cards", organizationId, facilityId],
+    enabled: Boolean(organizationId),
+    queryFn: () =>
+      fn.listPartOutcomeCards({
+        data: {
+          organizationId: organizationId as string,
+          facilityId: facilityId ?? undefined,
+        },
+      }) as Promise<PartOutcomeCard[]>,
+  });
+}
+
+export function useSavePartOutcomeCard(
+  organizationId?: string | null,
+  facilityId?: string | null,
+) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: {
+      id?: string;
+      partNumber: string;
+      partDescription?: string;
+      drawingRef?: string;
+      machineId?: string | null;
+      cncChangeLogId?: string;
+      capabilityActionId?: string;
+      whatChanged: string;
+      cycleTimeSecBefore: number;
+      cycleTimeSecAfter: number;
+      setupMinBefore: number;
+      setupMinAfter: number;
+      hoursOnPartBefore: number;
+      hoursOnPartAfter: number;
+      partsPerShiftBefore?: number | null;
+      partsPerShiftAfter?: number | null;
+      downtimeMinBefore?: number | null;
+      downtimeMinAfter?: number | null;
+      beforeAt?: string;
+      afterAt?: string;
+    }) => {
+      if (!organizationId) throw new Error("Select an organization first.");
+      return fn.savePartOutcomeCard({
+        data: {
+          organizationId,
+          facilityId: facilityId ?? undefined,
+          ...input,
+        },
+      }) as Promise<PartOutcomeCard>;
+    },
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: ["part-outcome-cards"] });
+      void qc.invalidateQueries({ queryKey: ["shop-parts"] });
+      void qc.invalidateQueries({ queryKey: ["cnc-change-log"] });
+      toast.success("Before/after card saved");
+    },
+    onError: (e) =>
+      toast.error(e instanceof Error ? e.message : "Could not save part card"),
   });
 }

@@ -31,6 +31,7 @@ export interface AskIronIQResult {
   answer: string;
   patterns: AskIronIQPattern[];
   usedExternalKnowledge: boolean;
+  noMatchingPrecedent?: boolean;
 }
 
 export function useAskIronIQ() {

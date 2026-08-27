@@ -342,6 +342,63 @@ export function formatDelta(value: number | null, unit: string): string {
   return `${sign}${value} ${unit}`;
 }
 
+export interface ShopPart {
+  id: string;
+  organization_id: string;
+  facility_id: string | null;
+  part_number: string;
+  description: string | null;
+  drawing_ref: string | null;
+}
+
+export interface PartOutcomeCard extends BeforeAfterNumbers {
+  id: string;
+  organization_id: string;
+  facility_id: string | null;
+  part_id: string;
+  machine_id: string | null;
+  cnc_change_log_id: string | null;
+  capability_action_id: string | null;
+  part_number: string;
+  part_description: string | null;
+  drawing_ref: string | null;
+  machine_label: string | null;
+  what_changed: string;
+  before_at: string | null;
+  after_at: string | null;
+  created_at: string;
+}
+
+export function looksLikePartNumberField(name: string): boolean {
+  return /part[\s_-]*number|part\s*#|p\/n|\bpn\b/i.test(name);
+}
+
+export const REQUIRED_BEFORE_AFTER_FIELDS = [
+  "cycle_time_sec_before",
+  "cycle_time_sec_after",
+  "setup_min_before",
+  "setup_min_after",
+  "hours_on_part_before",
+  "hours_on_part_after",
+] as const;
+
+export function parseRequiredNumber(value: string, label: string): number {
+  const n = Number(value);
+  if (value.trim() === "" || !Number.isFinite(n) || n < 0) {
+    throw new Error(`${label} is required and must be 0 or greater`);
+  }
+  return n;
+}
+
+export function parseOptionalNumber(value: string): number | null {
+  if (value.trim() === "") return null;
+  const n = Number(value);
+  if (!Number.isFinite(n) || n < 0) {
+    throw new Error("Optional numbers must be 0 or greater");
+  }
+  return n;
+}
+
 export function isCycleRuntimeQuestion(question: string): boolean {
   return /\b(cycle(?:\s*time)?s?|runtime|run[-\s]?time|hours?\s+on\s+part|idle\s+time|downtime)\b/i.test(
     question,

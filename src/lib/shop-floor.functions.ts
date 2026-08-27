@@ -15,6 +15,12 @@ import {
   type MachineRunEvent,
   type ShopMachine,
 } from "@/lib/shop-floor";
+import {
+  PART_CARD_SELECT,
+  mapPartCard,
+  mapShopPart,
+  upsertShopPart,
+} from "@/lib/shop-floor.server";
 
 const MachineWrite = z.object({
   organizationId: z.string().uuid(),
@@ -299,4 +305,183 @@ export const importMachineRunsCsv = createServerFn({ method: "POST" })
       );
     }
     return { imported: inserted.length };
+  });
+
+const ListPartsInput = z.object({
+  organizationId: z.string().uuid(),
+  facilityId: z.string().uuid().optional(),
+});
+
+export const listShopParts = createServerFn({ method: "GET" })
+  .middleware([requireAuth])
+  .inputValidator((d: unknown) => ListPartsInput.parse(d))
+  .handler(async ({ data, context }) => {
+    return withUser(context.userId, async (client) => {
+      const { rows } = data.facilityId
+        ? await client.query(
+            `SELECT * FROM public.shop_parts
+              WHERE organization_id = $1
+                AND (facility_id = $2 OR facility_id IS NULL)
+              ORDER BY part_number`,
+            [data.organizationId, data.facilityId],
+          )
+        : await client.query(
+            `SELECT * FROM public.shop_parts
+              WHERE organization_id = $1
+              ORDER BY part_number`,
+            [data.organizationId],
+          );
+      return rows.map((row) => mapShopPart(row as Record<string, unknown>));
+    });
+  });
+
+const UpsertPartInput = z.object({
+  organizationId: z.string().uuid(),
+  facilityId: z.string().uuid().optional(),
+  partNumber: z.string().min(1),
+  description: z.string().optional(),
+  drawingRef: z.string().optional(),
+});
+
+export const upsertShopPartRecord = createServerFn({ method: "POST" })
+  .middleware([requireAuth])
+  .inputValidator((d: unknown) => UpsertPartInput.parse(d))
+  .handler(async ({ data, context }) => {
+    return withUser(context.userId, (client) =>
+      upsertShopPart(client, {
+        organizationId: data.organizationId,
+        facilityId: data.facilityId,
+        partNumber: data.partNumber,
+        description: data.description,
+        drawingRef: data.drawingRef,
+      }),
+    );
+  });
+
+const MetricsInput = z.object({
+  cycleTimeSecBefore: z.number().nonnegative(),
+  cycleTimeSecAfter: z.number().nonnegative(),
+  setupMinBefore: z.number().nonnegative(),
+  setupMinAfter: z.number().nonnegative(),
+  hoursOnPartBefore: z.number().nonnegative(),
+  hoursOnPartAfter: z.number().nonnegative(),
+  partsPerShiftBefore: z.number().nonnegative().nullable().optional(),
+  partsPerShiftAfter: z.number().nonnegative().nullable().optional(),
+  downtimeMinBefore: z.number().nonnegative().nullable().optional(),
+  downtimeMinAfter: z.number().nonnegative().nullable().optional(),
+  beforeAt: z.string().optional(),
+  afterAt: z.string().optional(),
+});
+
+const SaveCardInput = MetricsInput.extend({
+  organizationId: z.string().uuid(),
+  facilityId: z.string().uuid().optional(),
+  partNumber: z.string().min(1),
+  partDescription: z.string().optional(),
+  drawingRef: z.string().optional(),
+  machineId: z.string().uuid().nullable().optional(),
+  cncChangeLogId: z.string().uuid().optional(),
+  capabilityActionId: z.string().uuid().optional(),
+  whatChanged: z.string().min(1),
+  id: z.string().uuid().optional(),
+});
+
+export const savePartOutcomeCard = createServerFn({ method: "POST" })
+  .middleware([requireAuth])
+  .inputValidator((d: unknown) => SaveCardInput.parse(d))
+  .handler(async ({ data, context }) => {
+    return withUser(context.userId, async (client) => {
+      const part = await upsertShopPart(client, {
+        organizationId: data.organizationId,
+        facilityId: data.facilityId,
+        partNumber: data.partNumber,
+        description: data.partDescription,
+        drawingRef: data.drawingRef,
+      });
+      const params = [
+        data.organizationId,
+        data.facilityId ?? null,
+        part.id,
+        data.machineId ?? null,
+        data.cncChangeLogId ?? null,
+        data.capabilityActionId ?? null,
+        data.whatChanged.trim(),
+        data.cycleTimeSecBefore,
+        data.cycleTimeSecAfter,
+        data.setupMinBefore,
+        data.setupMinAfter,
+        data.hoursOnPartBefore,
+        data.hoursOnPartAfter,
+        data.partsPerShiftBefore ?? null,
+        data.partsPerShiftAfter ?? null,
+        data.downtimeMinBefore ?? null,
+        data.downtimeMinAfter ?? null,
+        data.beforeAt || null,
+        data.afterAt || null,
+        context.userId,
+      ];
+      const { rows } = data.id
+        ? await client.query(
+            `UPDATE public.part_outcome_cards SET
+               part_id = $3, machine_id = $4, cnc_change_log_id = COALESCE($5, cnc_change_log_id),
+               capability_action_id = COALESCE($6, capability_action_id),
+               what_changed = $7,
+               cycle_time_sec_before = $8, cycle_time_sec_after = $9,
+               setup_min_before = $10, setup_min_after = $11,
+               hours_on_part_before = $12, hours_on_part_after = $13,
+               parts_per_shift_before = $14, parts_per_shift_after = $15,
+               downtime_min_before = $16, downtime_min_after = $17,
+               before_at = $18, after_at = $19
+             WHERE id = $21
+             RETURNING id`,
+            [...params, data.id],
+          )
+        : await client.query(
+            `INSERT INTO public.part_outcome_cards
+               (organization_id, facility_id, part_id, machine_id, cnc_change_log_id,
+                capability_action_id, what_changed,
+                cycle_time_sec_before, cycle_time_sec_after,
+                setup_min_before, setup_min_after,
+                hours_on_part_before, hours_on_part_after,
+                parts_per_shift_before, parts_per_shift_after,
+                downtime_min_before, downtime_min_after,
+                before_at, after_at, created_by)
+             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20)
+             RETURNING id`,
+            params,
+          );
+      const { rows: cards } = await client.query(
+        `${PART_CARD_SELECT} WHERE c.id = $1`,
+        [rows[0].id],
+      );
+      return mapPartCard(cards[0] as Record<string, unknown>);
+    });
+  });
+
+const ListCardsInput = z.object({
+  organizationId: z.string().uuid(),
+  facilityId: z.string().uuid().optional(),
+});
+
+export const listPartOutcomeCards = createServerFn({ method: "GET" })
+  .middleware([requireAuth])
+  .inputValidator((d: unknown) => ListCardsInput.parse(d))
+  .handler(async ({ data, context }) => {
+    return withUser(context.userId, async (client) => {
+      const { rows } = data.facilityId
+        ? await client.query(
+            `${PART_CARD_SELECT}
+              WHERE c.organization_id = $1
+                AND (c.facility_id = $2 OR c.facility_id IS NULL)
+              ORDER BY c.created_at DESC`,
+            [data.organizationId, data.facilityId],
+          )
+        : await client.query(
+            `${PART_CARD_SELECT}
+              WHERE c.organization_id = $1
+              ORDER BY c.created_at DESC`,
+            [data.organizationId],
+          );
+      return rows.map((row) => mapPartCard(row as Record<string, unknown>));
+    });
   });
