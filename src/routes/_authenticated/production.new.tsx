@@ -29,7 +29,10 @@ export const Route = createFileRoute("/_authenticated/production/new")({
         content:
           "Submit part, material, machine, workholding, tooling and inspection data to start a CNC programming job in IronIQ.",
       },
-      { property: "og:title", content: "Submit CNC Job — IronIQ Production Flow" },
+      {
+        property: "og:title",
+        content: "Submit CNC Job — IronIQ Production Flow",
+      },
       {
         property: "og:description",
         content: "Structured customer data submission for CNC programming.",
@@ -186,10 +189,27 @@ function NewJob() {
           <div className="grid gap-4 md:grid-cols-2">
             {step === 0 && (
               <>
-                <Field label="Part number *" value={form.part_number} onChange={set("part_number")} />
-                <Field label="Part name" value={form.part_name} onChange={set("part_name")} />
-                <Field label="Revision" value={form.part_revision} onChange={set("part_revision")} />
-                <Field label="Quantity" value={form.quantity} onChange={set("quantity")} type="number" />
+                <Field
+                  label="Part number *"
+                  value={form.part_number}
+                  onChange={set("part_number")}
+                />
+                <Field
+                  label="Part name"
+                  value={form.part_name}
+                  onChange={set("part_name")}
+                />
+                <Field
+                  label="Revision"
+                  value={form.part_revision}
+                  onChange={set("part_revision")}
+                />
+                <Field
+                  label="Quantity"
+                  value={form.quantity}
+                  onChange={set("quantity")}
+                  type="number"
+                />
                 <Field
                   label="Customer job number"
                   value={form.customer_job_number}
@@ -205,10 +225,28 @@ function NewJob() {
 
             {step === 1 && (
               <>
-                <Field label="Material specification" value={form.material_spec} onChange={set("material_spec")} />
-                <Field label="Stock type" value={form.stock_type} onChange={set("stock_type")} />
-                <Field label="Stock length" value={form.stock_length} onChange={set("stock_length")} type="number" />
-                <Field label="Stock width" value={form.stock_width} onChange={set("stock_width")} type="number" />
+                <Field
+                  label="Material specification"
+                  value={form.material_spec}
+                  onChange={set("material_spec")}
+                />
+                <Field
+                  label="Stock type"
+                  value={form.stock_type}
+                  onChange={set("stock_type")}
+                />
+                <Field
+                  label="Stock length"
+                  value={form.stock_length}
+                  onChange={set("stock_length")}
+                  type="number"
+                />
+                <Field
+                  label="Stock width"
+                  value={form.stock_width}
+                  onChange={set("stock_width")}
+                  type="number"
+                />
                 <Field
                   label="Stock thickness"
                   value={form.stock_thickness}
@@ -255,10 +293,27 @@ function NewJob() {
                     </SelectContent>
                   </Select>
                 </div>
-                <Field label="Machine make" value={form.machine_make} onChange={set("machine_make")} />
-                <Field label="Machine model" value={form.machine_model} onChange={set("machine_model")} />
-                <Field label="Controller" value={form.controller} onChange={set("controller")} />
-                <Field label="Axis count" value={form.axis_count} onChange={set("axis_count")} type="number" />
+                <Field
+                  label="Machine make"
+                  value={form.machine_make}
+                  onChange={set("machine_make")}
+                />
+                <Field
+                  label="Machine model"
+                  value={form.machine_model}
+                  onChange={set("machine_model")}
+                />
+                <Field
+                  label="Controller"
+                  value={form.controller}
+                  onChange={set("controller")}
+                />
+                <Field
+                  label="Axis count"
+                  value={form.axis_count}
+                  onChange={set("axis_count")}
+                  type="number"
+                />
                 <Field
                   label="Workholding method"
                   value={form.workholding_method}
@@ -274,7 +329,11 @@ function NewJob() {
 
             {step === 3 && (
               <>
-                <Area label="Available tooling" value={form.available_tooling} onChange={set("available_tooling")} />
+                <Area
+                  label="Available tooling"
+                  value={form.available_tooling}
+                  onChange={set("available_tooling")}
+                />
                 <Area
                   label="Critical dimensions"
                   value={form.critical_dimensions}
@@ -305,7 +364,11 @@ function NewJob() {
           </div>
 
           <div className="mt-6 flex justify-between border-t border-border pt-4">
-            <Button variant="outline" disabled={step === 0} onClick={() => setStep((s) => s - 1)}>
+            <Button
+              variant="outline"
+              disabled={step === 0}
+              onClick={() => setStep((s) => s - 1)}
+            >
               Back
             </Button>
             {step < STEPS.length - 1 ? (
@@ -336,7 +399,12 @@ function Field({
   return (
     <div>
       <Label className="eyebrow">{label}</Label>
-      <Input className="mt-1" type={type} value={value} onChange={(e) => onChange(e.target.value)} />
+      <Input
+        className="mt-1"
+        type={type}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+      />
     </div>
   );
 }
@@ -353,7 +421,12 @@ function Area({
   return (
     <div>
       <Label className="eyebrow">{label}</Label>
-      <Textarea className="mt-1" rows={3} value={value} onChange={(e) => onChange(e.target.value)} />
+      <Textarea
+        className="mt-1"
+        rows={3}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+      />
     </div>
   );
 }

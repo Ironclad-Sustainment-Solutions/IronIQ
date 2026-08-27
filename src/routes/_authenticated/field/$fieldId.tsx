@@ -71,6 +71,7 @@ import {
   type FieldCaptureObservationRow,
 } from "@/lib/field-domains";
 import { FIELD_SCALE } from "@/lib/field-form";
+import type { FieldAttachmentRow } from "@/lib/field-domains";
 import { EventsTab } from "@/components/ironiq/field/event-parts";
 import {
   BaselineMetricsTab,
@@ -274,9 +275,8 @@ function FieldCapture() {
     [obsRows, gapRows],
   );
   const overrides =
-    (data?.assessment as Record<string, any> | undefined)?.[
-      "baseline_statuses"
-    ] ?? {};
+    (data?.assessment as AssessmentExtras | undefined)?.["baseline_statuses"] ??
+    {};
   const areas = useMemo(
     () => areaBaselines(obsRows, gapRows, overrides as Record<string, string>),
     [obsRows, gapRows, overrides],
@@ -1096,12 +1096,37 @@ function Stat({ label, value }: { label: string; value: string }) {
 
 /* --------------------------------- intake -------------------------------- */
 
+// Exactly the fields IntakeTab reads via assessment["..."] bracket access,
+// each mirroring its real type from FieldAssessmentRow (field-assessment.ts)
+// or AssessmentExtras ($fieldId.tsx above) -- avoids `any` without needing
+// an index signature, since a concrete wider object (the real
+// `typeof data.assessment & AssessmentExtras`) satisfies this structurally.
+interface IntakeAssessmentFields {
+  assessment_status: string | null;
+  assessors: string | null;
+  attempted: string | null;
+  client_contact: string | null;
+  client_contact_title: string | null;
+  client_name: string | null;
+  facility_location: string | null;
+  facility_name: string | null;
+  impact_notes: string | null;
+  impact_tags: string[];
+  improvement_if_resolved: string | null;
+  problem_cell: string | null;
+  problem_department: string | null;
+  problem_machine: string | null;
+  problem_statement: string | null;
+  problem_timing: string | null;
+  workstreams: string[];
+}
+
 function IntakeTab({
   assessment,
   locked,
   set,
 }: {
-  assessment: Record<string, any>;
+  assessment: IntakeAssessmentFields;
   locked: boolean;
   set: (values: Record<string, unknown>) => void;
 }) {
@@ -1270,9 +1295,7 @@ function DomainPanel({
 }: {
   code: string;
   observations: FieldCaptureObservationRow[];
-  attachments: ReturnType<typeof useFieldCapture>["data"] extends infer T
-    ? any[]
-    : any[];
+  attachments: FieldAttachmentRow[];
   gaps: FieldCapabilityGap[];
   locked: boolean;
   onAdd: () => void;
@@ -1310,7 +1333,7 @@ function DomainPanel({
               key={row.id}
               row={row}
               attachments={attachments.filter(
-                (at: any) => at.observation_id === row.id,
+                (at: FieldAttachmentRow) => at.observation_id === row.id,
               )}
               hasGap={gaps.some((g) => g.observation_id === row.id)}
               onEdit={() => onEdit(row)}
@@ -1338,13 +1361,13 @@ function GapsTab({
   uploading,
 }: {
   gaps: FieldCapabilityGap[];
-  attachments: any[];
+  attachments: FieldAttachmentRow[];
   locked: boolean;
   onAdd: () => void;
   onUpdate: (id: string, values: Partial<FieldCapabilityGap>) => void;
   onDelete: (id: string) => void;
   onUpload: (gapId: string, file: File) => void;
-  onRemoveEvidence: (row: any) => void;
+  onRemoveEvidence: (row: FieldAttachmentRow) => void;
   uploading: boolean;
 }) {
   return (
@@ -1704,6 +1727,18 @@ function BaselineTab({
 
 /* -------------------------------- report --------------------------------- */
 
+// Exactly the fields ReportTab reads via assessment["..."] bracket access.
+interface ReportAssessmentFields {
+  assessment_date: string | null;
+  client_name: string | null;
+  executive_summary: string | null;
+  facility_location: string | null;
+  facility_name: string | null;
+  preliminary_conclusion: string | null;
+  problem_statement: string | null;
+  recommended_path: string | null;
+}
+
 function ReportTab({
   assessment,
   locked,
@@ -1717,7 +1752,7 @@ function ReportTab({
   onConvert,
   converting,
 }: {
-  assessment: Record<string, any>;
+  assessment: ReportAssessmentFields;
   locked: boolean;
   set: (values: Record<string, unknown>) => void;
   areas: AreaBaseline[];

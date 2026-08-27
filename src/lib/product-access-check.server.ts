@@ -90,7 +90,8 @@ export async function assertProductAllowedForAssessment(
     );
     return rows[0]?.organization_id ?? null;
   });
-  if (!organizationId) throw new Error("Assessment not found or not accessible.");
+  if (!organizationId)
+    throw new Error("Assessment not found or not accessible.");
   await assertProductAllowed(userId, organizationId, product);
 }
 
@@ -107,7 +108,8 @@ export async function assertProductAllowedForCapAssessment(
     );
     return rows[0]?.organization_id ?? null;
   });
-  if (!organizationId) throw new Error("Assessment not found or not accessible.");
+  if (!organizationId)
+    throw new Error("Assessment not found or not accessible.");
   await assertProductAllowed(userId, organizationId, product);
 }
 
@@ -124,7 +126,8 @@ export async function assertProductAllowedForFieldAssessment(
     );
     return rows[0]?.organization_id ?? null;
   });
-  if (!organizationId) throw new Error("Assessment not found or not accessible.");
+  if (!organizationId)
+    throw new Error("Assessment not found or not accessible.");
   await assertProductAllowed(userId, organizationId, product);
 }
 
@@ -161,7 +164,8 @@ export async function assertProductAllowedForCorrectiveAction(
     );
     return rows[0]?.organization_id ?? null;
   });
-  if (!organizationId) throw new Error("Corrective action not found or not accessible.");
+  if (!organizationId)
+    throw new Error("Corrective action not found or not accessible.");
   await assertProductAllowed(userId, organizationId, product);
 }
 
@@ -178,7 +182,8 @@ export async function assertProductAllowedForImprovementProject(
     );
     return rows[0]?.organization_id ?? null;
   });
-  if (!organizationId) throw new Error("Improvement project not found or not accessible.");
+  if (!organizationId)
+    throw new Error("Improvement project not found or not accessible.");
   await assertProductAllowed(userId, organizationId, product);
 }
 

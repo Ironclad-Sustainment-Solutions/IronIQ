@@ -15,7 +15,9 @@ export const fetchEstimatingParts = createServerFn({ method: "GET" })
             "SELECT * FROM public.rfqs WHERE organization_id = $1 ORDER BY created_at DESC",
             [data.id],
           )
-        : await client.query("SELECT * FROM public.rfqs ORDER BY created_at DESC");
+        : await client.query(
+            "SELECT * FROM public.rfqs ORDER BY created_at DESC",
+          );
       if (rfqs.length === 0) return [];
 
       const rfqIds = rfqs.map((r) => r.id as string);
@@ -27,7 +29,10 @@ export const fetchEstimatingParts = createServerFn({ method: "GET" })
 
       const partIds = parts.map((p) => p.id as string);
       const [requirements, files] = await Promise.all([
-        client.query("SELECT * FROM public.rfq_requirements WHERE rfq_part_id = ANY($1)", [partIds]),
+        client.query(
+          "SELECT * FROM public.rfq_requirements WHERE rfq_part_id = ANY($1)",
+          [partIds],
+        ),
         client.query(
           "SELECT * FROM public.rfq_files WHERE rfq_id = ANY($1) AND superseded = false ORDER BY created_at",
           [rfqIds],
@@ -37,9 +42,12 @@ export const fetchEstimatingParts = createServerFn({ method: "GET" })
       return parts.map((part) => ({
         part,
         rfq: rfqs.find((r) => r.id === part.rfq_id)!,
-        requirement: requirements.rows.find((r) => r.rfq_part_id === part.id) ?? null,
+        requirement:
+          requirements.rows.find((r) => r.rfq_part_id === part.id) ?? null,
         files: files.rows.filter(
-          (f) => f.rfq_part_id === part.id || (!f.rfq_part_id && f.rfq_id === part.rfq_id),
+          (f) =>
+            f.rfq_part_id === part.id ||
+            (!f.rfq_part_id && f.rfq_id === part.rfq_id),
         ),
       }));
     }),
@@ -70,7 +78,9 @@ export const fetchMachines = createServerFn({ method: "GET" })
             "SELECT * FROM public.machines WHERE active = true AND facility_id = $1 ORDER BY model",
             [data.id],
           )
-        : await client.query("SELECT * FROM public.machines WHERE active = true ORDER BY model");
+        : await client.query(
+            "SELECT * FROM public.machines WHERE active = true ORDER BY model",
+          );
       return rows;
     }),
   );

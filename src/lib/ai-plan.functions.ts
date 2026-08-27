@@ -14,7 +14,9 @@ const list = () => z.array(z.coerce.string()).catch([]);
 
 const planSchema = z.object({
   summary: str(),
-  complexity: z.enum(["low", "moderate", "high", "very_high"]).catch("moderate"),
+  complexity: z
+    .enum(["low", "moderate", "high", "very_high"])
+    .catch("moderate"),
   machining_strategy: str(),
   setups: z
     .array(
@@ -70,9 +72,10 @@ export const generateManufacturingPlan = createServerFn({ method: "POST" })
     await checkAndRecordAiUsage(userId);
 
     const plan = await withUser(userId, async (client) => {
-      const { rows: jobRows } = await client.query("SELECT * FROM public.jobs WHERE id = $1", [
-        data.jobId,
-      ]);
+      const { rows: jobRows } = await client.query(
+        "SELECT * FROM public.jobs WHERE id = $1",
+        [data.jobId],
+      );
       const job = jobRows[0];
       if (!job) throw new Error("Job not found or not accessible.");
 
@@ -82,7 +85,8 @@ export const generateManufacturingPlan = createServerFn({ method: "POST" })
       );
 
       const { streamText, Output } = await import("ai");
-      const { createAnthropicProvider } = await import("@/lib/ai-gateway.server");
+      const { createAnthropicProvider } =
+        await import("@/lib/ai-gateway.server");
       const gateway = createAnthropicProvider(apiKey);
 
       const prompt = `You are a senior CNC manufacturing planner preparing a PRELIMINARY manufacturing plan for programmer review. You never authorize production. Produce a complete, conservative plan.
@@ -139,7 +143,10 @@ RULES
         if (fallback?.success) {
           plan = fallback.data;
         } else {
-          const message = planError instanceof Error ? planError.message : "AI planning failed";
+          const message =
+            planError instanceof Error
+              ? planError.message
+              : "AI planning failed";
           await client.query(
             `INSERT INTO public.ai_plans (job_id, generated_by, model, plan, error)
              VALUES ($1, $2, $3, $4, $5)`,

@@ -7,7 +7,11 @@
  * capability gap and the capability health sweep.
  */
 
-import type { CapConfidence, CapEvidenceType, CapPerfCategory } from "./capability-domain";
+import type {
+  CapConfidence,
+  CapEvidenceType,
+  CapPerfCategory,
+} from "./capability-domain";
 
 /* ---------- Step 4: domain screen ---------- */
 
@@ -40,7 +44,9 @@ export const SCREEN_STATUS_TOKEN: Record<ScreenStatus, string> = {
   not_applicable: "steel",
 };
 
-export const SCREEN_STATUSES = Object.keys(SCREEN_STATUS_LABELS) as ScreenStatus[];
+export const SCREEN_STATUSES = Object.keys(
+  SCREEN_STATUS_LABELS,
+) as ScreenStatus[];
 
 /** Statuses that open a targeted deep dive (Step 5). */
 export const DEEP_DIVE_TRIGGERS: ScreenStatus[] = [
@@ -117,17 +123,21 @@ export const DOMAIN_SCREEN_ITEMS: Record<string, string[]> = {
 
 export type ConstraintValidation = "suspected" | "probable" | "validated";
 
-export const CONSTRAINT_VALIDATION_LABELS: Record<ConstraintValidation, string> = {
+export const CONSTRAINT_VALIDATION_LABELS: Record<
+  ConstraintValidation,
+  string
+> = {
   suspected: "Suspected",
   probable: "Probable",
   validated: "Validated",
 };
 
-export const CONSTRAINT_VALIDATION_TOKEN: Record<ConstraintValidation, string> = {
-  suspected: "medium",
-  probable: "high",
-  validated: "success",
-};
+export const CONSTRAINT_VALIDATION_TOKEN: Record<ConstraintValidation, string> =
+  {
+    suspected: "medium",
+    probable: "high",
+    validated: "success",
+  };
 
 /* ---------- Step 10: capability health sweep ---------- */
 
@@ -164,18 +174,39 @@ export type ChainStepKey =
   | "capability_gap"
   | "operational_consequence";
 
-export const CHAIN_STEPS: { key: ChainStepKey; label: string; hint: string }[] = [
-  { key: "customer_problem", label: "Customer Problem", hint: "e.g. Low weekly output" },
-  { key: "performance_gap", label: "Performance Gap", hint: "e.g. 150 parts/week short of requirement" },
-  { key: "observed_condition", label: "Observed Condition", hint: "e.g. Excessive machine setup time" },
-  { key: "constraint", label: "Constraint", hint: "e.g. Fixture configurations differ between cells" },
-  { key: "capability_gap", label: "Capability Gap", hint: "e.g. No controlled standardized fixturing system" },
-  {
-    key: "operational_consequence",
-    label: "Operational Consequence",
-    hint: "e.g. Lost machine availability and inconsistent cycle startup",
-  },
-];
+export const CHAIN_STEPS: { key: ChainStepKey; label: string; hint: string }[] =
+  [
+    {
+      key: "customer_problem",
+      label: "Customer Problem",
+      hint: "e.g. Low weekly output",
+    },
+    {
+      key: "performance_gap",
+      label: "Performance Gap",
+      hint: "e.g. 150 parts/week short of requirement",
+    },
+    {
+      key: "observed_condition",
+      label: "Observed Condition",
+      hint: "e.g. Excessive machine setup time",
+    },
+    {
+      key: "constraint",
+      label: "Constraint",
+      hint: "e.g. Fixture configurations differ between cells",
+    },
+    {
+      key: "capability_gap",
+      label: "Capability Gap",
+      hint: "e.g. No controlled standardized fixturing system",
+    },
+    {
+      key: "operational_consequence",
+      label: "Operational Consequence",
+      hint: "e.g. Lost machine availability and inconsistent cycle startup",
+    },
+  ];
 
 /* ---------- Evidence + observation vocabularies ---------- */
 
@@ -188,9 +219,17 @@ export const OBSERVATION_FREQUENCIES = [
   "One-off",
 ] as const;
 
-export const OBSERVATION_SEVERITIES = ["Critical", "High", "Moderate", "Low"] as const;
+export const OBSERVATION_SEVERITIES = [
+  "Critical",
+  "High",
+  "Moderate",
+  "Low",
+] as const;
 
-export const PERFORMANCE_CATEGORY_OPTIONS: { value: CapPerfCategory | "other"; label: string }[] = [
+export const PERFORMANCE_CATEGORY_OPTIONS: {
+  value: CapPerfCategory | "other";
+  label: string;
+}[] = [
   { value: "production", label: "Production Output" },
   { value: "throughput", label: "Throughput" },
   { value: "quality", label: "Quality" },
@@ -297,7 +336,12 @@ export interface MetricGap {
  * For "lower is better" metrics (scrap, downtime, setup time, cost, lead time)
  * the sign is flipped so a positive gap always means "work to do".
  */
-export function metricGap(m: Pick<CapMetricRow, "current_value" | "required_value" | "higher_is_better" | "unit">): MetricGap {
+export function metricGap(
+  m: Pick<
+    CapMetricRow,
+    "current_value" | "required_value" | "higher_is_better" | "unit"
+  >,
+): MetricGap {
   const cur = m.current_value;
   const req = m.required_value;
   if (cur === null || cur === undefined || req === null || req === undefined) {
@@ -315,6 +359,9 @@ export function metricGap(m: Pick<CapMetricRow, "current_value" | "required_valu
   };
 }
 
-export function metricTitle(m: Pick<CapMetricRow, "metric_name" | "other_label" | "category">, categoryLabel: string) {
+export function metricTitle(
+  m: Pick<CapMetricRow, "metric_name" | "other_label" | "category">,
+  categoryLabel: string,
+) {
   return m.metric_name?.trim() || m.other_label?.trim() || categoryLabel;
 }

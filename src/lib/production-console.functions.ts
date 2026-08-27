@@ -25,7 +25,8 @@ const ALLOWED_TABLES = new Set([
 ]);
 
 function assertAllowed(table: string) {
-  if (!ALLOWED_TABLES.has(table)) throw new Error(`Table "${table}" is not allowed here.`);
+  if (!ALLOWED_TABLES.has(table))
+    throw new Error(`Table "${table}" is not allowed here.`);
 }
 
 const UpsertInput = z.object({
@@ -45,10 +46,10 @@ export const productionUpsert = createServerFn({ method: "POST" })
         const cols = Object.keys(data.values);
         assertColumnsAllowed(data.table, cols);
         const setClause = cols.map((c, i) => `${c} = $${i + 1}`).join(", ");
-        await client.query(`UPDATE public.${data.table} SET ${setClause} WHERE id = $${cols.length + 1}`, [
-          ...Object.values(data.values),
-          data.id,
-        ]);
+        await client.query(
+          `UPDATE public.${data.table} SET ${setClause} WHERE id = $${cols.length + 1}`,
+          [...Object.values(data.values), data.id],
+        );
         return data.id;
       }
       const cols = Object.keys(data.values);
@@ -91,7 +92,10 @@ export const replaceAutomatedChecks = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => ReplaceAutomatedChecksInput.parse(d))
   .handler(({ data, context }) =>
     withUser(context.userId, async (client) => {
-      await client.query("DELETE FROM public.automated_checks WHERE job_id = $1", [data.jobId]);
+      await client.query(
+        "DELETE FROM public.automated_checks WHERE job_id = $1",
+        [data.jobId],
+      );
       for (const row of data.rows) {
         const cols = Object.keys(row);
         assertColumnsAllowed("automated_checks", cols);

@@ -8,25 +8,38 @@ export type Job = Database["public"]["Tables"]["jobs"]["Row"];
 export type JobInsert = Database["public"]["Tables"]["jobs"]["Insert"];
 export type Operation = Database["public"]["Tables"]["operations"]["Row"];
 export type AiPlan = Database["public"]["Tables"]["ai_plans"]["Row"];
-export type IntakeReview = Database["public"]["Tables"]["intake_reviews"]["Row"];
-export type IntakeException = Database["public"]["Tables"]["intake_exceptions"]["Row"];
+export type IntakeReview =
+  Database["public"]["Tables"]["intake_reviews"]["Row"];
+export type IntakeException =
+  Database["public"]["Tables"]["intake_exceptions"]["Row"];
 export type Simulation = Database["public"]["Tables"]["simulations"]["Row"];
-export type AutomatedCheck = Database["public"]["Tables"]["automated_checks"]["Row"];
-export type ProgrammerApproval = Database["public"]["Tables"]["programmer_approvals"]["Row"];
+export type AutomatedCheck =
+  Database["public"]["Tables"]["automated_checks"]["Row"];
+export type ProgrammerApproval =
+  Database["public"]["Tables"]["programmer_approvals"]["Row"];
 export type PostRecord = Database["public"]["Tables"]["post_records"]["Row"];
 export type SetupSheet = Database["public"]["Tables"]["setup_sheets"]["Row"];
-export type ReleasePackage = Database["public"]["Tables"]["release_packages"]["Row"];
-export type ProveOutResult = Database["public"]["Tables"]["prove_out_results"]["Row"];
-export type MachineProfile = Database["public"]["Tables"]["machine_profiles"]["Row"];
-export type ToolingProfile = Database["public"]["Tables"]["tooling_profiles"]["Row"];
-export type PostProcessor = Database["public"]["Tables"]["post_processors"]["Row"];
-export type MastercamJob = Database["public"]["Tables"]["mastercam_jobs"]["Row"];
+export type ReleasePackage =
+  Database["public"]["Tables"]["release_packages"]["Row"];
+export type ProveOutResult =
+  Database["public"]["Tables"]["prove_out_results"]["Row"];
+export type MachineProfile =
+  Database["public"]["Tables"]["machine_profiles"]["Row"];
+export type ToolingProfile =
+  Database["public"]["Tables"]["tooling_profiles"]["Row"];
+export type PostProcessor =
+  Database["public"]["Tables"]["post_processors"]["Row"];
+export type MastercamJob =
+  Database["public"]["Tables"]["mastercam_jobs"]["Row"];
 export type PlanReview = Database["public"]["Tables"]["plan_reviews"]["Row"];
 
 export function useJobs(organizationId?: string | null) {
   return useQuery({
     queryKey: ["prod-jobs", organizationId ?? "all"],
-    queryFn: () => fn.fetchJobs({ data: { id: organizationId ?? undefined } }) as Promise<Job[]>,
+    queryFn: () =>
+      fn.fetchJobs({ data: { id: organizationId ?? undefined } }) as Promise<
+        Job[]
+      >,
   });
 }
 
@@ -34,7 +47,8 @@ export function useJob(jobId?: string) {
   return useQuery({
     enabled: Boolean(jobId),
     queryKey: ["prod-job", jobId],
-    queryFn: () => fn.fetchJob({ data: { jobId: jobId as string } }) as Promise<Job>,
+    queryFn: () =>
+      fn.fetchJob({ data: { jobId: jobId as string } }) as Promise<Job>,
   });
 }
 
@@ -67,9 +81,9 @@ export function useMachineProfiles(organizationId?: string | null) {
   return useQuery({
     queryKey: ["machine-profiles", organizationId ?? "all"],
     queryFn: () =>
-      fn.fetchMachineProfiles({ data: { id: organizationId ?? undefined } }) as Promise<
-        MachineProfile[]
-      >,
+      fn.fetchMachineProfiles({
+        data: { id: organizationId ?? undefined },
+      }) as Promise<MachineProfile[]>,
   });
 }
 

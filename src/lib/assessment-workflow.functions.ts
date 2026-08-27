@@ -19,7 +19,11 @@ export const persistAssessmentAggregates = createServerFn({ method: "POST" })
   .middleware([requireAuth])
   .inputValidator((d: unknown) => PersistAggregatesInput.parse(d))
   .handler(async ({ data, context }) => {
-    await assertProductAllowedForAssessment(context.userId, data.assessmentId, "assessment");
+    await assertProductAllowedForAssessment(
+      context.userId,
+      data.assessmentId,
+      "assessment",
+    );
     const values = {
       overall_score: data.overallScore,
       confidence_score: data.confidenceScore,

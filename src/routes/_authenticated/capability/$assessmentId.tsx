@@ -1,6 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
-import { PageHeader, EmptyState, Panel } from "@/components/ironiq/layout-primitives";
+import {
+  PageHeader,
+  EmptyState,
+  Panel,
+} from "@/components/ironiq/layout-primitives";
 import { Button } from "@/components/ui/button";
 import { Tag } from "@/components/ironiq/badges";
 import {
@@ -11,7 +15,10 @@ import {
 } from "@/lib/capability-api";
 import { useCapInvestigation } from "@/lib/capability-investigation-api";
 import { computeCapability } from "@/lib/capability-scoring";
-import { CAP_STATUS_LABELS, PERF_CATEGORY_LABELS } from "@/lib/capability-domain";
+import {
+  CAP_STATUS_LABELS,
+  PERF_CATEGORY_LABELS,
+} from "@/lib/capability-domain";
 import { metricGap, metricTitle } from "@/lib/capability-investigation";
 import { IntakePanel } from "@/components/ironiq/capability/intake-panel";
 import { FindingsPanel } from "@/components/ironiq/capability/findings-panel";
@@ -32,7 +39,9 @@ import {
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export const Route = createFileRoute("/_authenticated/capability/$assessmentId")({
+export const Route = createFileRoute(
+  "/_authenticated/capability/$assessmentId",
+)({
   head: () => ({
     meta: [
       { title: "Capability Investigation — IronIQ" },
@@ -44,7 +53,8 @@ export const Route = createFileRoute("/_authenticated/capability/$assessmentId")
       { property: "og:title", content: "Capability Investigation — IronIQ" },
       {
         property: "og:description",
-        content: "Symptom → Evidence → Constraint → Capability Gap → Restoration Action.",
+        content:
+          "Symptom → Evidence → Constraint → Capability Gap → Restoration Action.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -69,14 +79,22 @@ type StepKey =
   | "report";
 
 const STEPS: { key: StepKey; label: string; caption: string }[] = [
-  { key: "dashboard", label: "Dashboard", caption: "Domain health at a glance" },
+  {
+    key: "dashboard",
+    label: "Dashboard",
+    caption: "Domain health at a glance",
+  },
   { key: "problem", label: "Problem", caption: "Customer-stated information" },
   { key: "performance", label: "Performance", caption: "Measurable gap" },
   { key: "observe", label: "Observe", caption: "What is actually happening" },
   { key: "screen", label: "Capability Screen", caption: "Six domains, short" },
   { key: "deep_dive", label: "Deep Dive", caption: "Targeted 0–5 scoring" },
   { key: "findings", label: "Findings", caption: "Evidence-backed, approved" },
-  { key: "constraint", label: "Constraint", caption: "Chain + primary constraint" },
+  {
+    key: "constraint",
+    label: "Constraint",
+    caption: "Chain + primary constraint",
+  },
   { key: "root_gap", label: "Root Gap", caption: "Underlying capability gap" },
   { key: "sweep", label: "Health Sweep", caption: "Other weaknesses" },
   { key: "actions", label: "Actions", caption: "Prioritized restoration" },
@@ -107,7 +125,8 @@ function CapabilityWorkspace() {
   const stored = assessment.data?.overall_score;
   useEffect(() => {
     if (!assessment.data) return;
-    const current = stored === null || stored === undefined ? null : Number(stored);
+    const current =
+      stored === null || stored === undefined ? null : Number(stored);
     if (current === overall) return;
     setScore.mutate({ overall });
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -130,31 +149,52 @@ function CapabilityWorkspace() {
       `Desired outcome: ${p?.desired_outcome ?? "—"}`,
       `Performance gaps: ${gapLines.join("; ") || "none captured"}`,
       `Observations: ${(inv?.observations ?? []).map((o) => o.observation).join("; ") || "none"}`,
-      `Domain screen: ${(inv?.screens ?? [])
-        .map((s) => `${domains.find((d) => d.id === s.domain_id)?.name ?? "?"}=${s.status}`)
-        .join(", ") || "not screened"}`,
+      `Domain screen: ${
+        (inv?.screens ?? [])
+          .map(
+            (s) =>
+              `${domains.find((d) => d.id === s.domain_id)?.name ?? "?"}=${s.status}`,
+          )
+          .join(", ") || "not screened"
+      }`,
       `Primary constraint: ${inv?.constraint?.constraint_text ?? "not declared"}`,
-      `Weak capability areas: ${result.severeCriteria
-        .map((s) => `${s.domain.name}/${s.criterion.name} (${s.dimension}=${s.score})`)
-        .join("; ") || "none"}`,
+      `Weak capability areas: ${
+        result.severeCriteria
+          .map(
+            (s) =>
+              `${s.domain.name}/${s.criterion.name} (${s.dimension}=${s.score})`,
+          )
+          .join("; ") || "none"
+      }`,
       `Existing findings: ${ws.findings.map((f) => f.title).join("; ") || "none"}`,
     ].join("\n");
   }, [ws, inv, domains, result.severeCriteria]);
 
   const dashboard = useMemo(() => {
-    const scoreByDomain: Record<string, { score: number | null; confidence: string }> = {};
+    const scoreByDomain: Record<
+      string,
+      { score: number | null; confidence: string }
+    > = {};
     for (const d of result.domains) {
       scoreByDomain[d.domain.id] = {
         score: d.score,
-        confidence: d.ratedCount === 0 ? "not assessed" : `${d.ratedCount}/${d.totalCount} rated`,
+        confidence:
+          d.ratedCount === 0
+            ? "not assessed"
+            : `${d.ratedCount}/${d.totalCount} rated`,
       };
     }
-    const findingCounts: Record<string, { total: number; critical: number }> = {};
+    const findingCounts: Record<string, { total: number; critical: number }> =
+      {};
     for (const f of ws?.findings ?? []) {
       if (!f.domain_id) continue;
       const entry = findingCounts[f.domain_id] ?? { total: 0, critical: 0 };
       entry.total += 1;
-      if (f.severity === "critical" || f.classification === "primary_constraint") entry.critical += 1;
+      if (
+        f.severity === "critical" ||
+        f.classification === "primary_constraint"
+      )
+        entry.critical += 1;
       findingCounts[f.domain_id] = entry;
     }
     const openActions: Record<string, number> = {};
@@ -168,7 +208,12 @@ function CapabilityWorkspace() {
     return { scoreByDomain, findingCounts, openActions };
   }, [result.domains, ws?.findings, ws?.actions, ws?.gaps]);
 
-  if (assessment.isLoading || workspace.isLoading || library.isLoading || investigation.isLoading) {
+  if (
+    assessment.isLoading ||
+    workspace.isLoading ||
+    library.isLoading ||
+    investigation.isLoading
+  ) {
     return <EmptyState message="Loading capability investigation…" />;
   }
   if (!assessment.data || !ws || !inv) {
@@ -178,7 +223,10 @@ function CapabilityWorkspace() {
   const a = assessment.data;
   const index = STEPS.findIndex((s) => s.key === step);
   const topAction = [...ws.actions].sort((x, y) => {
-    const order = { immediate: 0, high: 1, moderate: 2, monitor: 3 } as Record<string, number>;
+    const order = { immediate: 0, high: 1, moderate: 2, monitor: 3 } as Record<
+      string,
+      number
+    >;
     return (order[x.priority] ?? 9) - (order[y.priority] ?? 9);
   })[0];
   const worstGap = inv.metrics
@@ -208,7 +256,10 @@ function CapabilityWorkspace() {
       />
 
       <div className="grid gap-6 lg:grid-cols-[240px_1fr]">
-        <nav className="no-print lg:sticky lg:top-4 lg:self-start" aria-label="Assessment progress">
+        <nav
+          className="no-print lg:sticky lg:top-4 lg:self-start"
+          aria-label="Assessment progress"
+        >
           <ol className="grid gap-1">
             {STEPS.map((s, i) => (
               <li key={s.key}>
@@ -226,7 +277,9 @@ function CapabilityWorkspace() {
                   <span
                     className={cn(
                       "flex size-6 shrink-0 items-center justify-center rounded-sm border font-display text-[11px] font-semibold",
-                      step === s.key ? "border-primary bg-primary text-primary-foreground" : "border-border text-muted-foreground",
+                      step === s.key
+                        ? "border-primary bg-primary text-primary-foreground"
+                        : "border-border text-muted-foreground",
                     )}
                   >
                     {i}
@@ -235,7 +288,9 @@ function CapabilityWorkspace() {
                     <span className="block truncate font-display text-xs font-semibold uppercase tracking-widest text-foreground">
                       {s.label}
                     </span>
-                    <span className="block truncate text-[11px] text-muted-foreground">{s.caption}</span>
+                    <span className="block truncate text-[11px] text-muted-foreground">
+                      {s.caption}
+                    </span>
                   </span>
                 </button>
               </li>
@@ -248,19 +303,32 @@ function CapabilityWorkspace() {
             <div className="grid gap-4">
               <div className="grid gap-3 md:grid-cols-4">
                 <Panel title="Primary Constraint">
-                  <p className="text-sm">{inv.constraint?.constraint_text || "Not declared"}</p>
+                  <p className="text-sm">
+                    {inv.constraint?.constraint_text || "Not declared"}
+                  </p>
                 </Panel>
                 <Panel title="Performance Gap">
-                  <p className="metric-value text-2xl text-critical">{worstGap ? worstGap.g.label : "—"}</p>
+                  <p className="metric-value text-2xl text-critical">
+                    {worstGap ? worstGap.g.label : "—"}
+                  </p>
                   <p className="text-xs text-muted-foreground">
-                    {worstGap ? metricTitle(worstGap.m, PERF_CATEGORY_LABELS[worstGap.m.category]) : "No metric"}
+                    {worstGap
+                      ? metricTitle(
+                          worstGap.m,
+                          PERF_CATEGORY_LABELS[worstGap.m.category],
+                        )
+                      : "No metric"}
                   </p>
                 </Panel>
                 <Panel title="Assessment Confidence">
-                  <p className="text-sm">{inv.constraint?.confidence ?? "Not rated"}</p>
+                  <p className="text-sm">
+                    {inv.constraint?.confidence ?? "Not rated"}
+                  </p>
                 </Panel>
                 <Panel title="Top Restoration Priority">
-                  <p className="text-sm">{topAction?.recommended_action || "None yet"}</p>
+                  <p className="text-sm">
+                    {topAction?.recommended_action || "None yet"}
+                  </p>
                 </Panel>
               </div>
               <DomainDashboard
@@ -287,19 +355,34 @@ function CapabilityWorkspace() {
           ) : null}
 
           {step === "problem" ? (
-            <IntakePanel assessmentId={assessmentId} problem={ws.problem} impacts={ws.impacts} />
+            <IntakePanel
+              assessmentId={assessmentId}
+              problem={ws.problem}
+              impacts={ws.impacts}
+            />
           ) : null}
 
           {step === "performance" ? (
-            <PerformanceGapPanel assessmentId={assessmentId} metrics={inv.metrics} />
+            <PerformanceGapPanel
+              assessmentId={assessmentId}
+              metrics={inv.metrics}
+            />
           ) : null}
 
           {step === "observe" ? (
-            <ObservationPanel assessmentId={assessmentId} observations={inv.observations} domains={domains} />
+            <ObservationPanel
+              assessmentId={assessmentId}
+              observations={inv.observations}
+              domains={domains}
+            />
           ) : null}
 
           {step === "screen" ? (
-            <DomainScreenPanel assessmentId={assessmentId} domains={domains} screens={inv.screens} />
+            <DomainScreenPanel
+              assessmentId={assessmentId}
+              domains={domains}
+              screens={inv.screens}
+            />
           ) : null}
 
           {step === "deep_dive" ? (
@@ -326,7 +409,10 @@ function CapabilityWorkspace() {
 
           {step === "constraint" ? (
             <div className="grid gap-6">
-              <ConstraintChainPanel assessmentId={assessmentId} chain={inv.chain} />
+              <ConstraintChainPanel
+                assessmentId={assessmentId}
+                chain={inv.chain}
+              />
               <PrimaryConstraintPanel
                 assessmentId={assessmentId}
                 constraint={inv.constraint}
@@ -366,7 +452,9 @@ function CapabilityWorkspace() {
               contributing={ws.findings
                 .filter((f) => f.classification === "contributing_constraint")
                 .map((f) => ({ id: f.id, title: f.title }))}
-              risks={ws.findings.filter((f) => f.classification === "risk").map((f) => ({ id: f.id, title: f.title }))}
+              risks={ws.findings
+                .filter((f) => f.classification === "risk")
+                .map((f) => ({ id: f.id, title: f.title }))}
               firstAction={topAction ?? null}
               domains={domains}
             />
@@ -401,7 +489,9 @@ function CapabilityWorkspace() {
             </p>
             <Button
               disabled={index >= STEPS.length - 1}
-              onClick={() => setStep(STEPS[Math.min(STEPS.length - 1, index + 1)]!.key)}
+              onClick={() =>
+                setStep(STEPS[Math.min(STEPS.length - 1, index + 1)]!.key)
+              }
             >
               Next <ChevronRight className="size-4" />
             </Button>

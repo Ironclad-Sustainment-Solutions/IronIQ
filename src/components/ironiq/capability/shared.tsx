@@ -18,7 +18,15 @@ import {
 import { scoreToken } from "@/lib/capability-scoring";
 import { Sparkles } from "lucide-react";
 
-type Token = "critical" | "high" | "medium" | "low" | "opportunity" | "success" | "steel" | "primary";
+type Token =
+  | "critical"
+  | "high"
+  | "medium"
+  | "low"
+  | "opportunity"
+  | "success"
+  | "steel"
+  | "primary";
 
 const classToken: Record<CapFindingClass, Token> = {
   primary_constraint: "critical",
@@ -40,11 +48,19 @@ const confidenceToken: Record<CapConfidence, Token> = {
 };
 
 export function ConfidenceBadge({ value }: { value: CapConfidence }) {
-  return <Tag token={confidenceToken[value]}>{CONFIDENCE_LABELS[value]} confidence</Tag>;
+  return (
+    <Tag token={confidenceToken[value]}>
+      {CONFIDENCE_LABELS[value]} confidence
+    </Tag>
+  );
 }
 
 export function SourceBadge({ value }: { value: CapSource }) {
-  return <Tag token={value === "ironclad_validated" ? "primary" : "steel"}>{SOURCE_LABELS[value]}</Tag>;
+  return (
+    <Tag token={value === "ironclad_validated" ? "primary" : "steel"}>
+      {SOURCE_LABELS[value]}
+    </Tag>
+  );
 }
 
 const priorityToken: Record<CapPriority, Token> = {
@@ -81,10 +97,16 @@ const validationToken: Record<CapValidationResult, Token> = {
 };
 
 export function ValidationBadge({ value }: { value: CapValidationResult }) {
-  return <Tag token={validationToken[value]}>{VALIDATION_RESULT_LABELS[value]}</Tag>;
+  return (
+    <Tag token={validationToken[value]}>{VALIDATION_RESULT_LABELS[value]}</Tag>
+  );
 }
 
-export function AiBadge({ label = "AI suggestion — requires review" }: { label?: string }) {
+export function AiBadge({
+  label = "AI suggestion — requires review",
+}: {
+  label?: string;
+}) {
   return (
     <span className="inline-flex items-center gap-1.5 rounded-sm border border-primary/40 bg-primary/10 px-2 py-0.5 font-display text-[11px] font-semibold uppercase tracking-widest text-primary">
       <Sparkles className="size-3" aria-hidden />
@@ -94,7 +116,13 @@ export function AiBadge({ label = "AI suggestion — requires review" }: { label
 }
 
 /** 0–5 rating chip. */
-export function ScoreChip({ score, size = "md" }: { score: number | null; size?: "sm" | "md" }) {
+export function ScoreChip({
+  score,
+  size = "md",
+}: {
+  score: number | null;
+  size?: "sm" | "md";
+}) {
   const token = scoreToken(score);
   const map: Record<string, string> = {
     critical: "border-critical/50 bg-critical/15 text-critical",
@@ -107,7 +135,9 @@ export function ScoreChip({ score, size = "md" }: { score: number | null; size?:
     <span
       className={cn(
         "inline-flex items-center justify-center rounded-sm border font-display font-semibold tabular-nums",
-        size === "sm" ? "h-6 min-w-9 px-1.5 text-xs" : "h-8 min-w-12 px-2 text-sm",
+        size === "sm"
+          ? "h-6 min-w-9 px-1.5 text-xs"
+          : "h-8 min-w-12 px-2 text-sm",
         map[token],
       )}
     >
@@ -120,7 +150,13 @@ export function FieldLabel({ children }: { children: ReactNode }) {
   return <span className="eyebrow block">{children}</span>;
 }
 
-export function Meter({ value, token }: { value: number | null; token: string }) {
+export function Meter({
+  value,
+  token,
+}: {
+  value: number | null;
+  token: string;
+}) {
   const map: Record<string, string> = {
     critical: "bg-critical",
     high: "bg-high",
@@ -131,7 +167,10 @@ export function Meter({ value, token }: { value: number | null; token: string })
   return (
     <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
       <div
-        className={cn("h-full rounded-full transition-[width]", map[token] ?? map['steel'])}
+        className={cn(
+          "h-full rounded-full transition-[width]",
+          map[token] ?? map["steel"],
+        )}
         style={{ width: `${Math.max(0, Math.min(100, value ?? 0))}%` }}
       />
     </div>

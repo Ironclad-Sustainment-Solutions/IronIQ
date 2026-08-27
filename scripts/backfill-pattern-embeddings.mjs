@@ -52,11 +52,17 @@ async function embedText(text) {
       Authorization: `Bearer ${apiKey}`,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ input: text, model: OPENAI_MODEL, dimensions: DIMENSIONS }),
+    body: JSON.stringify({
+      input: text,
+      model: OPENAI_MODEL,
+      dimensions: DIMENSIONS,
+    }),
   });
   if (!response.ok) {
     const body = await response.text().catch(() => "");
-    throw new Error(`OpenAI embeddings request failed (${response.status}): ${body.slice(0, 300)}`);
+    throw new Error(
+      `OpenAI embeddings request failed (${response.status}): ${body.slice(0, 300)}`,
+    );
   }
   const json = await response.json();
   const embedding = json.data?.[0]?.embedding;
@@ -74,7 +80,10 @@ function toVectorLiteral(embedding) {
 
 const client = new pg.Client({
   connectionString,
-  ssl: new URL(connectionString).hostname === "localhost" ? false : { rejectUnauthorized: false },
+  ssl:
+    new URL(connectionString).hostname === "localhost"
+      ? false
+      : { rejectUnauthorized: false },
 });
 await client.connect();
 
@@ -90,7 +99,9 @@ console.log(`Found ${rows.length} approved pattern(s) missing an embedding.`);
 let succeeded = 0;
 let failed = 0;
 for (const row of rows) {
-  const text = [row.pattern_summary, row.pattern_resolution].filter(Boolean).join("\n\n");
+  const text = [row.pattern_summary, row.pattern_resolution]
+    .filter(Boolean)
+    .join("\n\n");
   try {
     const embedding = await embedText(text);
     await client.query(

@@ -10,11 +10,36 @@
  */
 
 export const FIELD_SCALE = [
-  { value: 5, label: "Controlled", description: "Standardized, documented, measurable, repeatable, consistently supports production." },
-  { value: 4, label: "Capable", description: "Generally supports production with minor weaknesses or isolated inconsistencies." },
-  { value: 3, label: "Functional", description: "Works, but depends on manual intervention, tribal knowledge or workarounds." },
-  { value: 2, label: "Constrained", description: "Regularly limits production, quality, cost, delivery or workforce performance." },
-  { value: 1, label: "Critical", description: "Missing, unreliable, severely degraded or creating major production risk." },
+  {
+    value: 5,
+    label: "Controlled",
+    description:
+      "Standardized, documented, measurable, repeatable, consistently supports production.",
+  },
+  {
+    value: 4,
+    label: "Capable",
+    description:
+      "Generally supports production with minor weaknesses or isolated inconsistencies.",
+  },
+  {
+    value: 3,
+    label: "Functional",
+    description:
+      "Works, but depends on manual intervention, tribal knowledge or workarounds.",
+  },
+  {
+    value: 2,
+    label: "Constrained",
+    description:
+      "Regularly limits production, quality, cost, delivery or workforce performance.",
+  },
+  {
+    value: 1,
+    label: "Critical",
+    description:
+      "Missing, unreliable, severely degraded or creating major production risk.",
+  },
 ] as const;
 
 export interface FieldSection {
@@ -29,7 +54,10 @@ export interface FieldSection {
 
 const areas = (section: string, labels: string[]) =>
   labels.map((label) => ({
-    code: `${section}.${label.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "")}`,
+    code: `${section}.${label
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "_")
+      .replace(/^_|_$/g, "")}`,
     label,
   }));
 
@@ -38,7 +66,8 @@ export const FIELD_SECTIONS: FieldSection[] = [
     code: "production_operations",
     number: 3,
     title: "Production Operations",
-    question: "Can the operation consistently execute the required production plan?",
+    question:
+      "Can the operation consistently execute the required production plan?",
     areas: areas("po", [
       "Production flow",
       "Machine utilization",
@@ -67,7 +96,8 @@ export const FIELD_SECTIONS: FieldSection[] = [
     code: "tooling_fixturing",
     number: 4,
     title: "Tooling & Fixturing",
-    question: "Does production have standardized and repeatable workholding and tooling support?",
+    question:
+      "Does production have standardized and repeatable workholding and tooling support?",
     areas: areas("tf", [
       "Fixture availability",
       "Fixture standardization",
@@ -96,7 +126,8 @@ export const FIELD_SECTIONS: FieldSection[] = [
     code: "programming_digital",
     number: 5,
     title: "CNC Programming & Digital Manufacturing",
-    question: "Can digital manufacturing support production without becoming a constraint?",
+    question:
+      "Can digital manufacturing support production without becoming a constraint?",
     areas: areas("pd", [
       "Programming capacity",
       "Program standardization",
@@ -126,7 +157,8 @@ export const FIELD_SECTIONS: FieldSection[] = [
     code: "production_support",
     number: 6,
     title: "Production Support",
-    question: "Does each production cell have what it needs before work reaches the machine?",
+    question:
+      "Does each production cell have what it needs before work reaches the machine?",
     areas: areas("ps", [
       "Setup planning",
       "Work instructions",
@@ -152,7 +184,8 @@ export const FIELD_SECTIONS: FieldSection[] = [
     code: "technical_data",
     number: 7,
     title: "Technical Data",
-    question: "Can the organization clearly define how the product should be manufactured?",
+    question:
+      "Can the organization clearly define how the product should be manufactured?",
     areas: areas("td", [
       "Drawing availability",
       "Drawing accuracy",
@@ -183,7 +216,8 @@ export const FIELD_SECTIONS: FieldSection[] = [
     code: "equipment_infrastructure",
     number: 8,
     title: "Equipment & Infrastructure",
-    question: "Are machines and supporting systems capable of meeting production requirements?",
+    question:
+      "Are machines and supporting systems capable of meeting production requirements?",
     areas: areas("ei", [
       "Machine availability",
       "Machine condition",
@@ -209,7 +243,8 @@ export const FIELD_SECTIONS: FieldSection[] = [
     code: "workforce_knowledge",
     number: 9,
     title: "Workforce & Knowledge",
-    question: "Can the operation sustain capability independent of individual employees?",
+    question:
+      "Can the operation sustain capability independent of individual employees?",
     areas: areas("wk", [
       "Operator skill coverage",
       "Cross-training",
@@ -222,13 +257,16 @@ export const FIELD_SECTIONS: FieldSection[] = [
       "Supervisor support",
       "Single-point dependencies",
     ]),
-    keyQuestions: ["Which capabilities depend on one person, and what is the operational risk?"],
+    keyQuestions: [
+      "Which capabilities depend on one person, and what is the operational risk?",
+    ],
   },
   {
     code: "quality_process",
     number: 10,
     title: "Quality & Process Control",
-    question: "Is the process capable of consistently producing acceptable output?",
+    question:
+      "Is the process capable of consistently producing acceptable output?",
     areas: areas("qp", [
       "First-piece success",
       "In-process inspection",
@@ -253,7 +291,8 @@ export const FIELD_SECTIONS: FieldSection[] = [
     code: "performance_visibility",
     number: 11,
     title: "Performance Data & Visibility",
-    question: "Does management have enough information to understand actual production capability?",
+    question:
+      "Does management have enough information to understand actual production capability?",
     areas: areas("pv", [
       "Production output tracking",
       "Downtime tracking",
@@ -277,7 +316,9 @@ export const FIELD_SECTIONS: FieldSection[] = [
   },
 ];
 
-export const ALL_AREA_CODES = FIELD_SECTIONS.flatMap((s) => s.areas.map((a) => a.code));
+export const ALL_AREA_CODES = FIELD_SECTIONS.flatMap((s) =>
+  s.areas.map((a) => a.code),
+);
 
 export const IMPACT_OPTIONS = [
   "Lost production",
@@ -312,7 +353,13 @@ export const GAP_IMPACT_OPTIONS = [
 ];
 
 export const SEVERITY_OPTIONS = ["Critical", "High", "Moderate", "Low"];
-export const FREQUENCY_OPTIONS = ["Continuous", "Daily", "Weekly", "Intermittent", "One-time"];
+export const FREQUENCY_OPTIONS = [
+  "Continuous",
+  "Daily",
+  "Weekly",
+  "Intermittent",
+  "One-time",
+];
 
 export const ROOT_CAPABILITY_OPTIONS = [
   "Technical Data",
@@ -353,10 +400,14 @@ export const PRIORITY_OPTIONS = [
 ];
 
 export const PRIORITY_HELP: Record<string, string> = {
-  "Immediate Stabilization": "Actions required to stop ongoing production loss.",
-  "Capability Restoration": "Rebuild a capability that is currently missing, degraded or unreliable.",
-  "Capability Strengthening": "Improve an existing capability so it becomes repeatable, scalable and measurable.",
-  Sustainment: "Standardize, document, measure and preserve the restored capability.",
+  "Immediate Stabilization":
+    "Actions required to stop ongoing production loss.",
+  "Capability Restoration":
+    "Rebuild a capability that is currently missing, degraded or unreliable.",
+  "Capability Strengthening":
+    "Improve an existing capability so it becomes repeatable, scalable and measurable.",
+  Sustainment:
+    "Standardize, document, measure and preserve the restored capability.",
 };
 
 export interface FieldObservationRow {
@@ -416,7 +467,10 @@ export interface SectionResult {
 
 const round1 = (n: number) => Math.round(n * 10) / 10;
 
-export function sectionResult(section: FieldSection, rows: FieldObservationRow[]): SectionResult {
+export function sectionResult(
+  section: FieldSection,
+  rows: FieldObservationRow[],
+): SectionResult {
   const byArea = new Map(rows.map((r) => [r.area_code, r]));
   const values: number[] = [];
   for (const a of section.areas) {
@@ -425,7 +479,9 @@ export function sectionResult(section: FieldSection, rows: FieldObservationRow[]
     values.push(row.rating);
   }
   return {
-    score: values.length ? round1(values.reduce((x, y) => x + y, 0) / values.length) : null,
+    score: values.length
+      ? round1(values.reduce((x, y) => x + y, 0) / values.length)
+      : null,
     rated: values.length,
     total: section.areas.length,
   };
@@ -441,7 +497,9 @@ export interface FieldReviewResult {
   completionPct: number;
 }
 
-export function computeReviewScore(rows: FieldObservationRow[]): FieldReviewResult {
+export function computeReviewScore(
+  rows: FieldObservationRow[],
+): FieldReviewResult {
   const byArea = new Map(rows.map((r) => [r.area_code, r]));
   const values: number[] = [];
   let criticalCount = 0;
@@ -458,7 +516,9 @@ export function computeReviewScore(rows: FieldObservationRow[]): FieldReviewResu
     else if (row.rating === 2) constrainedCount += 1;
   }
 
-  const score = values.length ? round1(values.reduce((x, y) => x + y, 0) / values.length) : null;
+  const score = values.length
+    ? round1(values.reduce((x, y) => x + y, 0) / values.length)
+    : null;
   return {
     score,
     percent: score === null ? null : round1((score / 5) * 100),
@@ -466,6 +526,7 @@ export function computeReviewScore(rows: FieldObservationRow[]): FieldReviewResu
     total: ALL_AREA_CODES.length,
     criticalCount,
     constrainedCount,
-    completionPct: applicable === 0 ? 100 : round1((values.length / applicable) * 100),
+    completionPct:
+      applicable === 0 ? 100 : round1((values.length / applicable) * 100),
   };
 }

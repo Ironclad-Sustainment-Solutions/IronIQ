@@ -82,16 +82,41 @@ export const OPPORTUNITY_STATUSES = [
   "Closed",
 ] as const;
 
-export const COMPLEXITY_LEVELS = ["Low", "Moderate", "High", "Very high"] as const;
+export const COMPLEXITY_LEVELS = [
+  "Low",
+  "Moderate",
+  "High",
+  "Very high",
+] as const;
 
 /** Capability domains used across IronIQ, with the ISS verb for each. */
 export const CAPABILITY_DOMAINS = [
   { code: "technical_data", label: "Technical Data", verb: "Define it" },
-  { code: "digital_manufacturing", label: "Digital Manufacturing", verb: "Digitize it" },
-  { code: "production_support", label: "Production Support", verb: "Support it" },
-  { code: "production_operations", label: "Production Operations", verb: "Execute it" },
-  { code: "equipment_infrastructure", label: "Equipment & Infrastructure", verb: "Enable it" },
-  { code: "workforce_knowledge", label: "Workforce & Knowledge", verb: "Sustain it" },
+  {
+    code: "digital_manufacturing",
+    label: "Digital Manufacturing",
+    verb: "Digitize it",
+  },
+  {
+    code: "production_support",
+    label: "Production Support",
+    verb: "Support it",
+  },
+  {
+    code: "production_operations",
+    label: "Production Operations",
+    verb: "Execute it",
+  },
+  {
+    code: "equipment_infrastructure",
+    label: "Equipment & Infrastructure",
+    verb: "Enable it",
+  },
+  {
+    code: "workforce_knowledge",
+    label: "Workforce & Knowledge",
+    verb: "Sustain it",
+  },
 ] as const;
 
 /** Ordered one-tap marks for the changeover timer. None are required. */
@@ -121,16 +146,40 @@ export const CAUSE_LEVELS = [
 export const BASELINE_METRIC_PRESETS = [
   { code: "changeover_duration", name: "Changeover duration", unit: "hours" },
   { code: "time_to_first_cycle", name: "Time to first cycle", unit: "minutes" },
-  { code: "time_to_first_piece", name: "Time to acceptable first piece", unit: "minutes" },
-  { code: "first_piece_accept_rate", name: "First-piece acceptance rate", unit: "%" },
-  { code: "setup_adjustments", name: "Setup adjustments", unit: "count / setup" },
-  { code: "assistance_events", name: "External/operator assistance events", unit: "count / week" },
+  {
+    code: "time_to_first_piece",
+    name: "Time to acceptable first piece",
+    unit: "minutes",
+  },
+  {
+    code: "first_piece_accept_rate",
+    name: "First-piece acceptance rate",
+    unit: "%",
+  },
+  {
+    code: "setup_adjustments",
+    name: "Setup adjustments",
+    unit: "count / setup",
+  },
+  {
+    code: "assistance_events",
+    name: "External/operator assistance events",
+    unit: "count / week",
+  },
   { code: "expert_dependency", name: "Expert dependency", unit: "% of setups" },
   { code: "scrap", name: "Scrap", unit: "pieces / week" },
   { code: "rework", name: "Rework", unit: "pieces / week" },
-  { code: "lost_machine_hours", name: "Lost machine hours", unit: "hours / week" },
+  {
+    code: "lost_machine_hours",
+    name: "Lost machine hours",
+    unit: "hours / week",
+  },
   { code: "events_per_week", name: "Events per week", unit: "count / week" },
-  { code: "annual_impact", name: "Estimated annual production impact", unit: "hours / year" },
+  {
+    code: "annual_impact",
+    name: "Estimated annual production impact",
+    unit: "hours / year",
+  },
 ] as const;
 
 export const PILOT_SCORES = [
@@ -147,7 +196,13 @@ export const DAY_FOCUS = [
   {
     key: "day1",
     label: "Day 1 — Establish reality",
-    focus: ["Observe", "Time events", "Capture delays", "Gather evidence", "Avoid conclusions"],
+    focus: [
+      "Observe",
+      "Time events",
+      "Capture delays",
+      "Gather evidence",
+      "Avoid conclusions",
+    ],
     indicators: [
       "Candidate parts selected",
       "Machines identified",
@@ -393,7 +448,11 @@ export interface PilotMetricRow {
 /* ------------------------------ calculations ------------------------------ */
 
 const minutesBetween = (a?: string | null, b?: string | null) =>
-  a && b ? Math.round(((new Date(b).getTime() - new Date(a).getTime()) / 60000) * 10) / 10 : null;
+  a && b
+    ? Math.round(
+        ((new Date(b).getTime() - new Date(a).getTime()) / 60000) * 10,
+      ) / 10
+    : null;
 
 export interface ChangeoverDurations {
   totalChangeover: number | null;
@@ -405,11 +464,19 @@ export interface ChangeoverDurations {
 
 /** Derive changeover durations from whichever marks the assessor captured. */
 export function computeDurations(marks: EventMarkRow[]): ChangeoverDurations {
-  const at = (code: string) => marks.find((m) => m.mark_code === code)?.marked_at ?? null;
-  const start = at("prev_stopped") ?? at("fixture_removal") ?? at("fixture_install");
+  const at = (code: string) =>
+    marks.find((m) => m.mark_code === code)?.marked_at ?? null;
+  const start =
+    at("prev_stopped") ?? at("fixture_removal") ?? at("fixture_install");
   return {
-    totalChangeover: minutesBetween(start, at("production_released") ?? at("first_piece_accepted")),
-    setupTime: minutesBetween(start, at("datum_set") ?? at("program_loaded") ?? at("tooling_complete")),
+    totalChangeover: minutesBetween(
+      start,
+      at("production_released") ?? at("first_piece_accepted"),
+    ),
+    setupTime: minutesBetween(
+      start,
+      at("datum_set") ?? at("program_loaded") ?? at("tooling_complete"),
+    ),
     timeToFirstCycle: minutesBetween(start, at("first_cycle")),
     firstPieceQualification: minutesBetween(
       at("first_piece") ?? at("first_cycle"),
@@ -448,9 +515,9 @@ export function lossByCategory(delays: DelayRow[]) {
 
 /** Pilot decision aid — a score out of 35. Never an automatic selection. */
 export function pilotScore(pilot: Partial<PilotRow>) {
-  const values = PILOT_SCORES.map((s) => pilot[s.key] as number | null | undefined).filter(
-    (v): v is number => typeof v === "number",
-  );
+  const values = PILOT_SCORES.map(
+    (s) => pilot[s.key] as number | null | undefined,
+  ).filter((v): v is number => typeof v === "number");
   return {
     total: values.reduce((a, b) => a + b, 0),
     max: 35,
@@ -485,29 +552,50 @@ export function computeRoi(pilot: Partial<PilotRow>): RoiResult {
     numOrNull(pilot.labor_rate),
   ].filter((v): v is number => v !== null);
   const hourlyValue = rates.length ? rates.reduce((a, b) => a + b, 0) : null;
-  if (hourlyValue === null) missing.push("An hourly cost basis (production value, burden or labor rate)");
+  if (hourlyValue === null)
+    missing.push(
+      "An hourly cost basis (production value, burden or labor rate)",
+    );
 
   const cost = numOrNull(pilot.iss_implementation_cost);
   if (cost === null) missing.push("ISS implementation cost");
 
   const annualHours = hoursPerWeek === null ? null : round2(hoursPerWeek * 52);
   const annualValue =
-    annualHours === null || hourlyValue === null ? null : round2(annualHours * hourlyValue);
-  const weeklyValue = hoursPerWeek === null || hourlyValue === null ? null : hoursPerWeek * hourlyValue;
+    annualHours === null || hourlyValue === null
+      ? null
+      : round2(annualHours * hourlyValue);
+  const weeklyValue =
+    hoursPerWeek === null || hourlyValue === null
+      ? null
+      : hoursPerWeek * hourlyValue;
   const paybackWeeks =
-    cost === null || !weeklyValue || weeklyValue <= 0 ? null : round2(cost / weeklyValue);
+    cost === null || !weeklyValue || weeklyValue <= 0
+      ? null
+      : round2(cost / weeklyValue);
   const roiPercent =
     cost === null || cost <= 0 || annualValue === null
       ? null
       : round2(((annualValue - cost) / cost) * 100);
 
-  return { hoursPerWeek, annualHours, hourlyValue, annualValue, cost, paybackWeeks, roiPercent, missing };
+  return {
+    hoursPerWeek,
+    annualHours,
+    hourlyValue,
+    annualValue,
+    cost,
+    paybackWeeks,
+    roiPercent,
+    missing,
+  };
 }
 
 export function metricDelta(before: number | null, after: number | null) {
-  if (before === null || after === null) return { difference: null, percent: null };
+  if (before === null || after === null)
+    return { difference: null, percent: null };
   const difference = round2(after - before);
-  const percent = before === 0 ? null : round2((difference / Math.abs(before)) * 100);
+  const percent =
+    before === 0 ? null : round2((difference / Math.abs(before)) * 100);
   return { difference, percent };
 }
 

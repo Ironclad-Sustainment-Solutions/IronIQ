@@ -1,5 +1,9 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { PageHeader, Panel, EmptyState } from "@/components/ironiq/layout-primitives";
+import {
+  PageHeader,
+  Panel,
+  EmptyState,
+} from "@/components/ironiq/layout-primitives";
 import { Badge } from "@/components/ui/badge";
 import {
   useMachineProfiles,
@@ -21,7 +25,8 @@ export const Route = createFileRoute("/_authenticated/production/libraries")({
       { property: "og:title", content: "Machine & Tooling Libraries — IronIQ" },
       {
         property: "og:description",
-        content: "Approved machines, controllers, post processors, tooling and programmer capacity.",
+        content:
+          "Approved machines, controllers, post processors, tooling and programmer capacity.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -50,17 +55,29 @@ function Libraries() {
             <EmptyState message="No machine profiles yet." />
           ) : (
             <Table
-              head={["Machine", "Controller", "Axes", "Travel X/Y/Z", "Post processors", "Status"]}
+              head={[
+                "Machine",
+                "Controller",
+                "Axes",
+                "Travel X/Y/Z",
+                "Post processors",
+                "Status",
+              ]}
               rows={machines.map((m) => [
                 `${m.make} ${m.model}`,
                 m.controller,
                 String(m.axis_count),
-                [m.travel_x, m.travel_y, m.travel_z].map((v) => v ?? "—").join(" / "),
+                [m.travel_x, m.travel_y, m.travel_z]
+                  .map((v) => v ?? "—")
+                  .join(" / "),
                 m.post_processors.join(", ") || "—",
                 m.is_supported ? (
                   <Badge variant="outline">Supported</Badge>
                 ) : (
-                  <Badge variant="outline" className="border-destructive/50 text-destructive">
+                  <Badge
+                    variant="outline"
+                    className="border-destructive/50 text-destructive"
+                  >
                     Unsupported
                   </Badge>
                 ),
@@ -74,7 +91,13 @@ function Libraries() {
             <EmptyState message="No post processors registered." />
           ) : (
             <Table
-              head={["Name", "Controller", "Machine family", "Version", "Approved"]}
+              head={[
+                "Name",
+                "Controller",
+                "Machine family",
+                "Version",
+                "Approved",
+              ]}
               rows={posts.map((p) => [
                 p.name,
                 p.controller,
@@ -91,7 +114,15 @@ function Libraries() {
             <EmptyState message="No tooling registered." />
           ) : (
             <Table
-              head={["Tool #", "Description", "Type", "Ø", "Flutes", "Stick-out", "Approved"]}
+              head={[
+                "Tool #",
+                "Description",
+                "Type",
+                "Ø",
+                "Flutes",
+                "Stick-out",
+                "Approved",
+              ]}
               rows={tools.map((t) => [
                 t.tool_number ?? "—",
                 t.description,
@@ -113,7 +144,14 @@ function Libraries() {
             <EmptyState message="No programmer capability records." />
           ) : (
             <Table
-              head={["Programmer", "Machine makes", "Controllers", "Max complexity", "Max active jobs", "Available"]}
+              head={[
+                "Programmer",
+                "Machine makes",
+                "Controllers",
+                "Max complexity",
+                "Max active jobs",
+                "Available",
+              ]}
               rows={capabilities.map((c) => [
                 c.programmer_id.slice(0, 8),
                 c.machine_makes.join(", ") || "—",

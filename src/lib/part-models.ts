@@ -9,7 +9,9 @@ const MESHES: Record<string, string> = {
   "MB-4471_revC.step": mb4471.url,
 };
 
-export function meshUrlForFile(fileName: string | null | undefined): string | null {
+export function meshUrlForFile(
+  fileName: string | null | undefined,
+): string | null {
   if (!fileName) return null;
   return MESHES[fileName] ?? null;
 }

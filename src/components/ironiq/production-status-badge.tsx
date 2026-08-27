@@ -17,7 +17,13 @@ const STAGE_CLASS: Record<ProductionStage, string> = {
   Feedback: "border-chart-4/40 bg-chart-4/10 text-chart-4",
 };
 
-export function JobStatusBadge({ status, className }: { status: JobStatus; className?: string }) {
+export function JobStatusBadge({
+  status,
+  className,
+}: {
+  status: JobStatus;
+  className?: string;
+}) {
   const meta = JOB_STATUS_META[status];
   const blocking = BLOCKING_STATUSES.includes(status);
   return (
@@ -25,7 +31,9 @@ export function JobStatusBadge({ status, className }: { status: JobStatus; class
       variant="outline"
       className={cn(
         "whitespace-nowrap font-mono text-[10px] uppercase tracking-wider",
-        blocking ? "border-destructive/50 bg-destructive/10 text-destructive" : STAGE_CLASS[meta.stage],
+        blocking
+          ? "border-destructive/50 bg-destructive/10 text-destructive"
+          : STAGE_CLASS[meta.stage],
         className,
       )}
     >

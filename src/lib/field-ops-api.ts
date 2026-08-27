@@ -75,23 +75,27 @@ function useRowMutations<T extends { id: string }>(
       invalidate();
       toast.success(labels.created);
     },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Could not save"),
+    onError: (e) =>
+      toast.error(e instanceof Error ? e.message : "Could not save"),
   });
 
   const update = useMutation({
     mutationFn: async ({ id, values }: { id: string; values: Partial<T> }) =>
       fn.rowUpdate({ data: { table: tableName, id, values } }),
     onSuccess: invalidate,
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Could not save"),
+    onError: (e) =>
+      toast.error(e instanceof Error ? e.message : "Could not save"),
   });
 
   const remove = useMutation({
-    mutationFn: async (id: string) => fn.rowRemove({ data: { table: tableName, id } }),
+    mutationFn: async (id: string) =>
+      fn.rowRemove({ data: { table: tableName, id } }),
     onSuccess: () => {
       invalidate();
       if (labels.deleted) toast.success(labels.deleted);
     },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Could not delete"),
+    onError: (e) =>
+      toast.error(e instanceof Error ? e.message : "Could not delete"),
   });
 
   return { add, update, remove };
@@ -104,10 +108,15 @@ export const useEventMutations = (fieldId: string) =>
   });
 
 export const useDelayMutations = (fieldId: string) =>
-  useRowMutations<DelayRow>(fieldId, "field_delays", { created: "Delay captured", deleted: "Delay removed" });
+  useRowMutations<DelayRow>(fieldId, "field_delays", {
+    created: "Delay captured",
+    deleted: "Delay removed",
+  });
 
 export const useCauseMutations = (fieldId: string) =>
-  useRowMutations<CauseNodeRow>(fieldId, "field_cause_nodes", { created: "Step added" });
+  useRowMutations<CauseNodeRow>(fieldId, "field_cause_nodes", {
+    created: "Step added",
+  });
 
 export const useEvidenceItemMutations = (fieldId: string) =>
   useRowMutations<EvidenceItemRow>(fieldId, "field_evidence_items", {
@@ -116,46 +125,75 @@ export const useEvidenceItemMutations = (fieldId: string) =>
   });
 
 export const useSmeMutations = (fieldId: string) =>
-  useRowMutations<SmeDependencyRow>(fieldId, "field_sme_dependencies", { created: "Expert profile added" });
+  useRowMutations<SmeDependencyRow>(fieldId, "field_sme_dependencies", {
+    created: "Expert profile added",
+  });
 
 export const useBaselineMetricMutations = (fieldId: string) =>
-  useRowMutations<BaselineMetricRow>(fieldId, "field_baseline_metrics", { created: "Metric added" });
+  useRowMutations<BaselineMetricRow>(fieldId, "field_baseline_metrics", {
+    created: "Metric added",
+  });
 
 export const usePilotMutations = (fieldId: string) =>
-  useRowMutations<PilotRow>(fieldId, "field_pilots", { created: "Pilot created" });
+  useRowMutations<PilotRow>(fieldId, "field_pilots", {
+    created: "Pilot created",
+  });
 
 export const useOpportunityMutations = (fieldId: string) =>
-  useRowMutations<OpportunityRow>(fieldId, "field_opportunities", { created: "Opportunity added" });
+  useRowMutations<OpportunityRow>(fieldId, "field_opportunities", {
+    created: "Opportunity added",
+  });
 
 /** Pilot measurements keyed by pilot id, usable across every pilot on the page. */
 export function usePilotMetricActions(fieldId: string) {
   const invalidate = useInvalidate(fieldId);
-  const wrap = <T,>(run: (v: T) => Promise<void>) => ({
+  const wrap = <T>(run: (v: T) => Promise<void>) => ({
     run: async (v: T) => {
       try {
         await run(v);
         invalidate();
       } catch (e) {
-        toast.error(e instanceof Error ? e.message : "Could not save measurement");
+        toast.error(
+          e instanceof Error ? e.message : "Could not save measurement",
+        );
       }
     },
   });
 
-  const add = wrap(async ({ pilotId, values }: { pilotId: string; values: Partial<PilotMetricRow> }) => {
-    await fn.rowAdd({
-      data: { table: "field_pilot_metrics", parentColumn: "pilot_id", parentId: pilotId, values },
-    });
-  });
-  const update = wrap(async ({ id, values }: { id: string; values: Partial<PilotMetricRow> }) => {
-    await fn.rowUpdate({ data: { table: "field_pilot_metrics", id, values } });
-  });
+  const add = wrap(
+    async ({
+      pilotId,
+      values,
+    }: {
+      pilotId: string;
+      values: Partial<PilotMetricRow>;
+    }) => {
+      await fn.rowAdd({
+        data: {
+          table: "field_pilot_metrics",
+          parentColumn: "pilot_id",
+          parentId: pilotId,
+          values,
+        },
+      });
+    },
+  );
+  const update = wrap(
+    async ({ id, values }: { id: string; values: Partial<PilotMetricRow> }) => {
+      await fn.rowUpdate({
+        data: { table: "field_pilot_metrics", id, values },
+      });
+    },
+  );
   const remove = wrap(async (id: string) => {
     await fn.rowRemove({ data: { table: "field_pilot_metrics", id } });
   });
 
   return {
-    add: (pilotId: string, values: Partial<PilotMetricRow>) => void add.run({ pilotId, values }),
-    update: (id: string, values: Partial<PilotMetricRow>) => void update.run({ id, values }),
+    add: (pilotId: string, values: Partial<PilotMetricRow>) =>
+      void add.run({ pilotId, values }),
+    update: (id: string, values: Partial<PilotMetricRow>) =>
+      void update.run({ id, values }),
     remove: (id: string) => void remove.run(id),
   };
 }
@@ -202,13 +240,18 @@ export function useEventMarks(fieldId: string) {
         },
       }),
     onSuccess: invalidate,
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Could not record timestamp"),
+    onError: (e) =>
+      toast.error(
+        e instanceof Error ? e.message : "Could not record timestamp",
+      ),
   });
 
   const clear = useMutation({
-    mutationFn: async (id: string) => fn.rowRemove({ data: { table: "field_event_marks", id } }),
+    mutationFn: async (id: string) =>
+      fn.rowRemove({ data: { table: "field_event_marks", id } }),
     onSuccess: invalidate,
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Could not clear timestamp"),
+    onError: (e) =>
+      toast.error(e instanceof Error ? e.message : "Could not clear timestamp"),
   });
 
   return { mark, clear };

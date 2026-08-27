@@ -108,7 +108,7 @@ exhaustive one.
    psql "$DATABASE_URL" -f db/schema_additions_user_approval.sql
    psql "$DATABASE_URL" -f db/grant_connection_role.sql -v conn_user="$(psql "$DATABASE_URL" -tAc 'SELECT current_user')"
    ```
-   (`$DATABASE_URL` is the *external* connection string from Render's
+   (`$DATABASE_URL` is the _external_ connection string from Render's
    dashboard Connect tab — the internal one the web service uses won't work
    from your machine. The intelligence-layer file requires the `vector`
    extension to be enabled on the plan/instance you're deploying to —

@@ -34,7 +34,12 @@ import {
 import { cn } from "@/lib/utils";
 
 const timeLabel = (iso?: string | null) =>
-  iso ? new Date(iso).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "—";
+  iso
+    ? new Date(iso).toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+      })
+    : "—";
 
 export function EventsTab({
   events,
@@ -71,7 +76,9 @@ export function EventsTab({
   onUpdateEvidence: (id: string, values: Partial<EvidenceItemRow>) => void;
   onDeleteEvidence: (id: string) => void;
 }) {
-  const [selectedId, setSelectedId] = useState<string | null>(events[0]?.id ?? null);
+  const [selectedId, setSelectedId] = useState<string | null>(
+    events[0]?.id ?? null,
+  );
   const active = events.find((e) => e.id === selectedId) ?? events[0] ?? null;
   const activeMarks = useMemo(
     () => marks.filter((m) => m.event_id === active?.id),
@@ -111,7 +118,10 @@ export function EventsTab({
         <EmptyState message="No production events captured yet. Start one above when a changeover or interruption begins." />
       ) : (
         <>
-          <Panel title="Captured events" subtitle="Select an event to time it and record delays">
+          <Panel
+            title="Captured events"
+            subtitle="Select an event to time it and record delays"
+          >
             <div className="grid gap-2">
               {events.map((e) => {
                 const eMarks = marks.filter((m) => m.event_id === e.id);
@@ -132,17 +142,21 @@ export function EventsTab({
                     )}
                   >
                     <div className="flex flex-wrap items-center gap-2">
-                      <Badge variant="outline" className="text-[10px] uppercase tracking-wider">
+                      <Badge
+                        variant="outline"
+                        className="text-[10px] uppercase tracking-wider"
+                      >
                         {e.event_type}
                       </Badge>
                       <span className="text-sm font-semibold text-foreground">
-                        {[e.machine, e.part].filter(Boolean).join(" · ") || "Unassigned machine"}
+                        {[e.machine, e.part].filter(Boolean).join(" · ") ||
+                          "Unassigned machine"}
                       </span>
                     </div>
                     <p className="mt-1 text-xs text-muted-foreground">
                       {new Date(e.occurred_at).toLocaleString()} · Total{" "}
-                      {formatMinutes(d.totalChangeover)} · Delays {formatMinutes(lost || null)} ·{" "}
-                      {eMarks.length} timestamps
+                      {formatMinutes(d.totalChangeover)} · Delays{" "}
+                      {formatMinutes(lost || null)} · {eMarks.length} timestamps
                     </p>
                   </button>
                 );
@@ -174,7 +188,9 @@ export function EventsTab({
                     label="Machine"
                     value={active.machine}
                     disabled={locked}
-                    onCommit={(machine) => onUpdateEvent(active.id, { machine })}
+                    onCommit={(machine) =>
+                      onUpdateEvent(active.id, { machine })
+                    }
                   />
                   <AutoField
                     label="Part number"
@@ -186,7 +202,9 @@ export function EventsTab({
                     label="Operator"
                     value={active.operator}
                     disabled={locked}
-                    onCommit={(operator) => onUpdateEvent(active.id, { operator })}
+                    onCommit={(operator) =>
+                      onUpdateEvent(active.id, { operator })
+                    }
                   />
                   <AutoField
                     label="Shift"
@@ -198,43 +216,57 @@ export function EventsTab({
                     label="Previous job"
                     value={active.previous_job}
                     disabled={locked}
-                    onCommit={(previous_job) => onUpdateEvent(active.id, { previous_job })}
+                    onCommit={(previous_job) =>
+                      onUpdateEvent(active.id, { previous_job })
+                    }
                   />
                   <AutoField
                     label="Incoming job"
                     value={active.incoming_job}
                     disabled={locked}
-                    onCommit={(incoming_job) => onUpdateEvent(active.id, { incoming_job })}
+                    onCommit={(incoming_job) =>
+                      onUpdateEvent(active.id, { incoming_job })
+                    }
                   />
                   <AutoField
                     label="Fixture"
                     value={active.fixture}
                     disabled={locked}
-                    onCommit={(fixture) => onUpdateEvent(active.id, { fixture })}
+                    onCommit={(fixture) =>
+                      onUpdateEvent(active.id, { fixture })
+                    }
                   />
                   <AutoField
                     label="Program"
                     value={active.program}
                     disabled={locked}
-                    onCommit={(program) => onUpdateEvent(active.id, { program })}
+                    onCommit={(program) =>
+                      onUpdateEvent(active.id, { program })
+                    }
                   />
                   <AutoField
                     label="Tooling package"
                     value={active.tooling_package}
                     disabled={locked}
-                    onCommit={(tooling_package) => onUpdateEvent(active.id, { tooling_package })}
+                    onCommit={(tooling_package) =>
+                      onUpdateEvent(active.id, { tooling_package })
+                    }
                   />
                   <AutoField
                     label="Material / casting"
                     value={active.material}
                     disabled={locked}
-                    onCommit={(material) => onUpdateEvent(active.id, { material })}
+                    onCommit={(material) =>
+                      onUpdateEvent(active.id, { material })
+                    }
                   />
                   <AutoField
                     label="Work order"
                     value={active.work_order}
                     disabled={locked}
-                    onCommit={(work_order) => onUpdateEvent(active.id, { work_order })}
+                    onCommit={(work_order) =>
+                      onUpdateEvent(active.id, { work_order })
+                    }
                   />
                 </div>
                 <div className="mt-3">
@@ -256,17 +288,25 @@ export function EventsTab({
                 <div className="mb-3 flex items-center gap-3">
                   <Clock className="size-4 text-muted-foreground" aria-hidden />
                   <span className="eyebrow">Running since first mark</span>
-                  <LiveTimer startedAt={activeMarks[0]?.marked_at ?? active.timer_started_at} />
+                  <LiveTimer
+                    startedAt={
+                      activeMarks[0]?.marked_at ?? active.timer_started_at
+                    }
+                  />
                 </div>
                 <div className="grid gap-2 sm:grid-cols-2">
                   {CHANGEOVER_MARKS.map((m) => {
-                    const existing = activeMarks.find((x) => x.mark_code === m.code);
+                    const existing = activeMarks.find(
+                      (x) => x.mark_code === m.code,
+                    );
                     return (
                       <div
                         key={m.code}
                         className={cn(
                           "flex items-center justify-between gap-2 rounded-sm border px-3 py-2",
-                          existing ? "border-primary/50 bg-primary/10" : "border-border bg-card",
+                          existing
+                            ? "border-primary/50 bg-primary/10"
+                            : "border-border bg-card",
                         )}
                       >
                         <button
@@ -296,9 +336,18 @@ export function EventsTab({
                   })}
                 </div>
                 <div className="mt-4 grid gap-2 sm:grid-cols-3 lg:grid-cols-5">
-                  <StatTile label="Total changeover" value={formatMinutes(durations.totalChangeover)} />
-                  <StatTile label="Setup time" value={formatMinutes(durations.setupTime)} />
-                  <StatTile label="To first cycle" value={formatMinutes(durations.timeToFirstCycle)} />
+                  <StatTile
+                    label="Total changeover"
+                    value={formatMinutes(durations.totalChangeover)}
+                  />
+                  <StatTile
+                    label="Setup time"
+                    value={formatMinutes(durations.setupTime)}
+                  />
+                  <StatTile
+                    label="To first cycle"
+                    value={formatMinutes(durations.timeToFirstCycle)}
+                  />
                   <StatTile
                     label="First-piece qualification"
                     value={formatMinutes(durations.firstPieceQualification)}
@@ -328,7 +377,9 @@ export function EventsTab({
                 delays={eventDelays}
                 locked={locked}
                 context={{ machine: active.machine, part: active.part }}
-                onAdd={(values) => onAddDelay({ ...values, event_id: active.id })}
+                onAdd={(values) =>
+                  onAddDelay({ ...values, event_id: active.id })
+                }
                 onUpdate={onUpdateDelay}
                 onDelete={onDeleteDelay}
               />
@@ -350,7 +401,10 @@ export function EventsTab({
             </>
           ) : null}
 
-          <Panel title="Loss summary" subtitle="Where time is being lost across every captured event">
+          <Panel
+            title="Loss summary"
+            subtitle="Where time is being lost across every captured event"
+          >
             {losses.length === 0 ? (
               <EmptyState message="No delays captured yet." />
             ) : (
@@ -360,9 +414,12 @@ export function EventsTab({
                     key={l.category}
                     className="flex items-center justify-between gap-3 rounded-sm border border-border px-3 py-2"
                   >
-                    <span className="text-sm font-medium text-foreground">{l.category}</span>
+                    <span className="text-sm font-medium text-foreground">
+                      {l.category}
+                    </span>
                     <span className="font-mono text-sm text-muted-foreground">
-                      {formatMinutes(l.minutes)} · {l.count} event{l.count === 1 ? "" : "s"}
+                      {formatMinutes(l.minutes)} · {l.count} event
+                      {l.count === 1 ? "" : "s"}
                     </span>
                   </div>
                 ))}
@@ -440,11 +497,15 @@ export function DelayPanel({
                           const ended = new Date().toISOString();
                           const minutes =
                             Math.round(
-                              ((new Date(ended).getTime() - new Date(d.started_at as string).getTime()) /
+                              ((new Date(ended).getTime() -
+                                new Date(d.started_at as string).getTime()) /
                                 60000) *
                                 10,
                             ) / 10;
-                          onUpdate(d.id, { ended_at: ended, minutes_lost: minutes });
+                          onUpdate(d.id, {
+                            ended_at: ended,
+                            minutes_lost: minutes,
+                          });
                         }}
                       >
                         Stop delay
@@ -462,7 +523,9 @@ export function DelayPanel({
                   value={d.loss_category}
                   disabled={locked}
                   columns={3}
-                  onChange={(loss_category) => onUpdate(d.id, { loss_category })}
+                  onChange={(loss_category) =>
+                    onUpdate(d.id, { loss_category })
+                  }
                 />
                 <NumberField
                   label="Minutes lost"
@@ -476,14 +539,18 @@ export function DelayPanel({
                   value={d.what_happened}
                   multiline
                   disabled={locked}
-                  onCommit={(what_happened) => onUpdate(d.id, { what_happened })}
+                  onCommit={(what_happened) =>
+                    onUpdate(d.id, { what_happened })
+                  }
                 />
                 <div className="grid gap-3 sm:grid-cols-2">
                   <AutoField
                     label="Person involved"
                     value={d.person_involved}
                     disabled={locked}
-                    onCommit={(person_involved) => onUpdate(d.id, { person_involved })}
+                    onCommit={(person_involved) =>
+                      onUpdate(d.id, { person_involved })
+                    }
                   />
                   <AutoField
                     label="Machine"

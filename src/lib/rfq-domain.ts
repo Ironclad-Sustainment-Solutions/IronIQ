@@ -77,7 +77,8 @@ export const MACHINE_TYPE_LABELS: Record<MachineType, string> = {
   other: "Other",
 };
 
-export type EstimateConfidence = "high" | "moderate" | "low" | "manual_required";
+export type EstimateConfidence =
+  "high" | "moderate" | "low" | "manual_required";
 export const CONFIDENCE_LABELS: Record<EstimateConfidence, string> = {
   high: "High",
   moderate: "Moderate",
@@ -168,7 +169,10 @@ export const FILE_KIND_LABELS: Record<RfqFileKind, string> = {
 };
 
 /** Extension -> bucket + logical kind. Enforced again server-side on upload. */
-export const ACCEPTED_EXTENSIONS: Record<string, { kind: RfqFileKind; bucket: string }> = {
+export const ACCEPTED_EXTENSIONS: Record<
+  string,
+  { kind: RfqFileKind; bucket: string }
+> = {
   step: { kind: "model_3d", bucket: "rfq-source-models" },
   stp: { kind: "model_3d", bucket: "rfq-source-models" },
   x_t: { kind: "model_3d", bucket: "rfq-source-models" },
@@ -202,7 +206,10 @@ export function classifyFile(name: string) {
 export function formatBytes(bytes: number) {
   if (!bytes) return "0 B";
   const units = ["B", "KB", "MB", "GB"];
-  const i = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1);
+  const i = Math.min(
+    Math.floor(Math.log(bytes) / Math.log(1024)),
+    units.length - 1,
+  );
   return `${(bytes / 1024 ** i).toFixed(i === 0 ? 0 : 1)} ${units[i]}`;
 }
 
@@ -521,9 +528,12 @@ export interface ActualJobResult {
 /** Release gate — an NC program is never released just because a file exists. */
 export function releaseBlockers(wo: ProgrammingWorkOrder): string[] {
   const blockers: string[] = [];
-  if (!wo.programmer_approved_by) blockers.push("Programmer approval is required.");
-  if (!wo.simulation_recorded) blockers.push("A simulation result must be recorded.");
-  if (!wo.post_processor_confirmed) blockers.push("Post processor must be confirmed.");
+  if (!wo.programmer_approved_by)
+    blockers.push("Programmer approval is required.");
+  if (!wo.simulation_recorded)
+    blockers.push("A simulation result must be recorded.");
+  if (!wo.post_processor_confirmed)
+    blockers.push("Post processor must be confirmed.");
   if (!wo.machine_confirmed) blockers.push("Machine must be confirmed.");
   if (!wo.revision_confirmed) blockers.push("Part revision must be confirmed.");
   if (!wo.final_approver) blockers.push("A final approver must sign off.");

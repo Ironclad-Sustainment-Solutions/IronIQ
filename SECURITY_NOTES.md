@@ -22,8 +22,8 @@ lib/xlsx/xform/sheet/cf-ext/cf-rule-ext-xform.js:const {v4: uuidv4} = require('u
 ```
 
 `exceljs` only calls `uuid.v4()`, with no `buf` argument, anywhere in its
-source. The flagged CVE is specific to `v3`/`v5`/`v6` *when a caller
-supplies an external buffer* -- `v4()` isn't affected, and nothing in
+source. The flagged CVE is specific to `v3`/`v5`/`v6` _when a caller
+supplies an external buffer_ -- `v4()` isn't affected, and nothing in
 `exceljs` passes a buffer at all. Downgrading a major version to silence
 a warning about a code path that isn't exercised is pure regression risk
 for zero real benefit.

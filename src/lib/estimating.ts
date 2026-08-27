@@ -21,7 +21,12 @@ export interface EstimateInput {
   machine: Machine | null;
   material: Material | null;
   geometry: GeometryResult | null;
-  stock: { a: number | null; b: number | null; c: number | null; units: string } | null;
+  stock: {
+    a: number | null;
+    b: number | null;
+    c: number | null;
+    units: string;
+  } | null;
   customerSuppliedMaterial: boolean;
   hasDrawing: boolean;
   hasModel: boolean;
@@ -138,30 +143,45 @@ export function calculateEstimate(input: EstimateInput): EstimateOutput {
   const progComplexity = input.material?.programming_complexity_factor ?? 1;
   const programmingHours = input.existingProgram
     ? round(BASE_PROGRAMMING_HOURS[machineType] * 0.25, 2)
-    : round(BASE_PROGRAMMING_HOURS[machineType] * complexity * progComplexity, 2);
+    : round(
+        BASE_PROGRAMMING_HOURS[machineType] * complexity * progComplexity,
+        2,
+      );
   const programmingCost = programmingHours * progRate;
 
   // ---- Setup --------------------------------------------------------------
-  const setupCount = geo?.suggested_setups ?? (COMPLEX_MACHINES.includes(machineType) ? 2 : 1);
+  const setupCount =
+    geo?.suggested_setups ?? (COMPLEX_MACHINES.includes(machineType) ? 2 : 1);
   const setupHours = round(setupCount * BASE_SETUP_HOURS[machineType], 2);
   const setupCost = setupHours * setupRate;
 
   // ---- Cycle time ---------------------------------------------------------
   const removalRatio = geo?.material_removal_ratio ?? 0.5;
   const featureMinutes = geo
-    ? geo.hole_count * 0.6 + geo.pocket_count * 3.5 + geo.slot_count * 2.2 + geo.undercuts * 6
+    ? geo.hole_count * 0.6 +
+      geo.pocket_count * 3.5 +
+      geo.slot_count * 2.2 +
+      geo.undercuts * 6
     : 12;
   const volumeMinutes = stockVolume * removalRatio * 0.9;
   const materialFactor = input.material?.cycle_time_factor ?? 1;
   const cycleTimeMinutes = round(
-    Math.max(3, (featureMinutes + volumeMinutes) * materialFactor * (setupCount > 1 ? 1.1 : 1)),
+    Math.max(
+      3,
+      (featureMinutes + volumeMinutes) *
+        materialFactor *
+        (setupCount > 1 ? 1.1 : 1),
+    ),
     2,
   );
   const machineBurdenCost = (cycleTimeMinutes / 60) * burdenRate * qty;
 
   // ---- Tooling ------------------------------------------------------------
   const toolWear = input.material?.tool_wear_factor ?? 1;
-  const toolingConsumption = round((cycleTimeMinutes / 60) * 9.5 * toolWear * qty, 2);
+  const toolingConsumption = round(
+    (cycleTimeMinutes / 60) * 9.5 * toolWear * qty,
+    2,
+  );
   const specialTooling = geo && geo.undercuts > 0 ? 240 : 0;
   const fixtureCost = input.existingFixture ? 0 : setupCount * 180;
 
@@ -171,18 +191,27 @@ export function calculateEstimate(input: EstimateInput): EstimateOutput {
     (input.materialCertification ? 45 : 0) +
     qty * (input.criticalTolerances ? 4.5 : 1.5);
   const outsideProcessing =
-    (input.heatTreatment ? 120 + qty * 6 : 0) + (input.coating ? 95 + qty * 5 : 0);
+    (input.heatTreatment ? 120 + qty * 6 : 0) +
+    (input.coating ? 95 + qty * 5 : 0);
   const packagingCost = (input.specialPackaging ? 85 : 25) + qty * 1.2;
   const freightCost = 65 + stockWeight * qty * 0.35;
   const expediteBase =
-    rawMaterialCost + wasteCost + programmingCost + setupCost + machineBurdenCost;
+    rawMaterialCost +
+    wasteCost +
+    programmingCost +
+    setupCost +
+    machineBurdenCost;
   const expediteFee = input.expedite ? round(expediteBase * 0.18, 2) : 0;
 
   // ---- Confidence and manual review --------------------------------------
   if (!input.hasDrawing) reasons.push("No drawing supplied.");
   if (!input.hasModel) reasons.push("No 3D model supplied.");
-  if (!input.material && !input.customerSuppliedMaterial) reasons.push("Material not identified.");
-  if (input.criticalTolerances && TIGHT_TOLERANCE.test(input.criticalTolerances))
+  if (!input.material && !input.customerSuppliedMaterial)
+    reasons.push("Material not identified.");
+  if (
+    input.criticalTolerances &&
+    TIGHT_TOLERANCE.test(input.criticalTolerances)
+  )
     reasons.push("Tight tolerances called out.");
   if (input.generalTolerance && TIGHT_TOLERANCE.test(input.generalTolerance))
     reasons.push("Tight general tolerance called out.");
@@ -194,9 +223,11 @@ export function calculateEstimate(input: EstimateInput): EstimateOutput {
   if (input.material?.specialty) reasons.push("Specialty material.");
   if (input.exportControlled) reasons.push("Export-controlled data.");
   if (!input.stock?.a && !geo) reasons.push("Stock size uncertain.");
-  if (SPECIAL_STOCK.test(input.stockNote ?? "")) reasons.push("Casting or forging stock.");
+  if (SPECIAL_STOCK.test(input.stockNote ?? ""))
+    reasons.push("Casting or forging stock.");
   if (!geo) reasons.push("Geometry analysis incomplete.");
-  if (geo?.manual_review_flags?.length) reasons.push(...geo.manual_review_flags);
+  if (geo?.manual_review_flags?.length)
+    reasons.push(...geo.manual_review_flags);
 
   const uniqueReasons = Array.from(new Set(reasons));
   const confidence: EstimateConfidence =
@@ -313,7 +344,9 @@ export function calculateEstimate(input: EstimateInput): EstimateOutput {
       "Special tooling",
       specialTooling,
       "Geometry analysis",
-      specialTooling ? "Undercuts require special-form tooling." : "No special tooling identified.",
+      specialTooling
+        ? "Undercuts require special-form tooling."
+        : "No special tooling identified.",
       8,
     ),
     line(
@@ -349,7 +382,9 @@ export function calculateEstimate(input: EstimateInput): EstimateOutput {
       "Packaging",
       packagingCost,
       "Standard packaging rule",
-      input.specialPackaging ? "Special packaging requested." : "Standard packaging.",
+      input.specialPackaging
+        ? "Special packaging requested."
+        : "Standard packaging.",
       12,
     ),
     line(
@@ -365,7 +400,9 @@ export function calculateEstimate(input: EstimateInput): EstimateOutput {
       "Expedite fee",
       expediteFee,
       "Requested turnaround",
-      input.expedite ? "18% expedite premium on direct cost." : "Standard lead time — no expedite fee.",
+      input.expedite
+        ? "18% expedite premium on direct cost."
+        : "Standard lead time — no expedite fee.",
       14,
     ),
     line(

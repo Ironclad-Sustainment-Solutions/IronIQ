@@ -45,15 +45,24 @@ export function round1(value: number): number {
 
 /** Runtime validation: scores must be integers 0..5. */
 export function isValidScore(score: unknown): score is number {
-  return typeof score === "number" && Number.isInteger(score) && score >= 0 && score <= 5;
+  return (
+    typeof score === "number" &&
+    Number.isInteger(score) &&
+    score >= 0 &&
+    score <= 5
+  );
 }
 
 /** Runtime validation: category weights must total 100%. */
-export function validateCategoryWeights(categories: Pick<AssessmentCategory, "weight">[]): {
+export function validateCategoryWeights(
+  categories: Pick<AssessmentCategory, "weight">[],
+): {
   valid: boolean;
   total: number;
 } {
-  const total = round1(categories.reduce((sum, c) => sum + Number(c.weight), 0));
+  const total = round1(
+    categories.reduce((sum, c) => sum + Number(c.weight), 0),
+  );
   return { valid: Math.abs(total - 100) < 0.05, total };
 }
 
@@ -106,7 +115,10 @@ function isAnswered(item: ScoredQuestion): boolean {
 export function computeCategoryScore(items: ScoredQuestion[]): number | null {
   const answered = items.filter(isAnswered);
   if (answered.length === 0) return null;
-  const weightSum = answered.reduce((sum, i) => sum + Number(i.question.weight), 0);
+  const weightSum = answered.reduce(
+    (sum, i) => sum + Number(i.question.weight),
+    0,
+  );
   if (weightSum <= 0) return null;
   const weighted = answered.reduce(
     (sum, i) => sum + Number(i.response!.score) * Number(i.question.weight),
@@ -127,7 +139,9 @@ export function computeConfidenceScore(items: ScoredQuestion[]): number | null {
 }
 
 export function readinessLevelFor(score: number): ReadinessLevel {
-  const match = READINESS_LEVELS.find((l) => score >= l.min && score <= l.max + 0.049);
+  const match = READINESS_LEVELS.find(
+    (l) => score >= l.min && score <= l.max + 0.049,
+  );
   return match?.level ?? "High Risk";
 }
 
@@ -162,7 +176,9 @@ export function isCriticalFailure(item: ScoredQuestion): boolean {
  * Findings are generated automatically when a critical question scores 0-1 or a
  * non-critical question scores 0-2.
  */
-export function autoFindingSeverity(item: ScoredQuestion): FindingSeverity | null {
+export function autoFindingSeverity(
+  item: ScoredQuestion,
+): FindingSeverity | null {
   if (!isAnswered(item)) return null;
   const score = item.response!.score as number;
   if (item.question.is_critical) {
@@ -175,7 +191,10 @@ export function autoFindingSeverity(item: ScoredQuestion): FindingSeverity | nul
   return null;
 }
 
-export function generateFindings(items: ScoredQuestion[], categoryOf: (q: AssessmentQuestion) => string) {
+export function generateFindings(
+  items: ScoredQuestion[],
+  categoryOf: (q: AssessmentQuestion) => string,
+) {
   return items
     .map((item) => {
       const severity = autoFindingSeverity(item);
@@ -207,7 +226,9 @@ export function computeAssessmentResult(
   const ordered = [...categories].sort((a, b) => a.sort_order - b.sort_order);
 
   const categoryResults: CategoryResult[] = ordered.map((category) => {
-    const items = allItems.filter((i) => i.question.category_id === category.id);
+    const items = allItems.filter(
+      (i) => i.question.category_id === category.id,
+    );
     const applicableItems = items.filter(isApplicable);
     return {
       category,
@@ -219,31 +240,40 @@ export function computeAssessmentResult(
   });
 
   const scored = categoryResults.filter((c) => c.score !== null);
-  const weightSum = scored.reduce((sum, c) => sum + Number(c.category.weight), 0);
+  const weightSum = scored.reduce(
+    (sum, c) => sum + Number(c.category.weight),
+    0,
+  );
   const overallScore =
     scored.length > 0 && weightSum > 0
       ? round1(
-          scored.reduce((sum, c) => sum + (c.score as number) * Number(c.category.weight), 0) /
-            weightSum,
+          scored.reduce(
+            (sum, c) => sum + (c.score as number) * Number(c.category.weight),
+            0,
+          ) / weightSum,
         )
       : null;
 
   const applicable = allItems.filter(isApplicable).length;
   const answered = allItems.filter(isAnswered).length;
-  const completionPct = applicable === 0 ? 0 : round1((answered / applicable) * 100);
+  const completionPct =
+    applicable === 0 ? 0 : round1((answered / applicable) * 100);
 
-  const criticalFailures = allItems.filter(isCriticalFailure).map((i) => i.question);
+  const criticalFailures = allItems
+    .filter(isCriticalFailure)
+    .map((i) => i.question);
   const hasCriticalFailure = criticalFailures.length > 0;
 
   const isComplete = applicable > 0 && answered === applicable;
   // A readiness level is only awarded once every applicable question is answered —
   // a partially scored assessment must never be published as "Production Ready".
   const rawReadinessLevel =
-    overallScore === null || !isComplete ? null : readinessLevelFor(overallScore);
+    overallScore === null || !isComplete
+      ? null
+      : readinessLevelFor(overallScore);
   const gate = rawReadinessLevel
     ? applyCriticalGate(rawReadinessLevel, hasCriticalFailure)
     : { level: null, gated: false };
-
 
   return {
     categories: categoryResults,
@@ -261,7 +291,11 @@ export function computeAssessmentResult(
   };
 }
 
-export function formatScore(score: number | null | undefined, suffix = ""): string {
-  if (score === null || score === undefined || Number.isNaN(Number(score))) return "—";
+export function formatScore(
+  score: number | null | undefined,
+  suffix = "",
+): string {
+  if (score === null || score === undefined || Number.isNaN(Number(score)))
+    return "—";
   return `${round1(Number(score)).toFixed(1)}${suffix}`;
 }

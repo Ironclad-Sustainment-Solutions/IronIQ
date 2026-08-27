@@ -27,7 +27,10 @@ export function useProductionUser(): ProductionUser | null {
     email: profile?.email ?? null,
     organizationId: organization?.id ?? null,
     organizationName: organization?.name ?? null,
-    isStaff: roles.some((r) => r === "ironiq_admin" || r === "consultant" || r === "facility_manager"),
+    isStaff: roles.some(
+      (r) =>
+        r === "ironiq_admin" || r === "consultant" || r === "facility_manager",
+    ),
     isAdmin: roles.some((r) => r === "ironiq_admin" || r === "customer_admin"),
   };
 }
@@ -86,7 +89,9 @@ export const fetchJobAudit = createServerFn({ method: "GET" })
       id: row.id,
       action: row.action,
       detail:
-        row.details && typeof row.details === "object" && "detail" in row.details
+        row.details &&
+        typeof row.details === "object" &&
+        "detail" in row.details
           ? String((row.details as { detail?: unknown }).detail ?? "")
           : "",
       actor_name: row.actor_name,

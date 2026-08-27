@@ -72,8 +72,8 @@ export function FieldOverviewTab({
         subtitle="Twelve areas walked during the visit. Record only what was actually seen — coverage is reported honestly."
       >
         <p className="text-xs text-muted-foreground">
-          A field visit produces an operational overview, not a capability score. Each area is
-          reported as one of four qualitative statuses.
+          A field visit produces an operational overview, not a capability
+          score. Each area is reported as one of four qualitative statuses.
         </p>
       </Panel>
 
@@ -93,18 +93,31 @@ export function FieldOverviewTab({
                 <h2 className="truncate text-sm font-semibold uppercase tracking-wider text-foreground">
                   {b.area.title}
                 </h2>
-                <p className="mt-1 text-xs text-muted-foreground">{b.area.prompt}</p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {b.area.prompt}
+                </p>
               </div>
               <div className="flex shrink-0 items-center gap-3">
                 <div className="text-right">
-                  <p className={cn("text-xs font-semibold uppercase tracking-wide", STATUS_TEXT[b.status])}>
+                  <p
+                    className={cn(
+                      "text-xs font-semibold uppercase tracking-wide",
+                      STATUS_TEXT[b.status],
+                    )}
+                  >
                     {b.status}
                   </p>
                   <p className="text-[10px] uppercase tracking-widest text-muted-foreground">
                     {rows.length} observation{rows.length === 1 ? "" : "s"}
                   </p>
                 </div>
-                <ChevronDown className={cn("size-4 transition-transform", expanded && "rotate-180")} aria-hidden />
+                <ChevronDown
+                  className={cn(
+                    "size-4 transition-transform",
+                    expanded && "rotate-180",
+                  )}
+                  aria-hidden
+                />
               </div>
             </button>
 
@@ -125,13 +138,17 @@ export function FieldOverviewTab({
                           label="Area / department"
                           value={o.area}
                           disabled={locked}
-                          onCommit={(v) => onUpdateObservation(o.id, { area: v })}
+                          onCommit={(v) =>
+                            onUpdateObservation(o.id, { area: v })
+                          }
                         />
                         <AutoField
                           label="Machine / cell"
                           value={o.machine}
                           disabled={locked}
-                          onCommit={(v) => onUpdateObservation(o.id, { machine: v })}
+                          onCommit={(v) =>
+                            onUpdateObservation(o.id, { machine: v })
+                          }
                         />
                       </div>
                       <AutoField
@@ -140,7 +157,9 @@ export function FieldOverviewTab({
                         multiline
                         rows={2}
                         disabled={locked}
-                        onCommit={(v) => onUpdateObservation(o.id, { observed_condition: v })}
+                        onCommit={(v) =>
+                          onUpdateObservation(o.id, { observed_condition: v })
+                        }
                       />
                       <AutoField
                         label="Operational impact observed"
@@ -148,7 +167,9 @@ export function FieldOverviewTab({
                         multiline
                         rows={2}
                         disabled={locked}
-                        onCommit={(v) => onUpdateObservation(o.id, { operational_impact: v })}
+                        onCommit={(v) =>
+                          onUpdateObservation(o.id, { operational_impact: v })
+                        }
                       />
                       <AutoField
                         label="Capability that appears constrained"
@@ -156,7 +177,11 @@ export function FieldOverviewTab({
                         multiline
                         rows={2}
                         disabled={locked}
-                        onCommit={(v) => onUpdateObservation(o.id, { constrained_capability: v })}
+                        onCommit={(v) =>
+                          onUpdateObservation(o.id, {
+                            constrained_capability: v,
+                          })
+                        }
                       />
                       <div className="grid gap-3 sm:grid-cols-2">
                         <TagPicker
@@ -165,7 +190,11 @@ export function FieldOverviewTab({
                           options={EVIDENCE_CLASSES}
                           selected={o.evidence_class ? [o.evidence_class] : []}
                           disabled={locked}
-                          onChange={(v) => onUpdateObservation(o.id, { evidence_class: v[0] ?? "Observed" })}
+                          onChange={(v) =>
+                            onUpdateObservation(o.id, {
+                              evidence_class: v[0] ?? "Observed",
+                            })
+                          }
                         />
                         <TagPicker
                           label="Severity"
@@ -173,26 +202,39 @@ export function FieldOverviewTab({
                           options={OBSERVATION_SEVERITY}
                           selected={o.severity ? [o.severity] : []}
                           disabled={locked}
-                          onChange={(v) => onUpdateObservation(o.id, { severity: v[0] ?? null })}
+                          onChange={(v) =>
+                            onUpdateObservation(o.id, {
+                              severity: v[0] ?? null,
+                            })
+                          }
                         />
                       </div>
                       <AutoField
                         label="Potential Ironclad support (internal)"
                         value={o.ironclad_support}
                         disabled={locked}
-                        onCommit={(v) => onUpdateObservation(o.id, { ironclad_support: v })}
+                        onCommit={(v) =>
+                          onUpdateObservation(o.id, { ironclad_support: v })
+                        }
                       />
                       <label className="flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
                         <input
                           type="checkbox"
                           checked={o.requires_validation}
                           disabled={locked}
-                          onChange={(e) => onUpdateObservation(o.id, { requires_validation: e.target.checked })}
+                          onChange={(e) =>
+                            onUpdateObservation(o.id, {
+                              requires_validation: e.target.checked,
+                            })
+                          }
                         />
                         Requires validation
                       </label>
                       {hasGap(o.id) ? (
-                        <Chip label="Promoted to finding" className="text-success" />
+                        <Chip
+                          label="Promoted to finding"
+                          className="text-success"
+                        />
                       ) : (
                         <Button
                           size="sm"
@@ -206,7 +248,11 @@ export function FieldOverviewTab({
                     </EntryCard>
                   ))
                 )}
-                <Button size="sm" disabled={locked} onClick={() => onAddObservation(b.area.code)}>
+                <Button
+                  size="sm"
+                  disabled={locked}
+                  onClick={() => onAddObservation(b.area.code)}
+                >
                   <Plus className="size-4" aria-hidden /> Add observation
                 </Button>
               </div>
@@ -254,11 +300,13 @@ export function PreliminaryFindingsTab({
         <p
           className={cn(
             "text-xs",
-            selected > 5 || selected < 3 ? "text-high" : "text-muted-foreground",
+            selected > 5 || selected < 3
+              ? "text-high"
+              : "text-muted-foreground",
           )}
         >
-          {selected} of 3–5 findings selected. {allGaps.length - selected} other gap(s) recorded but not
-          presented as findings.
+          {selected} of 3–5 findings selected. {allGaps.length - selected} other
+          gap(s) recorded but not presented as findings.
         </p>
       </Panel>
 
@@ -277,11 +325,18 @@ export function PreliminaryFindingsTab({
                 type="checkbox"
                 checked={g.is_top_finding}
                 disabled={locked}
-                onChange={(e) => onUpdate(g.id, { is_top_finding: e.target.checked })}
+                onChange={(e) =>
+                  onUpdate(g.id, { is_top_finding: e.target.checked })
+                }
               />
               Present as a preliminary finding
             </label>
-            <AutoField label="Finding title" value={g.title} disabled={locked} onCommit={(v) => onUpdate(g.id, { title: v })} />
+            <AutoField
+              label="Finding title"
+              value={g.title}
+              disabled={locked}
+              onCommit={(v) => onUpdate(g.id, { title: v })}
+            />
             <TagPicker
               label="Field area"
               single
@@ -290,7 +345,8 @@ export function PreliminaryFindingsTab({
               disabled={locked}
               onChange={(v) =>
                 onUpdate(g.id, {
-                  focus_area: FIELD_AREAS.find((a) => a.title === v[0])?.code ?? null,
+                  focus_area:
+                    FIELD_AREAS.find((a) => a.title === v[0])?.code ?? null,
                 })
               }
             />
@@ -341,7 +397,9 @@ export function PreliminaryFindingsTab({
                 options={EVIDENCE_CLASSES}
                 selected={g.evidence_class ? [g.evidence_class] : []}
                 disabled={locked}
-                onChange={(v) => onUpdate(g.id, { evidence_class: v[0] ?? null })}
+                onChange={(v) =>
+                  onUpdate(g.id, { evidence_class: v[0] ?? null })
+                }
               />
               <TagPicker
                 label="Production impact"
@@ -378,7 +436,10 @@ export function PreliminaryFindingsTab({
                   disabled={locked}
                   onCommit={(v) =>
                     onUpdate(g.id, {
-                      validation_questions: v.split("\n").map((s) => s.trim()).filter(Boolean),
+                      validation_questions: v
+                        .split("\n")
+                        .map((s) => s.trim())
+                        .filter(Boolean),
                     })
                   }
                 />
@@ -390,7 +451,10 @@ export function PreliminaryFindingsTab({
                   disabled={locked}
                   onCommit={(v) =>
                     onUpdate(g.id, {
-                      data_requirements: v.split("\n").map((s) => s.trim()).filter(Boolean),
+                      data_requirements: v
+                        .split("\n")
+                        .map((s) => s.trim())
+                        .filter(Boolean),
                     })
                   }
                 />
@@ -429,19 +493,34 @@ export function StatusBaselineTab({
         <div className="grid gap-2 sm:grid-cols-4">
           {FIELD_STATUSES.map((s) => (
             <div key={s} className="rounded-sm border border-border p-3">
-              <span className={cn("block h-1.5 w-8 rounded-sm", STATUS_BG[s])} aria-hidden />
-              <p className="mt-2 text-xs font-semibold uppercase tracking-wide text-foreground">{s}</p>
-              <p className="metric text-2xl font-semibold text-foreground">{counts[s] ?? 0}</p>
-              <p className="mt-1 text-[11px] text-muted-foreground">{STATUS_HELP[s]}</p>
+              <span
+                className={cn("block h-1.5 w-8 rounded-sm", STATUS_BG[s])}
+                aria-hidden
+              />
+              <p className="mt-2 text-xs font-semibold uppercase tracking-wide text-foreground">
+                {s}
+              </p>
+              <p className="metric text-2xl font-semibold text-foreground">
+                {counts[s] ?? 0}
+              </p>
+              <p className="mt-1 text-[11px] text-muted-foreground">
+                {STATUS_HELP[s]}
+              </p>
             </div>
           ))}
         </div>
       </Panel>
 
-      <Panel title="By area" subtitle="Suggested from what was recorded. The assessor has the final say.">
+      <Panel
+        title="By area"
+        subtitle="Suggested from what was recorded. The assessor has the final say."
+      >
         <div className="grid gap-3">
           {baselines.map((b) => (
-            <div key={b.area.code} className="rounded-sm border border-border p-3">
+            <div
+              key={b.area.code}
+              className="rounded-sm border border-border p-3"
+            >
               <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
                 <div className="min-w-0">
                   <p className="truncate text-sm font-semibold text-foreground">
@@ -452,7 +531,12 @@ export function StatusBaselineTab({
                     {b.requiresValidation} requiring validation
                   </p>
                 </div>
-                <span className={cn("shrink-0 text-xs font-semibold uppercase", STATUS_TEXT[b.status])}>
+                <span
+                  className={cn(
+                    "shrink-0 text-xs font-semibold uppercase",
+                    STATUS_TEXT[b.status],
+                  )}
+                >
                   {b.status}
                 </span>
               </div>
@@ -462,7 +546,12 @@ export function StatusBaselineTab({
                   single
                   selected={[b.status]}
                   disabled={locked}
-                  onChange={(v) => onSetStatus(b.area.code, (v[0] as FieldStatus | undefined) ?? null)}
+                  onChange={(v) =>
+                    onSetStatus(
+                      b.area.code,
+                      (v[0] as FieldStatus | undefined) ?? null,
+                    )
+                  }
                 />
               </div>
               {b.overridden ? (
@@ -534,8 +623,12 @@ export function NextStepPanel({
 
       <div className="mt-4 rounded-sm border border-dashed border-border p-3">
         <p className="eyebrow">Suggested path</p>
-        <p className="mt-1 text-sm font-semibold text-foreground">{recommendation.path ?? "Not yet determined"}</p>
-        <p className="mt-1 text-xs text-muted-foreground">{recommendation.rationale}</p>
+        <p className="mt-1 text-sm font-semibold text-foreground">
+          {recommendation.path ?? "Not yet determined"}
+        </p>
+        <p className="mt-1 text-xs text-muted-foreground">
+          {recommendation.rationale}
+        </p>
       </div>
 
       <div className="mt-3">
@@ -554,6 +647,29 @@ export function NextStepPanel({
 
 /* ------------------------ 5. findings review meeting ---------------------- */
 
+// Exactly the fields this component reads/writes via assessment["..."]
+// bracket access, each mirroring AssessmentExtras' real field types
+// (src/routes/_authenticated/field/$fieldId.tsx) -- not imported directly
+// from there to avoid a route file becoming a dependency of a shared
+// component. A concrete object with more fields than this (like the
+// route's actual FieldAssessmentRow & AssessmentExtras) satisfies this
+// structurally without needing an index signature, unlike
+// Record<string, ...> would.
+interface MeetingReviewFields {
+  review_meeting_date: string | null;
+  review_attendees: string | null;
+  review_notes: string | null;
+  meeting_new_info: string | null;
+  meeting_new_gaps: string | null;
+  meeting_data_promised: string | null;
+  meeting_scope: string | null;
+  meeting_projects: string | null;
+  meeting_decision: string | null;
+  meeting_next_action: string | null;
+  meeting_owner: string | null;
+  meeting_target_date: string | null;
+}
+
 export function ReviewMeetingTab({
   assessment,
   findings,
@@ -561,7 +677,7 @@ export function ReviewMeetingTab({
   set,
   onUpdateFinding,
 }: {
-  assessment: Record<string, any>;
+  assessment: MeetingReviewFields;
   findings: FieldCapabilityGap[];
   locked: boolean;
   set: (values: Record<string, unknown>) => void;
@@ -569,18 +685,21 @@ export function ReviewMeetingTab({
 }) {
   return (
     <div className="space-y-4">
-      <Panel title="Meeting details" subtitle="Findings review with the client — validation, not a sales pitch">
+      <Panel
+        title="Meeting details"
+        subtitle="Findings review with the client — validation, not a sales pitch"
+      >
         <div className="grid gap-3 sm:grid-cols-2">
           <AutoField
             label="Meeting date"
-            value={assessment['review_meeting_date']}
+            value={assessment["review_meeting_date"]}
             disabled={locked}
             placeholder="YYYY-MM-DD"
             onCommit={(v) => set({ review_meeting_date: v || null })}
           />
           <AutoField
             label="Attendees"
-            value={assessment['review_attendees']}
+            value={assessment["review_attendees"]}
             disabled={locked}
             onCommit={(v) => set({ review_attendees: v })}
           />
@@ -590,13 +709,23 @@ export function ReviewMeetingTab({
       <Panel title="Agenda" subtitle="Roughly 60 minutes">
         <ol className="grid gap-2">
           {MEETING_AGENDA.map((a, i) => (
-            <li key={a.title} className="grid grid-cols-[auto_minmax(0,1fr)] gap-3 rounded-sm border border-border p-3">
-              <span className="metric text-sm font-semibold text-muted-foreground">{i + 1}</span>
+            <li
+              key={a.title}
+              className="grid grid-cols-[auto_minmax(0,1fr)] gap-3 rounded-sm border border-border p-3"
+            >
+              <span className="metric text-sm font-semibold text-muted-foreground">
+                {i + 1}
+              </span>
               <span className="min-w-0">
                 <span className="block text-sm font-semibold text-foreground">
-                  {a.title} <span className="text-xs font-normal text-muted-foreground">· {a.minutes} min</span>
+                  {a.title}{" "}
+                  <span className="text-xs font-normal text-muted-foreground">
+                    · {a.minutes} min
+                  </span>
                 </span>
-                <span className="block text-xs text-muted-foreground">{a.detail}</span>
+                <span className="block text-xs text-muted-foreground">
+                  {a.detail}
+                </span>
               </span>
             </li>
           ))}
@@ -619,10 +748,15 @@ export function ReviewMeetingTab({
                     <p className="text-sm font-semibold text-foreground">
                       {g.title || g.observed_condition || "Untitled finding"}
                     </p>
-                    <p className="mt-1 text-xs text-muted-foreground">{g.operational_impact_text}</p>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {g.operational_impact_text}
+                    </p>
                   </div>
                   {g.client_status ? (
-                    <Chip label={g.client_status} className={CLIENT_STATE_TEXT[g.client_status]} />
+                    <Chip
+                      label={g.client_status}
+                      className={CLIENT_STATE_TEXT[g.client_status]}
+                    />
                   ) : null}
                 </div>
 
@@ -641,7 +775,9 @@ export function ReviewMeetingTab({
                     options={[...CLIENT_VALIDATION_STATES]}
                     selected={g.client_status ? [g.client_status] : []}
                     disabled={locked}
-                    onChange={(v) => onUpdateFinding(g.id, { client_status: v[0] ?? null })}
+                    onChange={(v) =>
+                      onUpdateFinding(g.id, { client_status: v[0] ?? null })
+                    }
                   />
                   <AutoField
                     label="Client comments"
@@ -649,7 +785,9 @@ export function ReviewMeetingTab({
                     multiline
                     rows={3}
                     disabled={locked}
-                    onCommit={(v) => onUpdateFinding(g.id, { client_comments: v })}
+                    onCommit={(v) =>
+                      onUpdateFinding(g.id, { client_comments: v })
+                    }
                   />
                 </div>
               </div>
@@ -658,39 +796,42 @@ export function ReviewMeetingTab({
         )}
       </Panel>
 
-      <Panel title="What we need to learn next" subtitle="Data, access and interviews required to validate">
+      <Panel
+        title="What we need to learn next"
+        subtitle="Data, access and interviews required to validate"
+      >
         <div className="grid gap-3">
           <AutoField
             label="New information provided by the client"
-            value={assessment['meeting_new_info']}
+            value={assessment["meeting_new_info"]}
             multiline
             disabled={locked}
             onCommit={(v) => set({ meeting_new_info: v })}
           />
           <AutoField
             label="New gaps identified in the meeting"
-            value={assessment['meeting_new_gaps']}
+            value={assessment["meeting_new_gaps"]}
             multiline
             disabled={locked}
             onCommit={(v) => set({ meeting_new_gaps: v })}
           />
           <AutoField
             label="Data the client agreed to provide"
-            value={assessment['meeting_data_promised']}
+            value={assessment["meeting_data_promised"]}
             multiline
             disabled={locked}
             onCommit={(v) => set({ meeting_data_promised: v })}
           />
           <AutoField
             label="Scope adjustments discussed"
-            value={assessment['meeting_scope']}
+            value={assessment["meeting_scope"]}
             multiline
             disabled={locked}
             onCommit={(v) => set({ meeting_scope: v })}
           />
           <AutoField
             label="Other projects or priorities raised"
-            value={assessment['meeting_projects']}
+            value={assessment["meeting_projects"]}
             multiline
             disabled={locked}
             onCommit={(v) => set({ meeting_projects: v })}
@@ -704,13 +845,17 @@ export function ReviewMeetingTab({
             label="Decision"
             single
             options={[...NEXT_PATHS, "Client Reviewing Internally"]}
-            selected={assessment['meeting_decision'] ? [assessment['meeting_decision']] : []}
+            selected={
+              assessment["meeting_decision"]
+                ? [assessment["meeting_decision"]]
+                : []
+            }
             disabled={locked}
             onChange={(v) => set({ meeting_decision: v[0] ?? null })}
           />
           <AutoField
             label="Agreed next action"
-            value={assessment['meeting_next_action']}
+            value={assessment["meeting_next_action"]}
             multiline
             disabled={locked}
             onCommit={(v) => set({ meeting_next_action: v })}
@@ -718,13 +863,13 @@ export function ReviewMeetingTab({
           <div className="grid gap-3 sm:grid-cols-2">
             <AutoField
               label="Owner"
-              value={assessment['meeting_owner']}
+              value={assessment["meeting_owner"]}
               disabled={locked}
               onCommit={(v) => set({ meeting_owner: v })}
             />
             <AutoField
               label="Target date"
-              value={assessment['meeting_target_date']}
+              value={assessment["meeting_target_date"]}
               placeholder="YYYY-MM-DD"
               disabled={locked}
               onCommit={(v) => set({ meeting_target_date: v || null })}
@@ -732,7 +877,7 @@ export function ReviewMeetingTab({
           </div>
           <AutoField
             label="Meeting notes"
-            value={assessment['review_notes']}
+            value={assessment["review_notes"]}
             multiline
             rows={5}
             disabled={locked}
@@ -777,7 +922,9 @@ export function OpportunityTab({
                   options={OPP_SERVICES}
                   selected={g.opp_service ? [g.opp_service] : []}
                   disabled={locked}
-                  onChange={(v) => onUpdate(g.id, { opp_service: v[0] ?? null })}
+                  onChange={(v) =>
+                    onUpdate(g.id, { opp_service: v[0] ?? null })
+                  }
                 />
                 <AutoField
                   label="Estimated scope"
@@ -794,7 +941,9 @@ export function OpportunityTab({
                     options={OPP_COMPLEXITY}
                     selected={g.opp_complexity ? [g.opp_complexity] : []}
                     disabled={locked}
-                    onChange={(v) => onUpdate(g.id, { opp_complexity: v[0] ?? null })}
+                    onChange={(v) =>
+                      onUpdate(g.id, { opp_complexity: v[0] ?? null })
+                    }
                   />
                   <TagPicker
                     label="Revenue potential"
@@ -802,7 +951,9 @@ export function OpportunityTab({
                     options={OPP_REVENUE}
                     selected={g.opp_revenue ? [g.opp_revenue] : []}
                     disabled={locked}
-                    onChange={(v) => onUpdate(g.id, { opp_revenue: v[0] ?? null })}
+                    onChange={(v) =>
+                      onUpdate(g.id, { opp_revenue: v[0] ?? null })
+                    }
                   />
                   <TagPicker
                     label="Confidence"
@@ -810,7 +961,9 @@ export function OpportunityTab({
                     options={OPP_CONFIDENCE}
                     selected={g.opp_confidence ? [g.opp_confidence] : []}
                     disabled={locked}
-                    onChange={(v) => onUpdate(g.id, { opp_confidence: v[0] ?? null })}
+                    onChange={(v) =>
+                      onUpdate(g.id, { opp_confidence: v[0] ?? null })
+                    }
                   />
                 </div>
                 <div className="grid gap-3 sm:grid-cols-2">

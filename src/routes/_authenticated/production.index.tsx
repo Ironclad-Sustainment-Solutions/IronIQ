@@ -1,7 +1,14 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { PageHeader, Panel, EmptyState } from "@/components/ironiq/layout-primitives";
-import { JobStatusBadge, StageBadge } from "@/components/ironiq/production-status-badge";
+import {
+  PageHeader,
+  Panel,
+  EmptyState,
+} from "@/components/ironiq/layout-primitives";
+import {
+  JobStatusBadge,
+  StageBadge,
+} from "@/components/ironiq/production-status-badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -30,10 +37,14 @@ export const Route = createFileRoute("/_authenticated/production/")({
         content:
           "Track CNC jobs from customer intake through AI manufacturing planning, programming, simulation, programmer approval and customer release.",
       },
-      { property: "og:title", content: "Production Flow — IronIQ CNC Job Queue" },
+      {
+        property: "og:title",
+        content: "Production Flow — IronIQ CNC Job Queue",
+      },
       {
         property: "og:description",
-        content: "Intake to release visibility for every CNC programming job in IronIQ.",
+        content:
+          "Intake to release visibility for every CNC programming job in IronIQ.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -53,7 +64,8 @@ function ProductionQueue() {
       jobs.filter((job) => {
         const meta = JOB_STATUS_META[job.status];
         if (stage !== "all" && meta.stage !== stage) return false;
-        const haystack = `${job.job_number} ${job.part_number ?? ""} ${job.part_name ?? ""}`.toLowerCase();
+        const haystack =
+          `${job.job_number} ${job.part_number ?? ""} ${job.part_name ?? ""}`.toLowerCase();
         return haystack.includes(search.toLowerCase());
       }),
     [jobs, search, stage],
@@ -63,7 +75,9 @@ function ProductionQueue() {
     stage: s,
     count: jobs.filter((job) => JOB_STATUS_META[job.status].stage === s).length,
   }));
-  const blocked = jobs.filter((job) => BLOCKING_STATUSES.includes(job.status)).length;
+  const blocked = jobs.filter((job) =>
+    BLOCKING_STATUSES.includes(job.status),
+  ).length;
 
   return (
     <>
@@ -86,20 +100,26 @@ function ProductionQueue() {
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <div className="panel p-4">
             <p className="eyebrow">Active jobs</p>
-            <p className="mt-1 font-display text-3xl font-bold">{jobs.length}</p>
+            <p className="mt-1 font-display text-3xl font-bold">
+              {jobs.length}
+            </p>
           </div>
           <div className="panel p-4">
             <p className="eyebrow">Blocked / exception</p>
-            <p className="mt-1 font-display text-3xl font-bold text-destructive">{blocked}</p>
+            <p className="mt-1 font-display text-3xl font-bold text-destructive">
+              {blocked}
+            </p>
           </div>
           <div className="panel p-4">
             <p className="eyebrow">Awaiting programmer</p>
             <p className="mt-1 font-display text-3xl font-bold">
               {
                 jobs.filter((j) =>
-                  ["programmer_plan_review", "programmer_approval_pending", "posted_code_review"].includes(
-                    j.status,
-                  ),
+                  [
+                    "programmer_plan_review",
+                    "programmer_approval_pending",
+                    "posted_code_review",
+                  ].includes(j.status),
                 ).length
               }
             </p>
@@ -107,7 +127,15 @@ function ProductionQueue() {
           <div className="panel p-4">
             <p className="eyebrow">Released</p>
             <p className="mt-1 font-display text-3xl font-bold">
-              {jobs.filter((j) => ["released_to_customer", "customer_prove_out", "completed"].includes(j.status)).length}
+              {
+                jobs.filter((j) =>
+                  [
+                    "released_to_customer",
+                    "customer_prove_out",
+                    "completed",
+                  ].includes(j.status),
+                ).length
+              }
             </p>
           </div>
         </div>
@@ -122,7 +150,9 @@ function ProductionQueue() {
                 className="rounded-md border border-border px-4 py-3 text-left transition hover:border-primary/60"
               >
                 <StageBadge stage={s.stage} />
-                <p className="mt-2 font-display text-2xl font-bold">{s.count}</p>
+                <p className="mt-2 font-display text-2xl font-bold">
+                  {s.count}
+                </p>
               </button>
             ))}
           </div>
@@ -138,7 +168,10 @@ function ProductionQueue() {
                 placeholder="Job or part number"
                 className="h-9 w-56"
               />
-              <Select value={stage} onValueChange={(v) => setStage(v as ProductionStage | "all")}>
+              <Select
+                value={stage}
+                onValueChange={(v) => setStage(v as ProductionStage | "all")}
+              >
                 <SelectTrigger className="h-9 w-44">
                   <SelectValue />
                 </SelectTrigger>
@@ -173,7 +206,10 @@ function ProductionQueue() {
                 </thead>
                 <tbody>
                   {filtered.map((job) => (
-                    <tr key={job.id} className="border-b border-border/60 hover:bg-muted/30">
+                    <tr
+                      key={job.id}
+                      className="border-b border-border/60 hover:bg-muted/30"
+                    >
                       <td className="py-2.5 pr-4 font-mono text-xs">
                         <Link
                           to="/production/jobs/$jobId"
@@ -186,10 +222,14 @@ function ProductionQueue() {
                       <td className="py-2.5 pr-4">
                         {job.part_number ?? "—"}
                         {job.part_revision ? ` rev ${job.part_revision}` : ""}
-                        <span className="block text-xs text-muted-foreground">{job.part_name}</span>
+                        <span className="block text-xs text-muted-foreground">
+                          {job.part_name}
+                        </span>
                       </td>
                       <td className="py-2.5 pr-4 text-xs text-muted-foreground">
-                        {[job.machine_make, job.machine_model].filter(Boolean).join(" ") || "—"}
+                        {[job.machine_make, job.machine_model]
+                          .filter(Boolean)
+                          .join(" ") || "—"}
                       </td>
                       <td className="py-2.5 pr-4">{job.quantity ?? "—"}</td>
                       <td className="py-2.5 pr-4">

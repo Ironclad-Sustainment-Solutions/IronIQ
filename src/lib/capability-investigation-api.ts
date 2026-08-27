@@ -33,12 +33,16 @@ export function useCapInvestigation(assessmentId: string) {
   });
 }
 
-export type CapInvestigation = NonNullable<ReturnType<typeof useCapInvestigation>["data"]>;
+export type CapInvestigation = NonNullable<
+  ReturnType<typeof useCapInvestigation>["data"]
+>;
 
 function useInvalidator(assessmentId: string) {
   const qc = useQueryClient();
   return () => {
-    void qc.invalidateQueries({ queryKey: ["cap-investigation", assessmentId] });
+    void qc.invalidateQueries({
+      queryKey: ["cap-investigation", assessmentId],
+    });
   };
 }
 
@@ -52,25 +56,34 @@ export function useInvestigationUpsert<T extends Record<string, unknown>>(
   return useMutation({
     mutationFn: async (input: T & { id?: string }) => {
       const { id, ...values } = input;
-      return fn.investigationUpsert({ data: { table: tableName, assessmentId, id, values } });
+      return fn.investigationUpsert({
+        data: { table: tableName, assessmentId, id, values },
+      });
     },
     onSuccess: () => {
       invalidate();
       if (!opts?.silent) toast.success(opts?.message ?? "Saved");
     },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Could not save"),
+    onError: (e) =>
+      toast.error(e instanceof Error ? e.message : "Could not save"),
   });
 }
 
-export function useInvestigationDelete(assessmentId: string, tableName: string, label = "Removed") {
+export function useInvestigationDelete(
+  assessmentId: string,
+  tableName: string,
+  label = "Removed",
+) {
   const invalidate = useInvalidator(assessmentId);
   return useMutation({
-    mutationFn: async (id: string) => fn.investigationDelete({ data: { table: tableName, id } }),
+    mutationFn: async (id: string) =>
+      fn.investigationDelete({ data: { table: tableName, id } }),
     onSuccess: () => {
       invalidate();
       toast.success(label);
     },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Could not remove"),
+    onError: (e) =>
+      toast.error(e instanceof Error ? e.message : "Could not remove"),
   });
 }
 
@@ -84,17 +97,22 @@ export function useSetDomainScreen(assessmentId: string) {
       notes?: string | null;
     }) => fn.setDomainScreen({ data: { assessmentId, ...input } }),
     onSuccess: invalidate,
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Could not save screen"),
+    onError: (e) =>
+      toast.error(e instanceof Error ? e.message : "Could not save screen"),
   });
 }
 
 export function useSetHealthSweep(assessmentId: string) {
   const invalidate = useInvalidator(assessmentId);
   return useMutation({
-    mutationFn: async (input: { domain_id: string; classification?: SweepClassification; note?: string | null }) =>
-      fn.setHealthSweep({ data: { assessmentId, ...input } }),
+    mutationFn: async (input: {
+      domain_id: string;
+      classification?: SweepClassification;
+      note?: string | null;
+    }) => fn.setHealthSweep({ data: { assessmentId, ...input } }),
     onSuccess: invalidate,
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Could not save sweep"),
+    onError: (e) =>
+      toast.error(e instanceof Error ? e.message : "Could not save sweep"),
   });
 }
 
@@ -110,16 +128,22 @@ export function useSavePrimaryConstraint(assessmentId: string) {
       invalidate();
       toast.success("Primary constraint saved");
     },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Could not save constraint"),
+    onError: (e) =>
+      toast.error(e instanceof Error ? e.message : "Could not save constraint"),
   });
 }
 
 export function useSaveChainNode(assessmentId: string) {
   const invalidate = useInvalidator(assessmentId);
   return useMutation({
-    mutationFn: async (input: { id?: string; step_key: string; content: string; sort_order: number }) =>
-      fn.saveChainNode({ data: { assessmentId, ...input } }),
+    mutationFn: async (input: {
+      id?: string;
+      step_key: string;
+      content: string;
+      sort_order: number;
+    }) => fn.saveChainNode({ data: { assessmentId, ...input } }),
     onSuccess: invalidate,
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Could not save chain"),
+    onError: (e) =>
+      toast.error(e instanceof Error ? e.message : "Could not save chain"),
   });
 }

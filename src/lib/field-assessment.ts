@@ -43,7 +43,6 @@ export interface FieldAssessmentRow {
   summary_outcome: string | null;
 }
 
-
 export interface FieldRatingRow {
   id: string;
   field_assessment_id: string;
@@ -60,12 +59,18 @@ export const SHIFTS = ["1st", "2nd", "3rd", "Weekend"] as const;
 
 /** Short prompts sized for a phone screen, keyed by cap_domains.code. */
 export const FIELD_PROMPTS: Record<string, string> = {
-  technical_data: "Do operators have correct, current drawings and specs at the machine?",
-  digital_manufacturing: "Are programs, models and digital records available and trusted here?",
-  production_support: "Do jobs have tooling, fixtures, material and instructions ready on time?",
-  production_operations: "Is this area running to plan without workarounds or firefighting?",
-  equipment_infrastructure: "Is the equipment available, accurate and maintained for this work?",
-  workforce_knowledge: "Can more than one person run this work to the required standard?",
+  technical_data:
+    "Do operators have correct, current drawings and specs at the machine?",
+  digital_manufacturing:
+    "Are programs, models and digital records available and trusted here?",
+  production_support:
+    "Do jobs have tooling, fixtures, material and instructions ready on time?",
+  production_operations:
+    "Is this area running to plan without workarounds or firefighting?",
+  equipment_infrastructure:
+    "Is the equipment available, accurate and maintained for this work?",
+  workforce_knowledge:
+    "Can more than one person run this work to the required standard?",
 };
 
 export interface FieldResult {
@@ -97,15 +102,20 @@ export function computeFieldScore(
     if (row.score <= 1) severeCount += 1;
   }
 
-  const applicable = domainIds.filter((id) => !byDomain.get(id)?.not_applicable).length;
-  const score = values.length ? round1(values.reduce((a, b) => a + b, 0) / values.length) : null;
+  const applicable = domainIds.filter(
+    (id) => !byDomain.get(id)?.not_applicable,
+  ).length;
+  const score = values.length
+    ? round1(values.reduce((a, b) => a + b, 0) / values.length)
+    : null;
 
   return {
     score,
     percent: score === null ? null : round1((score / 5) * 100),
     rated: values.length,
     total: domainIds.length,
-    completionPct: applicable === 0 ? 100 : round1((values.length / applicable) * 100),
+    completionPct:
+      applicable === 0 ? 100 : round1((values.length / applicable) * 100),
     severeCount,
     actionCount,
   };

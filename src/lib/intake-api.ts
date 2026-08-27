@@ -124,7 +124,8 @@ export function useUploadIntakeDocument(
 export function useDeleteIntakeDocument(facilityId?: string | null) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (input: { id: string }) => intakeFn.deleteIntakeDocument({ data: input }),
+    mutationFn: (input: { id: string }) =>
+      intakeFn.deleteIntakeDocument({ data: input }),
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ["intake-documents", facilityId] });
       toast.success("Document removed");

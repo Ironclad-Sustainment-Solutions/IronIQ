@@ -1,7 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { DefinitionList, EmptyState, PageHeader, Panel } from "@/components/ironiq/layout-primitives";
+import {
+  DefinitionList,
+  EmptyState,
+  PageHeader,
+  Panel,
+} from "@/components/ironiq/layout-primitives";
 import {
   JobStatusBadge,
   PreliminaryNotice,
@@ -22,7 +27,10 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { generateManufacturingPlan } from "@/lib/ai-plan.functions";
-import { productionUpsert, replaceAutomatedChecks } from "@/lib/production-console.functions";
+import {
+  productionUpsert,
+  replaceAutomatedChecks,
+} from "@/lib/production-console.functions";
 import {
   useAdvanceStatus,
   useJob,
@@ -70,7 +78,8 @@ export const Route = createFileRoute("/_authenticated/production/jobs/$jobId")({
       { property: "og:title", content: "Job Console — IronIQ Production Flow" },
       {
         property: "og:description",
-        content: "Stage-by-stage CNC programming console with programmer-controlled release gates.",
+        content:
+          "Stage-by-stage CNC programming console with programmer-controlled release gates.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -134,21 +143,40 @@ function JobConsole() {
               {
                 label: "Stock",
                 value:
-                  [job.stock_type, job.stock_length, job.stock_width, job.stock_thickness]
+                  [
+                    job.stock_type,
+                    job.stock_length,
+                    job.stock_width,
+                    job.stock_thickness,
+                  ]
                     .filter(Boolean)
                     .join(" · ") || "—",
               },
               {
                 label: "Machine",
                 value:
-                  [job.machine_make, job.machine_model, job.controller, `${job.axis_count ?? "?"} axis`]
+                  [
+                    job.machine_make,
+                    job.machine_model,
+                    job.controller,
+                    `${job.axis_count ?? "?"} axis`,
+                  ]
                     .filter(Boolean)
                     .join(" · ") || "—",
               },
               { label: "Workholding", value: job.workholding_method ?? "—" },
-              { label: "Fixture restrictions", value: job.fixture_restrictions ?? "—" },
-              { label: "Critical dimensions", value: job.critical_dimensions ?? "—" },
-              { label: "Inspection", value: job.inspection_requirements ?? "—" },
+              {
+                label: "Fixture restrictions",
+                value: job.fixture_restrictions ?? "—",
+              },
+              {
+                label: "Critical dimensions",
+                value: job.critical_dimensions ?? "—",
+              },
+              {
+                label: "Inspection",
+                value: job.inspection_requirements ?? "—",
+              },
             ]}
           />
         </Panel>
@@ -166,47 +194,106 @@ function JobConsole() {
           </TabsList>
 
           <TabsContent value="intake" className="mt-4 space-y-6">
-            <IntakePanel jobId={jobId} detail={detail} actor={actor} onDone={refresh} />
-            <ExceptionPanel jobId={jobId} detail={detail} actor={actor} onDone={refresh} />
+            <IntakePanel
+              jobId={jobId}
+              detail={detail}
+              actor={actor}
+              onDone={refresh}
+            />
+            <ExceptionPanel
+              jobId={jobId}
+              detail={detail}
+              actor={actor}
+              onDone={refresh}
+            />
           </TabsContent>
 
           <TabsContent value="planning" className="mt-4 space-y-6">
-            <PlanningPanel job={job} detail={detail} actor={actor} onDone={refresh} />
+            <PlanningPanel
+              job={job}
+              detail={detail}
+              actor={actor}
+              onDone={refresh}
+            />
           </TabsContent>
 
           <TabsContent value="programming" className="mt-4 space-y-6">
-            <ProgrammingPanel job={job} detail={detail} actor={actor} onDone={refresh} advance={advance} />
+            <ProgrammingPanel
+              job={job}
+              detail={detail}
+              actor={actor}
+              onDone={refresh}
+              advance={advance}
+            />
           </TabsContent>
 
           <TabsContent value="verification" className="mt-4 space-y-6">
-            <ChecksPanel jobId={jobId} detail={detail} actor={actor} onDone={refresh} />
-            <SimulationPanel jobId={jobId} detail={detail} actor={actor} onDone={refresh} />
+            <ChecksPanel
+              jobId={jobId}
+              detail={detail}
+              actor={actor}
+              onDone={refresh}
+            />
+            <SimulationPanel
+              jobId={jobId}
+              detail={detail}
+              actor={actor}
+              onDone={refresh}
+            />
           </TabsContent>
 
           <TabsContent value="approval" className="mt-4 space-y-6">
-            <ApprovalPanel jobId={jobId} detail={detail} actor={actor} onDone={refresh} />
+            <ApprovalPanel
+              jobId={jobId}
+              detail={detail}
+              actor={actor}
+              onDone={refresh}
+            />
           </TabsContent>
 
           <TabsContent value="release" className="mt-4 space-y-6">
-            <PostingPanel jobId={jobId} detail={detail} actor={actor} onDone={refresh} />
-            <ReleasePanel job={job} detail={detail} actor={actor} onDone={refresh} />
+            <PostingPanel
+              jobId={jobId}
+              detail={detail}
+              actor={actor}
+              onDone={refresh}
+            />
+            <ReleasePanel
+              job={job}
+              detail={detail}
+              actor={actor}
+              onDone={refresh}
+            />
           </TabsContent>
 
           <TabsContent value="feedback" className="mt-4 space-y-6">
-            <ProveOutPanel jobId={jobId} detail={detail} actor={actor} onDone={refresh} />
+            <ProveOutPanel
+              jobId={jobId}
+              detail={detail}
+              actor={actor}
+              onDone={refresh}
+            />
           </TabsContent>
 
           <TabsContent value="history" className="mt-4">
-            <Panel title="Audit trail" subtitle="Every decision recorded against this job.">
+            <Panel
+              title="Audit trail"
+              subtitle="Every decision recorded against this job."
+            >
               {audit.length === 0 ? (
                 <EmptyState message="No events recorded yet." />
               ) : (
                 <ol className="space-y-3">
                   {audit.map((entry) => (
-                    <li key={entry.id} className="border-l-2 border-border pl-4">
+                    <li
+                      key={entry.id}
+                      className="border-l-2 border-border pl-4"
+                    >
                       <p className="text-sm font-medium">{entry.action}</p>
                       {entry.detail ? (
-                        <p className="text-xs text-muted-foreground">{entry.detail}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {entry.detail}
+                        </p>
                       ) : null}
                       <p className="mt-0.5 text-[11px] uppercase tracking-wider text-muted-foreground">
                         {new Date(entry.created_at).toLocaleString()}
@@ -224,13 +311,32 @@ function JobConsole() {
   );
 }
 
-type Actor = { organizationId: string | null; actorId: string | null; actorName: string | null };
+type Actor = {
+  organizationId: string | null;
+  actorId: string | null;
+  actorName: string | null;
+};
 type Detail = ReturnType<typeof useJobDetail>["data"];
-type PanelProps = { jobId: string; detail: Detail; actor: Actor; onDone: () => void };
+type PanelProps = {
+  jobId: string;
+  detail: Detail;
+  actor: Actor;
+  onDone: () => void;
+};
 
-async function setStatus(jobId: string, status: string, actor: Actor, action: string, detail?: string) {
-  await productionUpsert({ data: { table: "jobs", id: jobId, values: { status } } });
-  await logJobEvent({ data: { jobId, ...actor, action, detail: detail ?? null } });
+async function setStatus(
+  jobId: string,
+  status: string,
+  actor: Actor,
+  action: string,
+  detail?: string,
+) {
+  await productionUpsert({
+    data: { table: "jobs", id: jobId, values: { status } },
+  });
+  await logJobEvent({
+    data: { jobId, ...actor, action, detail: detail ?? null },
+  });
 }
 
 /* ---------------------------------- Intake --------------------------------- */
@@ -239,8 +345,12 @@ function IntakePanel({ jobId, detail, actor, onDone }: PanelProps) {
   const review = detail?.review ?? null;
   const initial = (review?.checklist as Record<string, boolean> | null) ?? {};
   const [checks, setChecks] = useState<Record<string, boolean>>(initial);
-  const [complexity, setComplexity] = useState<ComplexityLevel>(review?.complexity ?? "moderate");
-  const [result, setResult] = useState<IntakeResult>(review?.result ?? "ready_for_ai_planning");
+  const [complexity, setComplexity] = useState<ComplexityLevel>(
+    review?.complexity ?? "moderate",
+  );
+  const [result, setResult] = useState<IntakeResult>(
+    review?.result ?? "ready_for_ai_planning",
+  );
   const [notes, setNotes] = useState(review?.notes ?? "");
   const [busy, setBusy] = useState(false);
 
@@ -260,9 +370,13 @@ function IntakePanel({ jobId, detail, actor, onDone }: PanelProps) {
         flags: INTAKE_CHECKS.filter((c) => !checks[c.key]).map((c) => c.label),
       };
       if (review) {
-        await productionUpsert({ data: { table: "intake_reviews", id: review.id, values: payload } });
+        await productionUpsert({
+          data: { table: "intake_reviews", id: review.id, values: payload },
+        });
       } else {
-        await productionUpsert({ data: { table: "intake_reviews", values: payload } });
+        await productionUpsert({
+          data: { table: "intake_reviews", values: payload },
+        });
       }
       await setStatus(
         jobId,
@@ -274,7 +388,9 @@ function IntakePanel({ jobId, detail, actor, onDone }: PanelProps) {
       toast.success("Intake review saved.");
       onDone();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Could not save the intake review.");
+      toast.error(
+        e instanceof Error ? e.message : "Could not save the intake review.",
+      );
     } finally {
       setBusy(false);
     }
@@ -290,7 +406,9 @@ function IntakePanel({ jobId, detail, actor, onDone }: PanelProps) {
           <label key={c.key} className="flex items-center gap-2 text-sm">
             <Checkbox
               checked={Boolean(checks[c.key])}
-              onCheckedChange={(v) => setChecks((prev) => ({ ...prev, [c.key]: v === true }))}
+              onCheckedChange={(v) =>
+                setChecks((prev) => ({ ...prev, [c.key]: v === true }))
+              }
             />
             {c.label}
           </label>
@@ -300,7 +418,10 @@ function IntakePanel({ jobId, detail, actor, onDone }: PanelProps) {
       <div className="mt-5 grid gap-4 md:grid-cols-2">
         <div>
           <Label className="eyebrow">Complexity</Label>
-          <Select value={complexity} onValueChange={(v) => setComplexity(v as ComplexityLevel)}>
+          <Select
+            value={complexity}
+            onValueChange={(v) => setComplexity(v as ComplexityLevel)}
+          >
             <SelectTrigger className="mt-1">
               <SelectValue />
             </SelectTrigger>
@@ -315,13 +436,20 @@ function IntakePanel({ jobId, detail, actor, onDone }: PanelProps) {
         </div>
         <div>
           <Label className="eyebrow">Intake result</Label>
-          <Select value={result} onValueChange={(v) => setResult(v as IntakeResult)}>
+          <Select
+            value={result}
+            onValueChange={(v) => setResult(v as IntakeResult)}
+          >
             <SelectTrigger className="mt-1">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
               {(Object.keys(INTAKE_RESULT_META) as IntakeResult[]).map((r) => (
-                <SelectItem key={r} value={r} disabled={r === "ready_for_ai_planning" && !complete}>
+                <SelectItem
+                  key={r}
+                  value={r}
+                  disabled={r === "ready_for_ai_planning" && !complete}
+                >
                   {INTAKE_RESULT_META[r]}
                 </SelectItem>
               ))}
@@ -332,13 +460,20 @@ function IntakePanel({ jobId, detail, actor, onDone }: PanelProps) {
 
       <div className="mt-4">
         <Label className="eyebrow">Reviewer notes</Label>
-        <Textarea className="mt-1" rows={3} value={notes} onChange={(e) => setNotes(e.target.value)} />
+        <Textarea
+          className="mt-1"
+          rows={3}
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+        />
       </div>
 
       {!complete ? (
         <p className="mt-3 text-xs text-muted-foreground">
-          {INTAKE_CHECKS.length - INTAKE_CHECKS.filter((c) => checks[c.key]).length} item(s) outstanding —
-          route to an exception path or resolve the data gap before AI planning.
+          {INTAKE_CHECKS.length -
+            INTAKE_CHECKS.filter((c) => checks[c.key]).length}{" "}
+          item(s) outstanding — route to an exception path or resolve the data
+          gap before AI planning.
         </p>
       ) : null}
 
@@ -353,7 +488,9 @@ function IntakePanel({ jobId, detail, actor, onDone }: PanelProps) {
 
 function ExceptionPanel({ jobId, detail, actor, onDone }: PanelProps) {
   const exceptions = detail?.exceptions ?? [];
-  const [kind, setKind] = useState<ExceptionKind>("missing_customer_information");
+  const [kind, setKind] = useState<ExceptionKind>(
+    "missing_customer_information",
+  );
   const [missing, setMissing] = useState("");
   const [path, setPath] = useState("");
   const [reason, setReason] = useState("");
@@ -383,12 +520,19 @@ function ExceptionPanel({ jobId, detail, actor, onDone }: PanelProps) {
       });
     } catch (e) {
       setBusy(false);
-      toast.error(e instanceof Error ? e.message : "Could not raise exception.");
+      toast.error(
+        e instanceof Error ? e.message : "Could not raise exception.",
+      );
       return;
     }
     setBusy(false);
     await logJobEvent({
-      data: { jobId, ...actor, action: "Intake exception raised", detail: EXCEPTION_KIND_META[kind] },
+      data: {
+        jobId,
+        ...actor,
+        action: "Intake exception raised",
+        detail: EXCEPTION_KIND_META[kind],
+      },
     });
     setReason("");
     setMissing("");
@@ -397,7 +541,11 @@ function ExceptionPanel({ jobId, detail, actor, onDone }: PanelProps) {
     onDone();
   }
 
-  async function decide(id: string, status: "approved" | "denied", resume?: string) {
+  async function decide(
+    id: string,
+    status: "approved" | "denied",
+    resume?: string,
+  ) {
     try {
       await productionUpsert({
         data: {
@@ -413,46 +561,76 @@ function ExceptionPanel({ jobId, detail, actor, onDone }: PanelProps) {
         },
       });
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Could not update exception.");
+      toast.error(
+        e instanceof Error ? e.message : "Could not update exception.",
+      );
       return;
     }
     if (status === "approved" && resume) {
-      await setStatus(jobId, resume, actor, "Exception approved", "Job resumed");
+      await setStatus(
+        jobId,
+        resume,
+        actor,
+        "Exception approved",
+        "Job resumed",
+      );
     } else {
-      await logJobEvent({ data: { jobId, ...actor, action: `Exception ${status}` } });
+      await logJobEvent({
+        data: { jobId, ...actor, action: `Exception ${status}` },
+      });
     }
     onDone();
   }
 
   return (
-    <Panel title="Intake exceptions" subtitle="Blocked jobs resume only after an explicit approval.">
+    <Panel
+      title="Intake exceptions"
+      subtitle="Blocked jobs resume only after an explicit approval."
+    >
       <div className="grid gap-4 md:grid-cols-2">
         <div>
           <Label className="eyebrow">Exception type</Label>
-          <Select value={kind} onValueChange={(v) => setKind(v as ExceptionKind)}>
+          <Select
+            value={kind}
+            onValueChange={(v) => setKind(v as ExceptionKind)}
+          >
             <SelectTrigger className="mt-1">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {(Object.keys(EXCEPTION_KIND_META) as ExceptionKind[]).map((k) => (
-                <SelectItem key={k} value={k}>
-                  {EXCEPTION_KIND_META[k]}
-                </SelectItem>
-              ))}
+              {(Object.keys(EXCEPTION_KIND_META) as ExceptionKind[]).map(
+                (k) => (
+                  <SelectItem key={k} value={k}>
+                    {EXCEPTION_KIND_META[k]}
+                  </SelectItem>
+                ),
+              )}
             </SelectContent>
           </Select>
         </div>
         <div>
           <Label className="eyebrow">Missing items</Label>
-          <Input className="mt-1" value={missing} onChange={(e) => setMissing(e.target.value)} />
+          <Input
+            className="mt-1"
+            value={missing}
+            onChange={(e) => setMissing(e.target.value)}
+          />
         </div>
         <div>
           <Label className="eyebrow">Proposed path</Label>
-          <Input className="mt-1" value={path} onChange={(e) => setPath(e.target.value)} />
+          <Input
+            className="mt-1"
+            value={path}
+            onChange={(e) => setPath(e.target.value)}
+          />
         </div>
         <div>
           <Label className="eyebrow">Request reason</Label>
-          <Input className="mt-1" value={reason} onChange={(e) => setReason(e.target.value)} />
+          <Input
+            className="mt-1"
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+          />
         </div>
       </div>
       <div className="mt-4">
@@ -468,21 +646,36 @@ function ExceptionPanel({ jobId, detail, actor, onDone }: PanelProps) {
           exceptions.map((ex) => (
             <div key={ex.id} className="rounded-md border border-border p-4">
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <p className="text-sm font-medium">{EXCEPTION_KIND_META[ex.kind]}</p>
+                <p className="text-sm font-medium">
+                  {EXCEPTION_KIND_META[ex.kind]}
+                </p>
                 <Badge variant="outline" className="uppercase">
                   {ex.status}
                 </Badge>
               </div>
-              <p className="mt-1 text-xs text-muted-foreground">{ex.request_reason}</p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                {ex.request_reason}
+              </p>
               {ex.missing_items ? (
-                <p className="mt-1 text-xs text-muted-foreground">Missing: {ex.missing_items}</p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Missing: {ex.missing_items}
+                </p>
               ) : null}
               {ex.status === "pending" ? (
                 <div className="mt-3 flex gap-2">
-                  <Button size="sm" onClick={() => decide(ex.id, "approved", "ready_for_ai_planning")}>
+                  <Button
+                    size="sm"
+                    onClick={() =>
+                      decide(ex.id, "approved", "ready_for_ai_planning")
+                    }
+                  >
                     Approve & resume
                   </Button>
-                  <Button size="sm" variant="outline" onClick={() => decide(ex.id, "denied")}>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => decide(ex.id, "denied")}
+                  >
                     Deny
                   </Button>
                 </div>
@@ -558,7 +751,9 @@ function PlanningPanel({
       });
       await setStatus(
         job.id,
-        action === "rejected" ? "mastercam_integration_pending" : "manufacturing_plan_approved",
+        action === "rejected"
+          ? "mastercam_integration_pending"
+          : "manufacturing_plan_approved",
         actor,
         `Programmer ${action} the manufacturing plan`,
         action === "approved" ? undefined : reason,
@@ -566,7 +761,9 @@ function PlanningPanel({
       toast.success("Plan review recorded.");
       onDone();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Could not record the review.");
+      toast.error(
+        e instanceof Error ? e.message : "Could not record the review.",
+      );
     } finally {
       setBusy(false);
     }
@@ -596,20 +793,32 @@ function PlanningPanel({
             <DefinitionList
               items={[
                 { label: "Complexity", value: planBody?.complexity ?? "—" },
-                { label: "Strategy", value: planBody?.machining_strategy ?? "—" },
+                {
+                  label: "Strategy",
+                  value: planBody?.machining_strategy ?? "—",
+                },
                 { label: "Model", value: plan.model },
-                { label: "Generated", value: new Date(plan.generated_at).toLocaleString() },
+                {
+                  label: "Generated",
+                  value: new Date(plan.generated_at).toLocaleString(),
+                },
               ]}
             />
             <ListBlock title="Risks" items={planBody?.risks} />
             <ListBlock title="Assumptions" items={planBody?.assumptions} />
             <ListBlock title="Data gaps" items={planBody?.data_gaps} />
-            <ListBlock title="Inspection points" items={planBody?.inspection_points} />
+            <ListBlock
+              title="Inspection points"
+              items={planBody?.inspection_points}
+            />
           </div>
         )}
       </Panel>
 
-      <Panel title="Operation plan" subtitle={`${operations.length} operation(s) proposed.`}>
+      <Panel
+        title="Operation plan"
+        subtitle={`${operations.length} operation(s) proposed.`}
+      >
         {operations.length === 0 ? (
           <EmptyState message="No operations yet." />
         ) : (
@@ -621,7 +830,12 @@ function PlanningPanel({
         <div className="grid gap-4 md:grid-cols-2">
           <div className="md:col-span-2">
             <Label className="eyebrow">Changes made</Label>
-            <Textarea className="mt-1" rows={3} value={changes} onChange={(e) => setChanges(e.target.value)} />
+            <Textarea
+              className="mt-1"
+              rows={3}
+              value={changes}
+              onChange={(e) => setChanges(e.target.value)}
+            />
           </div>
           <div>
             <Label className="eyebrow">Change reason</Label>
@@ -640,17 +854,29 @@ function PlanningPanel({
           </div>
           <div>
             <Label className="eyebrow">Programmer instructions</Label>
-            <Input className="mt-1" value={instructions} onChange={(e) => setInstructions(e.target.value)} />
+            <Input
+              className="mt-1"
+              value={instructions}
+              onChange={(e) => setInstructions(e.target.value)}
+            />
           </div>
         </div>
         <div className="mt-4 flex flex-wrap gap-2">
           <Button onClick={() => review("approved")} disabled={busy || !plan}>
             Approve plan
           </Button>
-          <Button variant="outline" onClick={() => review("modified")} disabled={busy || !plan}>
+          <Button
+            variant="outline"
+            onClick={() => review("modified")}
+            disabled={busy || !plan}
+          >
             Approve with modifications
           </Button>
-          <Button variant="outline" onClick={() => review("rejected")} disabled={busy || !plan}>
+          <Button
+            variant="outline"
+            onClick={() => review("rejected")}
+            disabled={busy || !plan}
+          >
             Reject — program manually
           </Button>
         </div>
@@ -693,7 +919,16 @@ function OperationTable({ operations }: { operations: Operation[] }) {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border text-left">
-                  {["#", "Operation", "Feature", "Tool", "RPM", "Feed", "Stock left", "Validated"].map((h) => (
+                  {[
+                    "#",
+                    "Operation",
+                    "Feature",
+                    "Tool",
+                    "RPM",
+                    "Feed",
+                    "Stock left",
+                    "Validated",
+                  ].map((h) => (
                     <th key={h} className="eyebrow py-2 pr-4">
                       {h}
                     </th>
@@ -703,9 +938,13 @@ function OperationTable({ operations }: { operations: Operation[] }) {
               <tbody>
                 {ops.map((op) => (
                   <tr key={op.id} className="border-b border-border/60">
-                    <td className="py-2 pr-4 font-mono text-xs">{op.sequence}</td>
+                    <td className="py-2 pr-4 font-mono text-xs">
+                      {op.sequence}
+                    </td>
                     <td className="py-2 pr-4">{op.operation_type}</td>
-                    <td className="py-2 pr-4 text-muted-foreground">{op.feature ?? "—"}</td>
+                    <td className="py-2 pr-4 text-muted-foreground">
+                      {op.feature ?? "—"}
+                    </td>
                     <td className="py-2 pr-4 text-xs">
                       T{op.tool_number ?? "?"} {op.tool_description ?? ""}
                     </td>
@@ -740,7 +979,9 @@ function ProgrammingPanel({
 }) {
   const camJob = detail?.camJob ?? null;
   const { data: posts = [] } = usePostProcessors();
-  const [mode, setMode] = useState<IntegrationMode>(camJob?.mode ?? "guided_add_in");
+  const [mode, setMode] = useState<IntegrationMode>(
+    camJob?.mode ?? "guided_add_in",
+  );
   const [fileName, setFileName] = useState(camJob?.file_name ?? "");
   const [version, setVersion] = useState(camJob?.file_version ?? "");
   const [postId, setPostId] = useState(camJob?.post_processor_id ?? "");
@@ -760,36 +1001,56 @@ function ProgrammingPanel({
         package: {} as never,
       };
       if (camJob) {
-        await productionUpsert({ data: { table: "mastercam_jobs", id: camJob.id, values: payload } });
+        await productionUpsert({
+          data: { table: "mastercam_jobs", id: camJob.id, values: payload },
+        });
       } else {
-        await productionUpsert({ data: { table: "mastercam_jobs", values: payload } });
+        await productionUpsert({
+          data: { table: "mastercam_jobs", values: payload },
+        });
       }
-      await setStatus(job.id, status, actor, action, INTEGRATION_MODE_META[mode].label);
+      await setStatus(
+        job.id,
+        status,
+        actor,
+        action,
+        INTEGRATION_MODE_META[mode].label,
+      );
       toast.success(action);
       onDone();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Could not update the CAM job.");
+      toast.error(
+        e instanceof Error ? e.message : "Could not update the CAM job.",
+      );
     } finally {
       setBusy(false);
     }
   }
 
   return (
-    <Panel title="CAM integration" subtitle={INTEGRATION_MODE_META[mode].description}>
+    <Panel
+      title="CAM integration"
+      subtitle={INTEGRATION_MODE_META[mode].description}
+    >
       <PreliminaryNotice label={AUTOMATION_LABEL} />
       <div className="mt-4 grid gap-4 md:grid-cols-2">
         <div>
           <Label className="eyebrow">Integration mode</Label>
-          <Select value={mode} onValueChange={(v) => setMode(v as IntegrationMode)}>
+          <Select
+            value={mode}
+            onValueChange={(v) => setMode(v as IntegrationMode)}
+          >
             <SelectTrigger className="mt-1">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {(Object.keys(INTEGRATION_MODE_META) as IntegrationMode[]).map((m) => (
-                <SelectItem key={m} value={m}>
-                  {INTEGRATION_MODE_META[m].label}
-                </SelectItem>
-              ))}
+              {(Object.keys(INTEGRATION_MODE_META) as IntegrationMode[]).map(
+                (m) => (
+                  <SelectItem key={m} value={m}>
+                    {INTEGRATION_MODE_META[m].label}
+                  </SelectItem>
+                ),
+              )}
             </SelectContent>
           </Select>
         </div>
@@ -810,28 +1071,54 @@ function ProgrammingPanel({
         </div>
         <div>
           <Label className="eyebrow">CAM file name</Label>
-          <Input className="mt-1" value={fileName} onChange={(e) => setFileName(e.target.value)} />
+          <Input
+            className="mt-1"
+            value={fileName}
+            onChange={(e) => setFileName(e.target.value)}
+          />
         </div>
         <div>
           <Label className="eyebrow">CAM file version</Label>
-          <Input className="mt-1" value={version} onChange={(e) => setVersion(e.target.value)} />
+          <Input
+            className="mt-1"
+            value={version}
+            onChange={(e) => setVersion(e.target.value)}
+          />
         </div>
       </div>
 
       <div className="mt-5 flex flex-wrap gap-2 border-t border-border pt-4">
-        <Button variant="outline" disabled={busy} onClick={() => save("created", "mastercam_job_created", "CAM job created")}>
+        <Button
+          variant="outline"
+          disabled={busy}
+          onClick={() =>
+            save("created", "mastercam_job_created", "CAM job created")
+          }
+        >
           Mark CAM job created
         </Button>
         <Button
           variant="outline"
           disabled={busy}
-          onClick={() => save("toolpaths", "toolpath_generation_in_progress", "Toolpath generation started")}
+          onClick={() =>
+            save(
+              "toolpaths",
+              "toolpath_generation_in_progress",
+              "Toolpath generation started",
+            )
+          }
         >
           Start toolpaths
         </Button>
         <Button
           disabled={busy}
-          onClick={() => save("preliminary", "preliminary_toolpaths_generated", "Preliminary toolpaths generated")}
+          onClick={() =>
+            save(
+              "preliminary",
+              "preliminary_toolpaths_generated",
+              "Preliminary toolpaths generated",
+            )
+          }
         >
           Preliminary toolpaths complete
         </Button>
@@ -849,7 +1136,12 @@ function ChecksPanel({ jobId, detail, actor, onDone }: PanelProps) {
   async function run() {
     setBusy(true);
     try {
-      await setStatus(jobId, "automated_checks_in_progress", actor, "Automated checks started");
+      await setStatus(
+        jobId,
+        "automated_checks_in_progress",
+        actor,
+        "Automated checks started",
+      );
 
       const rows = AUTOMATED_CHECKS.map((label) => ({
         job_id: jobId,
@@ -860,7 +1152,13 @@ function ChecksPanel({ jobId, detail, actor, onDone }: PanelProps) {
         detail: null,
       }));
       await replaceAutomatedChecks({ data: { jobId, rows } });
-      await setStatus(jobId, "ready_for_simulation", actor, "Automated checks complete", `${rows.length} checks recorded`);
+      await setStatus(
+        jobId,
+        "ready_for_simulation",
+        actor,
+        "Automated checks complete",
+        `${rows.length} checks recorded`,
+      );
       toast.success("Automated checks recorded.");
       onDone();
     } catch (e) {
@@ -870,12 +1168,24 @@ function ChecksPanel({ jobId, detail, actor, onDone }: PanelProps) {
     }
   }
 
-  async function flag(id: string, severity: "critical" | "review_required" | "advisory" | "passed") {
+  async function flag(
+    id: string,
+    severity: "critical" | "review_required" | "advisory" | "passed",
+  ) {
     await productionUpsert({
-      data: { table: "automated_checks", id, values: { severity, resolved: severity === "passed" } },
+      data: {
+        table: "automated_checks",
+        id,
+        values: { severity, resolved: severity === "passed" },
+      },
     });
     if (severity === "critical") {
-      await setStatus(jobId, "corrections_required", actor, "Correction required from automated checks");
+      await setStatus(
+        jobId,
+        "corrections_required",
+        actor,
+        "Correction required from automated checks",
+      );
     }
     onDone();
   }
@@ -895,7 +1205,10 @@ function ChecksPanel({ jobId, detail, actor, onDone }: PanelProps) {
       ) : (
         <div className="grid gap-2 md:grid-cols-2">
           {checks.map((c) => (
-            <div key={c.id} className="flex items-center justify-between rounded-md border border-border px-3 py-2">
+            <div
+              key={c.id}
+              className="flex items-center justify-between rounded-md border border-border px-3 py-2"
+            >
               <span className="text-sm">{c.check_label}</span>
               <div className="flex items-center gap-2">
                 <Badge
@@ -910,7 +1223,11 @@ function ChecksPanel({ jobId, detail, actor, onDone }: PanelProps) {
                 >
                   {c.severity.replace("_", " ")}
                 </Badge>
-                <Button size="sm" variant="ghost" onClick={() => flag(c.id, "critical")}>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => flag(c.id, "critical")}
+                >
                   Flag
                 </Button>
               </div>
@@ -924,7 +1241,8 @@ function ChecksPanel({ jobId, detail, actor, onDone }: PanelProps) {
 
 function SimulationPanel({ jobId, detail, actor, onDone }: PanelProps) {
   const sims = detail?.simulations ?? [];
-  const [status, setStatusValue] = useState<SimulationStatus>("simulation_passed");
+  const [status, setStatusValue] =
+    useState<SimulationStatus>("simulation_passed");
   const [collisions, setCollisions] = useState("");
   const [warnings, setWarnings] = useState("");
   const [cycle, setCycle] = useState("");
@@ -947,7 +1265,9 @@ function SimulationPanel({ jobId, detail, actor, onDone }: PanelProps) {
             software_version: software || null,
             simulated_by: actor.actorId,
             simulated_at: new Date().toISOString(),
-            results: Object.fromEntries(SIMULATION_CHECKS.map((c) => [c, Boolean(selected[c])])),
+            results: Object.fromEntries(
+              SIMULATION_CHECKS.map((c) => [c, Boolean(selected[c])]),
+            ),
           },
         },
       });
@@ -959,24 +1279,37 @@ function SimulationPanel({ jobId, detail, actor, onDone }: PanelProps) {
             : status === "simulation_failed"
               ? "simulation_failed"
               : "corrections_required";
-      await setStatus(jobId, next, actor, "Simulation result recorded", status.replace(/_/g, " "));
+      await setStatus(
+        jobId,
+        next,
+        actor,
+        "Simulation result recorded",
+        status.replace(/_/g, " "),
+      );
       toast.success("Simulation recorded.");
       onDone();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Could not record the simulation.");
+      toast.error(
+        e instanceof Error ? e.message : "Could not record the simulation.",
+      );
     } finally {
       setBusy(false);
     }
   }
 
   return (
-    <Panel title="Simulation" subtitle="Thirteen verification checks. No approval without a recorded result.">
+    <Panel
+      title="Simulation"
+      subtitle="Thirteen verification checks. No approval without a recorded result."
+    >
       <div className="grid gap-2 md:grid-cols-3">
         {SIMULATION_CHECKS.map((c) => (
           <label key={c} className="flex items-center gap-2 text-sm">
             <Checkbox
               checked={Boolean(selected[c])}
-              onCheckedChange={(v) => setSelected((prev) => ({ ...prev, [c]: v === true }))}
+              onCheckedChange={(v) =>
+                setSelected((prev) => ({ ...prev, [c]: v === true }))
+              }
             />
             {c}
           </label>
@@ -986,7 +1319,10 @@ function SimulationPanel({ jobId, detail, actor, onDone }: PanelProps) {
       <div className="mt-5 grid gap-4 md:grid-cols-2">
         <div>
           <Label className="eyebrow">Result</Label>
-          <Select value={status} onValueChange={(v) => setStatusValue(v as SimulationStatus)}>
+          <Select
+            value={status}
+            onValueChange={(v) => setStatusValue(v as SimulationStatus)}
+          >
             <SelectTrigger className="mt-1">
               <SelectValue />
             </SelectTrigger>
@@ -1009,19 +1345,36 @@ function SimulationPanel({ jobId, detail, actor, onDone }: PanelProps) {
         </div>
         <div>
           <Label className="eyebrow">Estimated cycle time (min)</Label>
-          <Input className="mt-1" type="number" value={cycle} onChange={(e) => setCycle(e.target.value)} />
+          <Input
+            className="mt-1"
+            type="number"
+            value={cycle}
+            onChange={(e) => setCycle(e.target.value)}
+          />
         </div>
         <div>
           <Label className="eyebrow">Collisions</Label>
-          <Input className="mt-1" value={collisions} onChange={(e) => setCollisions(e.target.value)} />
+          <Input
+            className="mt-1"
+            value={collisions}
+            onChange={(e) => setCollisions(e.target.value)}
+          />
         </div>
         <div>
           <Label className="eyebrow">Warnings</Label>
-          <Input className="mt-1" value={warnings} onChange={(e) => setWarnings(e.target.value)} />
+          <Input
+            className="mt-1"
+            value={warnings}
+            onChange={(e) => setWarnings(e.target.value)}
+          />
         </div>
         <div>
           <Label className="eyebrow">Software version</Label>
-          <Input className="mt-1" value={software} onChange={(e) => setSoftware(e.target.value)} />
+          <Input
+            className="mt-1"
+            value={software}
+            onChange={(e) => setSoftware(e.target.value)}
+          />
         </div>
       </div>
 
@@ -1037,7 +1390,9 @@ function SimulationPanel({ jobId, detail, actor, onDone }: PanelProps) {
             <li key={s.id} className="flex justify-between">
               <span>{s.status.replace(/_/g, " ")}</span>
               <span className="text-xs text-muted-foreground">
-                {s.simulated_at ? new Date(s.simulated_at).toLocaleString() : ""}
+                {s.simulated_at
+                  ? new Date(s.simulated_at).toLocaleString()
+                  : ""}
               </span>
             </li>
           ))}
@@ -1083,15 +1438,21 @@ function ApprovalPanel({ jobId, detail, actor, onDone }: PanelProps) {
       });
       await setStatus(
         jobId,
-        action === "approved" ? "programmer_approved" : "programmer_revisions_in_progress",
+        action === "approved"
+          ? "programmer_approved"
+          : "programmer_revisions_in_progress",
         actor,
-        action === "approved" ? "Programmer approved the program" : "Programmer requested revisions",
+        action === "approved"
+          ? "Programmer approved the program"
+          : "Programmer requested revisions",
         notes || undefined,
       );
       toast.success("Recorded.");
       onDone();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Could not record the approval.");
+      toast.error(
+        e instanceof Error ? e.message : "Could not record the approval.",
+      );
     } finally {
       setBusy(false);
     }
@@ -1113,7 +1474,9 @@ function ApprovalPanel({ jobId, detail, actor, onDone }: PanelProps) {
           <label key={c} className="flex items-center gap-2 text-sm">
             <Checkbox
               checked={Boolean(checks[c])}
-              onCheckedChange={(v) => setChecks((prev) => ({ ...prev, [c]: v === true }))}
+              onCheckedChange={(v) =>
+                setChecks((prev) => ({ ...prev, [c]: v === true }))
+              }
             />
             {c}
           </label>
@@ -1123,31 +1486,53 @@ function ApprovalPanel({ jobId, detail, actor, onDone }: PanelProps) {
       <div className="mt-5 grid gap-4 md:grid-cols-2">
         <div>
           <Label className="eyebrow">Program version</Label>
-          <Input className="mt-1" value={programVersion} onChange={(e) => setProgramVersion(e.target.value)} />
+          <Input
+            className="mt-1"
+            value={programVersion}
+            onChange={(e) => setProgramVersion(e.target.value)}
+          />
         </div>
         <div>
           <Label className="eyebrow">Notes</Label>
-          <Input className="mt-1" value={notes} onChange={(e) => setNotes(e.target.value)} />
+          <Input
+            className="mt-1"
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+          />
         </div>
       </div>
 
       <label className="mt-4 flex items-start gap-2 rounded-md border border-border p-3 text-sm">
-        <Checkbox checked={ack} onCheckedChange={(v) => setAck(v === true)} className="mt-0.5" />
+        <Checkbox
+          checked={ack}
+          onCheckedChange={(v) => setAck(v === true)}
+          className="mt-0.5"
+        />
         <span>
-          I am a qualified programmer. I have reviewed every item above and accept responsibility for this
-          program's validation, posting and production release.
+          I am a qualified programmer. I have reviewed every item above and
+          accept responsibility for this program's validation, posting and
+          production release.
         </span>
       </label>
 
       {outstanding.length > 0 ? (
-        <p className="mt-2 text-xs text-muted-foreground">{outstanding.length} checklist item(s) outstanding.</p>
+        <p className="mt-2 text-xs text-muted-foreground">
+          {outstanding.length} checklist item(s) outstanding.
+        </p>
       ) : null}
 
       <div className="mt-4 flex gap-2 border-t border-border pt-4">
-        <Button onClick={() => submit("approved")} disabled={!canApprove || busy}>
+        <Button
+          onClick={() => submit("approved")}
+          disabled={!canApprove || busy}
+        >
           Approve program
         </Button>
-        <Button variant="outline" onClick={() => submit("revisions_required")} disabled={busy}>
+        <Button
+          variant="outline"
+          onClick={() => submit("revisions_required")}
+          disabled={busy}
+        >
           Request revisions
         </Button>
       </div>
@@ -1156,7 +1541,8 @@ function ApprovalPanel({ jobId, detail, actor, onDone }: PanelProps) {
         <ul className="mt-5 space-y-1 text-xs text-muted-foreground">
           {approvals.map((a) => (
             <li key={a.id}>
-              {a.action} — {a.programmer_name} · {new Date(a.approved_at).toLocaleString()}
+              {a.action} — {a.programmer_name} ·{" "}
+              {new Date(a.approved_at).toLocaleString()}
             </li>
           ))}
         </ul>
@@ -1203,7 +1589,9 @@ function PostingPanel({ jobId, detail, actor, onDone }: PanelProps) {
       onDone();
       toast.success("Posted code recorded.");
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Could not record the post.");
+      toast.error(
+        e instanceof Error ? e.message : "Could not record the post.",
+      );
     } finally {
       setBusy(false);
     }
@@ -1214,14 +1602,23 @@ function PostingPanel({ jobId, detail, actor, onDone }: PanelProps) {
       await productionUpsert({
         data: {
           table: "setup_sheets",
-          values: { job_id: jobId, content: { generated_at: new Date().toISOString() }, reviewed: false },
+          values: {
+            job_id: jobId,
+            content: { generated_at: new Date().toISOString() },
+            reviewed: false,
+          },
         },
       });
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Could not generate sheet.");
       return;
     }
-    await setStatus(jobId, "final_technical_review", actor, "Setup sheet generated");
+    await setStatus(
+      jobId,
+      "final_technical_review",
+      actor,
+      "Setup sheet generated",
+    );
     onDone();
   }
 
@@ -1230,21 +1627,35 @@ function PostingPanel({ jobId, detail, actor, onDone }: PanelProps) {
       data: {
         table: "setup_sheets",
         id,
-        values: { reviewed: true, reviewed_at: new Date().toISOString(), reviewer: actor.actorId },
+        values: {
+          reviewed: true,
+          reviewed_at: new Date().toISOString(),
+          reviewer: actor.actorId,
+        },
       },
     });
-    await setStatus(jobId, "ready_for_customer_release", actor, "Final technical review complete");
+    await setStatus(
+      jobId,
+      "ready_for_customer_release",
+      actor,
+      "Final technical review complete",
+    );
     onDone();
   }
 
   return (
-    <Panel title="Posting & code review" subtitle="16-point posted-code review before setup documentation.">
+    <Panel
+      title="Posting & code review"
+      subtitle="16-point posted-code review before setup documentation."
+    >
       <div className="grid gap-1.5 md:grid-cols-2">
         {CODE_REVIEW_CHECKS.map((c) => (
           <label key={c} className="flex items-center gap-2 text-sm">
             <Checkbox
               checked={Boolean(checks[c])}
-              onCheckedChange={(v) => setChecks((prev) => ({ ...prev, [c]: v === true }))}
+              onCheckedChange={(v) =>
+                setChecks((prev) => ({ ...prev, [c]: v === true }))
+              }
             />
             {c}
           </label>
@@ -1254,11 +1665,19 @@ function PostingPanel({ jobId, detail, actor, onDone }: PanelProps) {
       <div className="mt-5 grid gap-4 md:grid-cols-2">
         <div>
           <Label className="eyebrow">Program number</Label>
-          <Input className="mt-1" value={programNumber} onChange={(e) => setProgramNumber(e.target.value)} />
+          <Input
+            className="mt-1"
+            value={programNumber}
+            onChange={(e) => setProgramNumber(e.target.value)}
+          />
         </div>
         <div>
           <Label className="eyebrow">Post processor used</Label>
-          <Input className="mt-1" value={postName} onChange={(e) => setPostName(e.target.value)} />
+          <Input
+            className="mt-1"
+            value={postName}
+            onChange={(e) => setPostName(e.target.value)}
+          />
         </div>
       </div>
 
@@ -1273,7 +1692,8 @@ function PostingPanel({ jobId, detail, actor, onDone }: PanelProps) {
 
       {posts.length > 0 ? (
         <p className="mt-4 text-xs text-muted-foreground">
-          Latest post: {posts[0].program_number ?? "—"} · {posts[0].review_status}
+          Latest post: {posts[0].program_number ?? "—"} ·{" "}
+          {posts[0].review_status}
         </p>
       ) : null}
 
@@ -1281,11 +1701,17 @@ function PostingPanel({ jobId, detail, actor, onDone }: PanelProps) {
         <ul className="mt-3 space-y-2 border-t border-border pt-3 text-sm">
           {sheets.map((s) => (
             <li key={s.id} className="flex items-center justify-between">
-              <span>Setup sheet · {new Date(s.created_at).toLocaleDateString()}</span>
+              <span>
+                Setup sheet · {new Date(s.created_at).toLocaleDateString()}
+              </span>
               {s.reviewed ? (
                 <Badge variant="outline">Reviewed</Badge>
               ) : (
-                <Button size="sm" variant="outline" onClick={() => reviewSheet(s.id)}>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => reviewSheet(s.id)}
+                >
                   Mark technical review complete
                 </Button>
               )}
@@ -1316,10 +1742,12 @@ function ReleasePanel({
   const [busy, setBusy] = useState(false);
 
   const blockers: string[] = [];
-  if (!approvals.some((a) => a.action === "approved")) blockers.push("Programmer approval is required.");
+  if (!approvals.some((a) => a.action === "approved"))
+    blockers.push("Programmer approval is required.");
   if (!sims.length) blockers.push("A simulation result must be recorded.");
   if (!posts.length) blockers.push("Posted code must be recorded.");
-  if (!sheets.some((s) => s.reviewed)) blockers.push("Setup sheet technical review is required.");
+  if (!sheets.some((s) => s.reviewed))
+    blockers.push("Setup sheet technical review is required.");
 
   async function releaseToCustomer() {
     setBusy(true);
@@ -1337,9 +1765,13 @@ function ReleasePanel({
         released_by: actor.actorId,
       };
       if (release) {
-        await productionUpsert({ data: { table: "release_packages", id: release.id, values: payload } });
+        await productionUpsert({
+          data: { table: "release_packages", id: release.id, values: payload },
+        });
       } else {
-        await productionUpsert({ data: { table: "release_packages", values: payload } });
+        await productionUpsert({
+          data: { table: "release_packages", values: payload },
+        });
       }
       await productionUpsert({
         data: {
@@ -1352,18 +1784,25 @@ function ReleasePanel({
           },
         },
       });
-      await logJobEvent({ data: { jobId: job.id, ...actor, action: "Released to customer" } });
+      await logJobEvent({
+        data: { jobId: job.id, ...actor, action: "Released to customer" },
+      });
       toast.success("Release package issued.");
       onDone();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Could not release the job.");
+      toast.error(
+        e instanceof Error ? e.message : "Could not release the job.",
+      );
     } finally {
       setBusy(false);
     }
   }
 
   return (
-    <Panel title="Customer release" subtitle="Nothing auto-releases. Every gate is explicit.">
+    <Panel
+      title="Customer release"
+      subtitle="Nothing auto-releases. Every gate is explicit."
+    >
       {blockers.length > 0 ? (
         <ul className="space-y-1 rounded-md border border-destructive/40 bg-destructive/10 p-3 text-xs text-destructive">
           {blockers.map((b) => (
@@ -1379,14 +1818,22 @@ function ReleasePanel({
       <p className="mt-4 text-xs text-muted-foreground">{PRODUCTION_LICENSE}</p>
 
       <div className="mt-4 flex gap-2">
-        <Button onClick={releaseToCustomer} disabled={blockers.length > 0 || busy}>
+        <Button
+          onClick={releaseToCustomer}
+          disabled={blockers.length > 0 || busy}
+        >
           Release to customer
         </Button>
         <Button
           variant="outline"
           disabled={job.status !== "released_to_customer"}
           onClick={async () => {
-            await setStatus(job.id, "customer_prove_out", actor, "Customer prove-out started");
+            await setStatus(
+              job.id,
+              "customer_prove_out",
+              actor,
+              "Customer prove-out started",
+            );
             onDone();
           }}
         >
@@ -1425,8 +1872,12 @@ function ProveOutPanel({ jobId, detail, actor, onDone }: PanelProps) {
           table: "prove_out_results",
           values: {
             job_id: jobId,
-            actual_cycle_time: form.actual_cycle_time ? Number(form.actual_cycle_time) : null,
-            planned_cycle_time: form.planned_cycle_time ? Number(form.planned_cycle_time) : null,
+            actual_cycle_time: form.actual_cycle_time
+              ? Number(form.actual_cycle_time)
+              : null,
+            planned_cycle_time: form.planned_cycle_time
+              ? Number(form.planned_cycle_time)
+              : null,
             dimensional_results: form.dimensional_results || null,
             surface_finish_results: form.surface_finish_results || null,
             tool_life_results: form.tool_life_results || null,
@@ -1451,7 +1902,9 @@ function ProveOutPanel({ jobId, detail, actor, onDone }: PanelProps) {
       toast.success("Prove-out recorded.");
       onDone();
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Could not record the prove-out.");
+      toast.error(
+        e instanceof Error ? e.message : "Could not record the prove-out.",
+      );
     } finally {
       setBusy(false);
     }
@@ -1463,13 +1916,18 @@ function ProveOutPanel({ jobId, detail, actor, onDone }: PanelProps) {
       <Input
         className="mt-1"
         value={form[key]}
-        onChange={(e) => setForm((prev) => ({ ...prev, [key]: e.target.value }))}
+        onChange={(e) =>
+          setForm((prev) => ({ ...prev, [key]: e.target.value }))
+        }
       />
     </div>
   );
 
   return (
-    <Panel title="Customer prove-out" subtitle="Actual results feed accuracy tracking and revisions.">
+    <Panel
+      title="Customer prove-out"
+      subtitle="Actual results feed accuracy tracking and revisions."
+    >
       <div className="grid gap-4 md:grid-cols-2">
         {field("planned_cycle_time", "Planned cycle time (min)")}
         {field("actual_cycle_time", "Actual cycle time (min)")}
@@ -1485,11 +1943,17 @@ function ProveOutPanel({ jobId, detail, actor, onDone }: PanelProps) {
 
       <div className="mt-4 flex flex-wrap gap-6">
         <label className="flex items-center gap-2 text-sm">
-          <Checkbox checked={accepted} onCheckedChange={(v) => setAccepted(v === true)} />
+          <Checkbox
+            checked={accepted}
+            onCheckedChange={(v) => setAccepted(v === true)}
+          />
           First piece accepted
         </label>
         <label className="flex items-center gap-2 text-sm">
-          <Checkbox checked={revision} onCheckedChange={(v) => setRevision(v === true)} />
+          <Checkbox
+            checked={revision}
+            onCheckedChange={(v) => setRevision(v === true)}
+          />
           Revision required
         </label>
       </div>

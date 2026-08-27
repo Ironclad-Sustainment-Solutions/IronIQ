@@ -13,7 +13,11 @@ import {
   deleteObject,
 } from "@/lib/storage.server";
 import { extractCadFields } from "@/lib/cad-vision-ai.server";
-import { assertProductAllowed, assertProductAllowedForCadJob, assertProductAllowedForCadField } from "@/lib/product-access-check.server";
+import {
+  assertProductAllowed,
+  assertProductAllowedForCadJob,
+  assertProductAllowedForCadField,
+} from "@/lib/product-access-check.server";
 
 export const CAD_BUCKET = "cad-drawings";
 const MAX_FILE_BYTES = 25 * 1024 * 1024; // 25MB, same cap as Bulk Intake

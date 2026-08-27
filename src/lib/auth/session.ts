@@ -2,7 +2,12 @@
 // built-in sealed (encrypted + signed) cookie session — the cookie itself
 // only ever holds a pointer (sessionId) into public.app_sessions, so a
 // session can be revoked server-side at any time by deleting that row.
-import { useSession, getSession, updateSession, clearSession } from "@tanstack/react-start/server";
+import {
+  useSession,
+  getSession,
+  updateSession,
+  clearSession,
+} from "@tanstack/react-start/server";
 import { randomUUID } from "node:crypto";
 import { withAdmin } from "@/lib/db.server";
 
@@ -52,7 +57,10 @@ function sessionConfig() {
 }
 
 /** Call after verifying credentials — creates the DB session row + sets the cookie. */
-export async function createUserSession(userId: string, userAgent?: string | null): Promise<void> {
+export async function createUserSession(
+  userId: string,
+  userAgent?: string | null,
+): Promise<void> {
   const expiresAt = new Date(Date.now() + SESSION_MAX_AGE_SECONDS * 1000);
   const sessionId = await withAdmin(async (client) => {
     const { rows } = await client.query<{ id: string }>(
@@ -109,7 +117,9 @@ export async function destroySession(): Promise<void> {
   const sessionId = session.data.sessionId;
   if (sessionId) {
     await withAdmin((client) =>
-      client.query(`DELETE FROM public.app_sessions WHERE id = $1`, [sessionId]),
+      client.query(`DELETE FROM public.app_sessions WHERE id = $1`, [
+        sessionId,
+      ]),
     );
   }
   await clearSession(sessionConfig());

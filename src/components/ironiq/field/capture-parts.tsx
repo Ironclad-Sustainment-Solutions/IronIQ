@@ -50,7 +50,10 @@ export function RatingPad({
             disabled={disabled || notObserved}
             title={`${s.label} — ${s.description}`}
             onClick={() =>
-              onChange({ rating: rating === s.value ? null : s.value, not_observed: false })
+              onChange({
+                rating: rating === s.value ? null : s.value,
+                not_observed: false,
+              })
             }
             className={cn(
               "flex h-12 flex-col items-center justify-center rounded-sm border font-display text-base font-semibold transition-colors",
@@ -136,7 +139,10 @@ export function ObservationDialog({
   initial?: FieldCaptureObservationRow | null;
   quickWalk?: boolean;
   saving?: boolean;
-  onSave: (draft: ObservationDraft, opts: { addAnother: boolean; photo: File | null }) => void;
+  onSave: (
+    draft: ObservationDraft,
+    opts: { addAnother: boolean; photo: File | null },
+  ) => void;
   onUploadPhoto?: boolean;
 }) {
   const start = useMemo<ObservationDraft>(
@@ -175,13 +181,18 @@ export function ObservationDialog({
     setPhoto(null);
   }
 
-  const set = (values: Partial<ObservationDraft>) => setDraft((d) => ({ ...d, ...values }));
+  const set = (values: Partial<ObservationDraft>) =>
+    setDraft((d) => ({ ...d, ...values }));
   const domain = domainByCode(draft.domain_code);
 
   const save = (addAnother: boolean) => {
     onSave(draft, { addAnother, photo });
     if (addAnother) {
-      setDraft({ ...emptyDraft(draft.domain_code), area: draft.area, machine: draft.machine });
+      setDraft({
+        ...emptyDraft(draft.domain_code),
+        area: draft.area,
+        machine: draft.machine,
+      });
       setPhoto(null);
       setKey((k) => k + 1);
     }
@@ -192,16 +203,22 @@ export function ObservationDialog({
       <DialogContent className="flex max-h-[92dvh] w-[calc(100vw-1rem)] max-w-2xl flex-col gap-0 overflow-hidden p-0 sm:w-full">
         <DialogHeader className="shrink-0 border-b border-border px-4 py-3 pr-10 sm:px-6">
           <DialogTitle className="uppercase tracking-wide">
-            {initial ? "Edit observation" : quickWalk ? "Quick walk observation" : "Add observation"}
+            {initial
+              ? "Edit observation"
+              : quickWalk
+                ? "Quick walk observation"
+                : "Add observation"}
           </DialogTitle>
           <DialogDescription>
-            {domain ? domain.title : "Field observation"} — nothing here is required. Capture what you
-            can and move on.
+            {domain ? domain.title : "Field observation"} — nothing here is
+            required. Capture what you can and move on.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="grid flex-1 gap-4 overflow-y-auto overscroll-contain px-4 py-4 sm:px-6" key={key}>
-
+        <div
+          className="grid flex-1 gap-4 overflow-y-auto overscroll-contain px-4 py-4 sm:px-6"
+          key={key}
+        >
           {!domainCode || initial ? (
             <TagPicker
               label="Capability domain"
@@ -210,14 +227,25 @@ export function ObservationDialog({
               selected={domain ? [domain.title] : []}
               onChange={(v) => {
                 const next = FIELD_DOMAINS.find((d) => d.title === v[0]);
-                set({ domain_code: next?.code ?? draft.domain_code, category: null });
+                set({
+                  domain_code: next?.code ?? draft.domain_code,
+                  category: null,
+                });
               }}
             />
           ) : null}
 
           <div className="grid gap-3 sm:grid-cols-2">
-            <Field label="Area / department" value={draft.area} onChange={(v) => set({ area: v })} />
-            <Field label="Machine" value={draft.machine} onChange={(v) => set({ machine: v })} />
+            <Field
+              label="Area / department"
+              value={draft.area}
+              onChange={(v) => set({ area: v })}
+            />
+            <Field
+              label="Machine"
+              value={draft.machine}
+              onChange={(v) => set({ machine: v })}
+            />
             {!quickWalk ? (
               <>
                 <Field
@@ -225,7 +253,11 @@ export function ObservationDialog({
                   value={draft.production_cell}
                   onChange={(v) => set({ production_cell: v })}
                 />
-                <Field label="Process" value={draft.process} onChange={(v) => set({ process: v })} />
+                <Field
+                  label="Process"
+                  value={draft.process}
+                  onChange={(v) => set({ process: v })}
+                />
               </>
             ) : null}
           </div>
@@ -286,11 +318,18 @@ export function ObservationDialog({
             <div className="grid gap-1.5">
               <Label className="eyebrow">Photo / document evidence</Label>
               <div className="flex items-center gap-2">
-                <Button type="button" variant="outline" size="sm" onClick={() => fileRef.current?.click()}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => fileRef.current?.click()}
+                >
                   <Camera className="size-4" aria-hidden /> Attach
                 </Button>
                 {photo ? (
-                  <span className="truncate text-xs text-muted-foreground">{photo.name}</span>
+                  <span className="truncate text-xs text-muted-foreground">
+                    {photo.name}
+                  </span>
                 ) : null}
                 <input
                   ref={fileRef}
@@ -305,21 +344,31 @@ export function ObservationDialog({
         </div>
 
         <DialogFooter className="shrink-0 gap-2 border-t border-border bg-background px-4 py-3 sm:justify-between sm:px-6">
-          <Button variant="ghost" className="hidden sm:inline-flex" onClick={() => onOpenChange(false)}>
+          <Button
+            variant="ghost"
+            className="hidden sm:inline-flex"
+            onClick={() => onOpenChange(false)}
+          >
             Cancel
           </Button>
           <div className="flex flex-col gap-2 sm:flex-row">
             {!initial ? (
-              <Button variant="outline" disabled={saving} onClick={() => save(true)}>
+              <Button
+                variant="outline"
+                disabled={saving}
+                onClick={() => save(true)}
+              >
                 Save &amp; add another
               </Button>
             ) : null}
             <Button disabled={saving} onClick={() => save(false)}>
-              {saving ? <Loader2 className="size-4 animate-spin" aria-hidden /> : null} Save observation
+              {saving ? (
+                <Loader2 className="size-4 animate-spin" aria-hidden />
+              ) : null}{" "}
+              Save observation
             </Button>
           </div>
         </DialogFooter>
-
       </DialogContent>
     </Dialog>
   );
@@ -381,7 +430,6 @@ function Area({
   );
 }
 
-
 /* ------------------------------ quick capture ----------------------------- */
 
 export function QuickCaptureDialog({
@@ -412,7 +460,18 @@ export function QuickCaptureDialog({
   const [listening, setListening] = useState(false);
 
   const dictate = () => {
-    const w = window as unknown as { webkitSpeechRecognition?: new () => any; SpeechRecognition?: new () => any };
+    interface MinimalSpeechRecognition {
+      continuous: boolean;
+      interimResults: boolean;
+      onresult:
+        ((e: { results: { 0: { 0: { transcript: string } } } }) => void) | null;
+      onend: (() => void) | null;
+      start: () => void;
+    }
+    const w = window as unknown as {
+      webkitSpeechRecognition?: new () => MinimalSpeechRecognition;
+      SpeechRecognition?: new () => MinimalSpeechRecognition;
+    };
     const Ctor = w.SpeechRecognition ?? w.webkitSpeechRecognition;
     if (!Ctor) return;
     const rec = new Ctor();
@@ -438,27 +497,46 @@ export function QuickCaptureDialog({
   const speechAvailable =
     typeof window !== "undefined" &&
     Boolean(
-      (window as unknown as { webkitSpeechRecognition?: unknown; SpeechRecognition?: unknown })
-        .SpeechRecognition ??
-        (window as unknown as { webkitSpeechRecognition?: unknown }).webkitSpeechRecognition,
+      (
+        window as unknown as {
+          webkitSpeechRecognition?: unknown;
+          SpeechRecognition?: unknown;
+        }
+      ).SpeechRecognition ??
+      (window as unknown as { webkitSpeechRecognition?: unknown })
+        .webkitSpeechRecognition,
     );
 
   return (
-    <Dialog open={open} onOpenChange={(v) => { onOpenChange(v); if (!v) reset(); }}>
+    <Dialog
+      open={open}
+      onOpenChange={(v) => {
+        onOpenChange(v);
+        if (!v) reset();
+      }}
+    >
       <DialogContent className="flex max-h-[92dvh] w-[calc(100vw-1rem)] max-w-lg flex-col gap-0 overflow-hidden p-0 sm:w-full">
         <DialogHeader className="shrink-0 border-b border-border px-4 py-3 pr-10 sm:px-6">
-          <DialogTitle className="uppercase tracking-wide">Quick capture</DialogTitle>
+          <DialogTitle className="uppercase tracking-wide">
+            Quick capture
+          </DialogTitle>
           <DialogDescription>
-            Record it now, structure it later. Quick captures can be converted into full observations.
+            Record it now, structure it later. Quick captures can be converted
+            into full observations.
           </DialogDescription>
         </DialogHeader>
         <div className="grid flex-1 gap-3 overflow-y-auto overscroll-contain px-4 py-4 sm:px-6">
-
           <div className="grid gap-1.5">
             <div className="flex items-center justify-between">
               <Label className="eyebrow">Note</Label>
               {speechAvailable ? (
-                <Button type="button" size="sm" variant="ghost" onClick={dictate} disabled={listening}>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  onClick={dictate}
+                  disabled={listening}
+                >
                   {listening ? "Listening…" : "Voice to text"}
                 </Button>
               ) : null}
@@ -475,19 +553,36 @@ export function QuickCaptureDialog({
             <Field label="Area" value={area} onChange={setArea} />
             <Field label="Machine" value={machine} onChange={setMachine} />
           </div>
-          <Field label="Potential problem" value={problem} onChange={setProblem} />
+          <Field
+            label="Potential problem"
+            value={problem}
+            onChange={setProblem}
+          />
           <TagPicker
             label="Capability domain"
             single
             options={FIELD_DOMAINS.map((d) => d.title)}
             selected={domain ? [domainByCode(domain)?.title ?? ""] : []}
-            onChange={(v) => setDomain(FIELD_DOMAINS.find((d) => d.title === v[0])?.code ?? null)}
+            onChange={(v) =>
+              setDomain(
+                FIELD_DOMAINS.find((d) => d.title === v[0])?.code ?? null,
+              )
+            }
           />
           <div className="flex items-center gap-2">
-            <Button type="button" variant="outline" size="sm" onClick={() => fileRef.current?.click()}>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => fileRef.current?.click()}
+            >
               <Camera className="size-4" aria-hidden /> Photo
             </Button>
-            {photo ? <span className="truncate text-xs text-muted-foreground">{photo.name}</span> : null}
+            {photo ? (
+              <span className="truncate text-xs text-muted-foreground">
+                {photo.name}
+              </span>
+            ) : null}
             <input
               ref={fileRef}
               type="file"
@@ -502,7 +597,14 @@ export function QuickCaptureDialog({
           <Button
             disabled={saving || (!note.trim() && !problem.trim())}
             onClick={() => {
-              onSave({ note, area, machine, domain_code: domain, potential_problem: problem, photo });
+              onSave({
+                note,
+                area,
+                machine,
+                domain_code: domain,
+                potential_problem: problem,
+                photo,
+              });
               reset();
             }}
           >
@@ -524,7 +626,9 @@ export function EvidenceThumb({
   onDelete?: () => void;
 }) {
   const { data: url } = useEvidenceUrl(row.storage_path);
-  const isImage = /\.(png|jpe?g|webp|gif|heic)$/i.test(row.file_name ?? row.storage_path);
+  const isImage = /\.(png|jpe?g|webp|gif|heic)$/i.test(
+    row.file_name ?? row.storage_path,
+  );
   return (
     <figure className="relative w-28 shrink-0 overflow-hidden rounded-sm border border-border">
       {isImage && url ? (
@@ -576,8 +680,18 @@ export function EvidenceStrip({
   return (
     <div className="grid gap-2">
       <div className="flex flex-wrap items-center gap-2">
-        <Button type="button" size="sm" variant="outline" onClick={() => fileRef.current?.click()} disabled={uploading}>
-          {uploading ? <Loader2 className="size-4 animate-spin" aria-hidden /> : <Camera className="size-4" aria-hidden />}
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          onClick={() => fileRef.current?.click()}
+          disabled={uploading}
+        >
+          {uploading ? (
+            <Loader2 className="size-4 animate-spin" aria-hidden />
+          ) : (
+            <Camera className="size-4" aria-hidden />
+          )}
           Add photo / document
         </Button>
         <input
@@ -595,7 +709,11 @@ export function EvidenceStrip({
       {rows.length ? (
         <div className="flex gap-2 overflow-x-auto pb-1">
           {rows.map((r) => (
-            <EvidenceThumb key={r.id} row={r} onDelete={onDelete ? () => onDelete(r) : undefined} />
+            <EvidenceThumb
+              key={r.id}
+              row={r}
+              onDelete={onDelete ? () => onDelete(r) : undefined}
+            />
           ))}
         </div>
       ) : null}
@@ -612,7 +730,13 @@ export const severityToken: Record<string, string> = {
   Low: "text-muted-foreground border-border",
 };
 
-export function Chip({ label, className }: { label: string; className?: string }) {
+export function Chip({
+  label,
+  className,
+}: {
+  label: string;
+  className?: string;
+}) {
   return (
     <span
       className={cn(
@@ -640,32 +764,49 @@ export function ObservationCard({
   onCreateGap: () => void;
   hasGap: boolean;
 }) {
-  const location = [row.area, row.machine, row.production_cell, row.process].filter(Boolean).join(" / ");
+  const location = [row.area, row.machine, row.production_cell, row.process]
+    .filter(Boolean)
+    .join(" / ");
   return (
     <article className="rounded-sm border border-border p-4">
       <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
         <div className="min-w-0">
-          <p className="eyebrow">{domainByCode(row.domain_code)?.title ?? "Observation"}</p>
+          <p className="eyebrow">
+            {domainByCode(row.domain_code)?.title ?? "Observation"}
+          </p>
           <h3 className="truncate text-sm font-semibold text-foreground">
-            {row.category || row.observed_condition?.slice(0, 60) || "Observation"}
+            {row.category ||
+              row.observed_condition?.slice(0, 60) ||
+              "Observation"}
           </h3>
-          {location ? <p className="truncate text-xs text-muted-foreground">{location}</p> : null}
+          {location ? (
+            <p className="truncate text-xs text-muted-foreground">{location}</p>
+          ) : null}
         </div>
         <div className="flex shrink-0 items-center gap-2">
           <span className="metric text-lg font-semibold text-foreground">
             {row.not_observed ? "N/O" : (row.rating ?? "—")}
           </span>
-          <Button variant="ghost" size="icon" aria-label="Delete observation" onClick={onDelete}>
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label="Delete observation"
+            onClick={onDelete}
+          >
             <Trash2 className="size-4" aria-hidden />
           </Button>
         </div>
       </div>
       {row.observed_condition ? (
-        <p className="mt-2 whitespace-pre-wrap text-sm text-foreground">{row.observed_condition}</p>
+        <p className="mt-2 whitespace-pre-wrap text-sm text-foreground">
+          {row.observed_condition}
+        </p>
       ) : null}
       {row.objective_evidence ? (
         <p className="mt-1 whitespace-pre-wrap text-xs text-muted-foreground">
-          <span className="font-semibold uppercase tracking-widest">Evidence — </span>
+          <span className="font-semibold uppercase tracking-widest">
+            Evidence —{" "}
+          </span>
           {row.objective_evidence}
         </p>
       ) : null}
@@ -684,7 +825,12 @@ export function ObservationCard({
         <Button size="sm" variant="outline" onClick={onEdit}>
           Edit
         </Button>
-        <Button size="sm" variant={hasGap ? "ghost" : "default"} onClick={onCreateGap} disabled={hasGap}>
+        <Button
+          size="sm"
+          variant={hasGap ? "ghost" : "default"}
+          onClick={onCreateGap}
+          disabled={hasGap}
+        >
           {hasGap ? "Gap created" : "Create capability gap"}
         </Button>
       </div>

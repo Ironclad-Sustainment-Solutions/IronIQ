@@ -72,7 +72,9 @@ export function AutoField({
           aria-invalid={Boolean(error)}
           aria-describedby={describedBy}
           onChange={(e) => setText(e.target.value)}
-          onFocus={() => { focused.current = true; }}
+          onFocus={() => {
+            focused.current = true;
+          }}
           onBlur={commit}
           className="text-base"
         />
@@ -87,7 +89,9 @@ export function AutoField({
           aria-invalid={Boolean(error)}
           aria-describedby={describedBy}
           onChange={(e) => setText(e.target.value)}
-          onFocus={() => { focused.current = true; }}
+          onFocus={() => {
+            focused.current = true;
+          }}
           onBlur={commit}
           className="h-11 text-base"
         />
@@ -100,7 +104,6 @@ export function AutoField({
     </div>
   );
 }
-
 
 export function TagPicker({
   label,
@@ -122,7 +125,11 @@ export function TagPicker({
       onChange(selected.includes(opt) ? [] : [opt]);
       return;
     }
-    onChange(selected.includes(opt) ? selected.filter((s) => s !== opt) : [...selected, opt]);
+    onChange(
+      selected.includes(opt)
+        ? selected.filter((s) => s !== opt)
+        : [...selected, opt],
+    );
   };
   return (
     <div className="grid gap-1.5">
@@ -170,7 +177,11 @@ export function RatingRow({
   label: string;
   row: FieldObservationRow | undefined;
   disabled?: boolean;
-  onChange: (values: { rating?: number | null; not_observed?: boolean; notes?: string | null }) => void;
+  onChange: (values: {
+    rating?: number | null;
+    not_observed?: boolean;
+    notes?: string | null;
+  }) => void;
 }) {
   const [noteOpen, setNoteOpen] = useState(Boolean(row?.notes));
   const no = row?.not_observed ?? false;
@@ -184,7 +195,12 @@ export function RatingRow({
             type="button"
             disabled={no || disabled}
             title={`${s.label} — ${s.description}`}
-            onClick={() => onChange({ rating: row?.rating === s.value ? null : s.value, not_observed: false })}
+            onClick={() =>
+              onChange({
+                rating: row?.rating === s.value ? null : s.value,
+                not_observed: false,
+              })
+            }
             className={cn(
               "flex h-12 flex-col items-center justify-center rounded-sm border font-display text-base font-semibold transition-colors",
               row?.rating === s.value && !no
@@ -248,7 +264,14 @@ export function SectionPanel({
   section: FieldSection;
   rows: FieldObservationRow[];
   disabled?: boolean;
-  onChange: (areaCode: string, values: { rating?: number | null; not_observed?: boolean; notes?: string | null }) => void;
+  onChange: (
+    areaCode: string,
+    values: {
+      rating?: number | null;
+      not_observed?: boolean;
+      notes?: string | null;
+    },
+  ) => void;
   findings?: string | null;
   onFindings?: (v: string) => void;
 }) {
@@ -269,18 +292,28 @@ export function SectionPanel({
           <h2 className="truncate text-sm font-semibold uppercase tracking-wider text-foreground">
             {section.title}
           </h2>
-          <p className="mt-1 text-xs text-muted-foreground">{section.question}</p>
+          <p className="mt-1 text-xs text-muted-foreground">
+            {section.question}
+          </p>
         </div>
         <div className="flex shrink-0 items-center gap-3">
           <div className="text-right">
-            <p className={cn("metric text-xl font-semibold", scoreTone(result.score))}>
+            <p
+              className={cn(
+                "metric text-xl font-semibold",
+                scoreTone(result.score),
+              )}
+            >
               {result.score === null ? "—" : result.score.toFixed(1)}
             </p>
             <p className="text-[10px] uppercase tracking-widest text-muted-foreground">
               {result.rated}/{result.total}
             </p>
           </div>
-          <ChevronDown className={cn("size-4 transition-transform", open && "rotate-180")} aria-hidden />
+          <ChevronDown
+            className={cn("size-4 transition-transform", open && "rotate-180")}
+            aria-hidden
+          />
         </div>
       </button>
 

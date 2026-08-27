@@ -22,7 +22,9 @@ export function useEstimatingParts(organizationId?: string) {
   return useQuery({
     queryKey: ["estimating-parts", organizationId ?? "all"],
     queryFn: () =>
-      fn.fetchEstimatingParts({ data: { id: organizationId } }) as Promise<EstimatingPart[]>,
+      fn.fetchEstimatingParts({ data: { id: organizationId } }) as Promise<
+        EstimatingPart[]
+      >,
   });
 }
 
@@ -32,16 +34,17 @@ export function useGeometryRuns(rfqPartId?: string) {
     enabled: Boolean(rfqPartId),
     queryKey: ["geometry-runs", rfqPartId],
     queryFn: () =>
-      fn.fetchGeometryRuns({ data: { rfqPartId: rfqPartId as string } }) as Promise<
-        GeometryAnalysisRun[]
-      >,
+      fn.fetchGeometryRuns({
+        data: { rfqPartId: rfqPartId as string },
+      }) as Promise<GeometryAnalysisRun[]>,
   });
 }
 
 export function useMachines(facilityId?: string) {
   return useQuery({
     queryKey: ["machines", facilityId ?? "all"],
-    queryFn: () => fn.fetchMachines({ data: { id: facilityId } }) as Promise<Machine[]>,
+    queryFn: () =>
+      fn.fetchMachines({ data: { id: facilityId } }) as Promise<Machine[]>,
   });
 }
 

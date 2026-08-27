@@ -361,7 +361,10 @@ function BulkIntakePage() {
                           size="sm"
                           variant="outline"
                           onClick={() =>
-                            updateStatus.mutate({ id: s.id, status: "accepted" })
+                            updateStatus.mutate({
+                              id: s.id,
+                              status: "accepted",
+                            })
                           }
                         >
                           Accept
@@ -380,7 +383,10 @@ function BulkIntakePage() {
                           size="sm"
                           variant="ghost"
                           onClick={() =>
-                            updateStatus.mutate({ id: s.id, status: "rejected" })
+                            updateStatus.mutate({
+                              id: s.id,
+                              status: "rejected",
+                            })
                           }
                         >
                           Reject

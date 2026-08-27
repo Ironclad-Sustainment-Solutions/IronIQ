@@ -43,9 +43,13 @@ export function IntakePanel({
   problem: CapProblemRow | null;
   impacts: CapImpactRow[];
 }) {
-  const saveProblem = useCapUpsert<Record<string, unknown>>(assessmentId, "cap_problems", {
-    successMessage: "Intake saved",
-  });
+  const saveProblem = useCapUpsert<Record<string, unknown>>(
+    assessmentId,
+    "cap_problems",
+    {
+      successMessage: "Intake saved",
+    },
+  );
   const [draft, setDraft] = useState<Record<string, string>>({});
   const [aiDraft, setAiDraft] = useState<SummaryDraft | null>(null);
   const [busy, setBusy] = useState(false);
@@ -66,18 +70,19 @@ export function IntakePanel({
     });
   }, [problem]);
 
-  const set = (key: string, value: string) => setDraft((d) => ({ ...d, [key]: value }));
+  const set = (key: string, value: string) =>
+    setDraft((d) => ({ ...d, [key]: value }));
 
   async function runAi() {
     setBusy(true);
     try {
       const out = (await summarizeIntake({
         data: {
-          q_greatest_impact: draft['q_greatest_impact'] ?? "",
-          q_where_when: draft['q_where_when'] ?? "",
-          q_effect: draft['q_effect'] ?? "",
-          q_tried: draft['q_tried'] ?? "",
-          q_if_resolved: draft['q_if_resolved'] ?? "",
+          q_greatest_impact: draft["q_greatest_impact"] ?? "",
+          q_where_when: draft["q_where_when"] ?? "",
+          q_effect: draft["q_effect"] ?? "",
+          q_tried: draft["q_tried"] ?? "",
+          q_if_resolved: draft["q_if_resolved"] ?? "",
         },
       })) as SummaryDraft;
       setAiDraft(out);
@@ -95,7 +100,7 @@ export function IntakePanel({
         subtitle="The stated problem is the starting point for investigation — it is never assumed to be the root cause."
         actions={
           <Select
-            value={draft['entered_by_role'] ?? "assessor"}
+            value={draft["entered_by_role"] ?? "assessor"}
             onValueChange={(v) => set("entered_by_role", v)}
           >
             <SelectTrigger className="w-44">
@@ -123,13 +128,23 @@ export function IntakePanel({
           ))}
           <div className="flex flex-wrap gap-2">
             <Button
-              onClick={() => saveProblem.mutate({ id: problem?.id, assessment_id: assessmentId, ...draft })}
+              onClick={() =>
+                saveProblem.mutate({
+                  id: problem?.id,
+                  assessment_id: assessmentId,
+                  ...draft,
+                })
+              }
               disabled={saveProblem.isPending}
             >
               Save intake
             </Button>
             <Button variant="outline" onClick={runAi} disabled={busy}>
-              {busy ? <Loader2 className="size-4 animate-spin" /> : <Sparkles className="size-4" />}
+              {busy ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <Sparkles className="size-4" />
+              )}
               Summarize with AI
             </Button>
           </div>
@@ -137,7 +152,10 @@ export function IntakePanel({
       </Panel>
 
       {aiDraft ? (
-        <Panel title="AI-drafted summary" subtitle="Review, edit and apply. Nothing is recorded until you apply it.">
+        <Panel
+          title="AI-drafted summary"
+          subtitle="Review, edit and apply. Nothing is recorded until you apply it."
+        >
           <div className="grid gap-4">
             <AiBadge />
             <dl className="grid gap-3 text-sm md:grid-cols-2">
@@ -178,7 +196,9 @@ export function IntakePanel({
                     desired_outcome: aiDraft.desired_outcome,
                   }));
                   setAiDraft(null);
-                  toast.success("Applied to the summary fields — review before saving");
+                  toast.success(
+                    "Applied to the summary fields — review before saving",
+                  );
                 }}
               >
                 Apply to summary
@@ -191,7 +211,10 @@ export function IntakePanel({
         </Panel>
       ) : null}
 
-      <Panel title="Assessor Summary" subtitle="Validated wording that carries into the capability review report.">
+      <Panel
+        title="Assessor Summary"
+        subtitle="Validated wording that carries into the capability review report."
+      >
         <div className="grid gap-4 md:grid-cols-2">
           {(
             [
@@ -214,7 +237,13 @@ export function IntakePanel({
         </div>
         <div className="mt-4">
           <Button
-            onClick={() => saveProblem.mutate({ id: problem?.id, assessment_id: assessmentId, ...draft })}
+            onClick={() =>
+              saveProblem.mutate({
+                id: problem?.id,
+                assessment_id: assessmentId,
+                ...draft,
+              })
+            }
             disabled={saveProblem.isPending}
           >
             Save summary
@@ -227,11 +256,25 @@ export function IntakePanel({
   );
 }
 
-function ImpactsPanel({ assessmentId, impacts }: { assessmentId: string; impacts: CapImpactRow[] }) {
-  const upsert = useCapUpsert<Record<string, unknown>>(assessmentId, "cap_performance_impacts", {
-    successMessage: "Performance impact saved",
-  });
-  const remove = useCapDelete(assessmentId, "cap_performance_impacts", "Performance impact removed");
+function ImpactsPanel({
+  assessmentId,
+  impacts,
+}: {
+  assessmentId: string;
+  impacts: CapImpactRow[];
+}) {
+  const upsert = useCapUpsert<Record<string, unknown>>(
+    assessmentId,
+    "cap_performance_impacts",
+    {
+      successMessage: "Performance impact saved",
+    },
+  );
+  const remove = useCapDelete(
+    assessmentId,
+    "cap_performance_impacts",
+    "Performance impact removed",
+  );
   const [adding, setAdding] = useState<CapPerfCategory | "">("");
 
   const used = new Set(impacts.map((i) => i.category));
@@ -242,7 +285,10 @@ function ImpactsPanel({ assessmentId, impacts }: { assessmentId: string; impacts
       subtitle="Which operational outcomes are affected, and by how much."
       actions={
         <div className="flex items-center gap-2">
-          <Select value={adding} onValueChange={(v) => setAdding(v as CapPerfCategory)}>
+          <Select
+            value={adding}
+            onValueChange={(v) => setAdding(v as CapPerfCategory)}
+          >
             <SelectTrigger className="w-48">
               <SelectValue placeholder="Add category" />
             </SelectTrigger>
@@ -276,7 +322,13 @@ function ImpactsPanel({ assessmentId, impacts }: { assessmentId: string; impacts
             <ImpactCard
               key={impact.id}
               impact={impact}
-              onSave={(values) => upsert.mutate({ id: impact.id, assessment_id: assessmentId, ...values })}
+              onSave={(values) =>
+                upsert.mutate({
+                  id: impact.id,
+                  assessment_id: assessmentId,
+                  ...values,
+                })
+              }
               onDelete={() => remove.mutate(impact.id)}
             />
           ))}
@@ -306,7 +358,8 @@ function ImpactCard({
     evidence: impact.evidence ?? "",
     assessor_notes: impact.assessor_notes ?? "",
   });
-  const set = (k: keyof typeof v, val: string) => setV((s) => ({ ...s, [k]: val }));
+  const set = (k: keyof typeof v, val: string) =>
+    setV((s) => ({ ...s, [k]: val }));
 
   return (
     <div className="rounded-md border border-border p-4">
@@ -314,50 +367,93 @@ function ImpactCard({
         <h3 className="font-display text-sm font-semibold uppercase tracking-widest text-foreground">
           {PERF_CATEGORY_LABELS[impact.category]}
         </h3>
-        <Button variant="ghost" size="sm" onClick={onDelete} aria-label="Remove category">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onDelete}
+          aria-label="Remove category"
+        >
           <Trash2 className="size-4" />
         </Button>
       </div>
       <div className="mt-3 grid gap-3 md:grid-cols-2">
         <div>
           <FieldLabel>Current condition</FieldLabel>
-          <Textarea className="mt-1.5 min-h-16" value={v.current_condition} onChange={(e) => set("current_condition", e.target.value)} />
+          <Textarea
+            className="mt-1.5 min-h-16"
+            value={v.current_condition}
+            onChange={(e) => set("current_condition", e.target.value)}
+          />
         </div>
         <div>
           <FieldLabel>Desired condition</FieldLabel>
-          <Textarea className="mt-1.5 min-h-16" value={v.desired_condition} onChange={(e) => set("desired_condition", e.target.value)} />
+          <Textarea
+            className="mt-1.5 min-h-16"
+            value={v.desired_condition}
+            onChange={(e) => set("desired_condition", e.target.value)}
+          />
         </div>
       </div>
       <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <div>
           <FieldLabel>Metric</FieldLabel>
-          <Input className="mt-1.5" value={v.metric_name} onChange={(e) => set("metric_name", e.target.value)} />
+          <Input
+            className="mt-1.5"
+            value={v.metric_name}
+            onChange={(e) => set("metric_name", e.target.value)}
+          />
         </div>
         <div>
           <FieldLabel>Current value</FieldLabel>
-          <Input className="mt-1.5" inputMode="decimal" value={v.current_value} onChange={(e) => set("current_value", e.target.value)} />
+          <Input
+            className="mt-1.5"
+            inputMode="decimal"
+            value={v.current_value}
+            onChange={(e) => set("current_value", e.target.value)}
+          />
         </div>
         <div>
           <FieldLabel>Target value</FieldLabel>
-          <Input className="mt-1.5" inputMode="decimal" value={v.target_value} onChange={(e) => set("target_value", e.target.value)} />
+          <Input
+            className="mt-1.5"
+            inputMode="decimal"
+            value={v.target_value}
+            onChange={(e) => set("target_value", e.target.value)}
+          />
         </div>
         <div>
           <FieldLabel>Unit</FieldLabel>
-          <Input className="mt-1.5" value={v.unit} onChange={(e) => set("unit", e.target.value)} />
+          <Input
+            className="mt-1.5"
+            value={v.unit}
+            onChange={(e) => set("unit", e.target.value)}
+          />
         </div>
       </div>
       <div className="mt-3 grid gap-3 md:grid-cols-3">
         <div>
           <FieldLabel>Data source</FieldLabel>
-          <Input className="mt-1.5" value={v.data_source} onChange={(e) => set("data_source", e.target.value)} />
+          <Input
+            className="mt-1.5"
+            value={v.data_source}
+            onChange={(e) => set("data_source", e.target.value)}
+          />
         </div>
         <div>
           <FieldLabel>Evidence</FieldLabel>
-          <Input className="mt-1.5" value={v.evidence} onChange={(e) => set("evidence", e.target.value)} />
+          <Input
+            className="mt-1.5"
+            value={v.evidence}
+            onChange={(e) => set("evidence", e.target.value)}
+          />
         </div>
         <div>
           <FieldLabel>Assessor notes</FieldLabel>
-          <Input className="mt-1.5" value={v.assessor_notes} onChange={(e) => set("assessor_notes", e.target.value)} />
+          <Input
+            className="mt-1.5"
+            value={v.assessor_notes}
+            onChange={(e) => set("assessor_notes", e.target.value)}
+          />
         </div>
       </div>
       <div className="mt-3">
@@ -366,8 +462,10 @@ function ImpactCard({
           onClick={() =>
             onSave({
               ...v,
-              current_value: v.current_value === "" ? null : Number(v.current_value),
-              target_value: v.target_value === "" ? null : Number(v.target_value),
+              current_value:
+                v.current_value === "" ? null : Number(v.current_value),
+              target_value:
+                v.target_value === "" ? null : Number(v.target_value),
             })
           }
         >
