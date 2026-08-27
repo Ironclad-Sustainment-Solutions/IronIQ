@@ -23,6 +23,8 @@ import { Route as AuthenticatedExecutiveRollupRouteImport } from './routes/_auth
 import { Route as AuthenticatedFacilitiesRouteImport } from './routes/_authenticated/facilities'
 import { Route as AuthenticatedFindingsRouteImport } from './routes/_authenticated/findings'
 import { Route as AuthenticatedHomeRouteImport } from './routes/_authenticated/home'
+import { Route as AuthenticatedMachinesIndexRouteImport } from './routes/_authenticated/machines/index'
+import { Route as AuthenticatedMachinesMachineIdRouteImport } from './routes/_authenticated/machines/$machineId'
 import { Route as AuthenticatedIntakeRouteImport } from './routes/_authenticated/intake'
 import { Route as AuthenticatedOrganizationsRouteImport } from './routes/_authenticated/organizations'
 import { Route as AuthenticatedProductionRouteImport } from './routes/_authenticated/production'
@@ -114,6 +116,18 @@ const AuthenticatedHomeRoute = AuthenticatedHomeRouteImport.update({
   path: '/home',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedMachinesIndexRoute =
+  AuthenticatedMachinesIndexRouteImport.update({
+    id: '/machines/',
+    path: '/machines/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedMachinesMachineIdRoute =
+  AuthenticatedMachinesMachineIdRouteImport.update({
+    id: '/machines/$machineId',
+    path: '/machines/$machineId',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedIntakeRoute = AuthenticatedIntakeRouteImport.update({
   id: '/intake',
   path: '/intake',
@@ -237,6 +251,8 @@ export interface FileRoutesByFullPath {
   '/facilities': typeof AuthenticatedFacilitiesRoute
   '/findings': typeof AuthenticatedFindingsRoute
   '/home': typeof AuthenticatedHomeRoute
+  '/machines/': typeof AuthenticatedMachinesIndexRoute
+  '/machines/$machineId': typeof AuthenticatedMachinesMachineIdRoute
   '/intake': typeof AuthenticatedIntakeRoute
   '/organizations': typeof AuthenticatedOrganizationsRoute
   '/production': typeof AuthenticatedProductionRouteWithChildren
@@ -276,6 +292,8 @@ export interface FileRoutesByTo {
   '/projects': typeof AuthenticatedProjectsRoute
   '/reports': typeof AuthenticatedReportsRoute
   '/templates': typeof AuthenticatedTemplatesRoute
+  '/machines': typeof AuthenticatedMachinesIndexRoute
+  '/machines/$machineId': typeof AuthenticatedMachinesMachineIdRoute
   '/assessments/$assessmentId': typeof AuthenticatedAssessmentsAssessmentIdRoute
   '/assessments/new': typeof AuthenticatedAssessmentsNewRoute
   '/business-development/$prospectId': typeof AuthenticatedBusinessDevelopmentProspectIdRoute
@@ -306,6 +324,8 @@ export interface FileRoutesById {
   '/_authenticated/facilities': typeof AuthenticatedFacilitiesRoute
   '/_authenticated/findings': typeof AuthenticatedFindingsRoute
   '/_authenticated/home': typeof AuthenticatedHomeRoute
+  '/_authenticated/machines/': typeof AuthenticatedMachinesIndexRoute
+  '/_authenticated/machines/$machineId': typeof AuthenticatedMachinesMachineIdRoute
   '/_authenticated/intake': typeof AuthenticatedIntakeRoute
   '/_authenticated/organizations': typeof AuthenticatedOrganizationsRoute
   '/_authenticated/production': typeof AuthenticatedProductionRouteWithChildren
@@ -342,6 +362,8 @@ export interface FileRouteTypes {
     | '/facilities'
     | '/findings'
     | '/home'
+    | '/machines/'
+    | '/machines/$machineId'
     | '/intake'
     | '/organizations'
     | '/production'
@@ -376,6 +398,8 @@ export interface FileRouteTypes {
     | '/facilities'
     | '/findings'
     | '/home'
+    | '/machines'
+    | '/machines/$machineId'
     | '/intake'
     | '/organizations'
     | '/projects'
@@ -410,6 +434,8 @@ export interface FileRouteTypes {
     | '/_authenticated/facilities'
     | '/_authenticated/findings'
     | '/_authenticated/home'
+    | '/_authenticated/machines/'
+    | '/_authenticated/machines/$machineId'
     | '/_authenticated/intake'
     | '/_authenticated/organizations'
     | '/_authenticated/production'
@@ -535,6 +561,20 @@ declare module '@tanstack/react-router' {
       path: '/home'
       fullPath: '/home'
       preLoaderRoute: typeof AuthenticatedHomeRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/machines/': {
+      id: '/_authenticated/machines/'
+      path: '/machines'
+      fullPath: '/machines/'
+      preLoaderRoute: typeof AuthenticatedMachinesIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/machines/$machineId': {
+      id: '/_authenticated/machines/$machineId'
+      path: '/machines/$machineId'
+      fullPath: '/machines/$machineId'
+      preLoaderRoute: typeof AuthenticatedMachinesMachineIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/intake': {
@@ -707,6 +747,8 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedFacilitiesRoute: typeof AuthenticatedFacilitiesRoute
   AuthenticatedFindingsRoute: typeof AuthenticatedFindingsRoute
   AuthenticatedHomeRoute: typeof AuthenticatedHomeRoute
+  AuthenticatedMachinesIndexRoute: typeof AuthenticatedMachinesIndexRoute
+  AuthenticatedMachinesMachineIdRoute: typeof AuthenticatedMachinesMachineIdRoute
   AuthenticatedIntakeRoute: typeof AuthenticatedIntakeRoute
   AuthenticatedOrganizationsRoute: typeof AuthenticatedOrganizationsRoute
   AuthenticatedProductionRoute: typeof AuthenticatedProductionRouteWithChildren
@@ -736,6 +778,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedFacilitiesRoute: AuthenticatedFacilitiesRoute,
   AuthenticatedFindingsRoute: AuthenticatedFindingsRoute,
   AuthenticatedHomeRoute: AuthenticatedHomeRoute,
+  AuthenticatedMachinesIndexRoute: AuthenticatedMachinesIndexRoute,
+  AuthenticatedMachinesMachineIdRoute: AuthenticatedMachinesMachineIdRoute,
   AuthenticatedIntakeRoute: AuthenticatedIntakeRoute,
   AuthenticatedOrganizationsRoute: AuthenticatedOrganizationsRoute,
   AuthenticatedProductionRoute: AuthenticatedProductionRouteWithChildren,

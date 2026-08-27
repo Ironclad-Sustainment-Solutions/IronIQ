@@ -80,7 +80,7 @@ const PRODUCT_NAV: {
   {
     section: "Machines",
     items: [
-      { to: "/production/libraries", label: "Machines", icon: Factory },
+      { to: "/machines", label: "Machines", icon: Factory },
     ],
   },
   {

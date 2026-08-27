@@ -36,7 +36,7 @@ export const Route = createFileRoute("/_authenticated/home")({
 
 const PRODUCTS = [
   {
-    to: "/production/libraries",
+    to: "/machines",
     icon: Factory,
     label: "Machines",
     description:

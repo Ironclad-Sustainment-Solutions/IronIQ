@@ -34,6 +34,8 @@ import {
   type CncChangeCategory,
   type CncChangeLogRow,
 } from "@/lib/cnc-api";
+import { useShopMachines } from "@/lib/shop-floor-api";
+import { machineLabel } from "@/lib/shop-floor";
 import { useDraftFromPrecedent } from "@/lib/precedent-draft-api";
 import { toast } from "sonner";
 
@@ -68,12 +70,13 @@ const CATEGORY_LABELS: Record<CncChangeCategory, string> = {
 };
 
 function CncChangeLogPage() {
-  const { organization } = useApp();
+  const { organization, facility } = useApp();
   const entries = useCncChangeLog(organization?.id).data ?? [];
+  const machines = useShopMachines(organization?.id, facility?.id).data ?? [];
   const create = useCreateCncLogEntry(organization?.id);
   const draftAI = useDraftFromPrecedent();
 
-  const [machineName, setMachineName] = useState("");
+  const [machineId, setMachineId] = useState("");
   const [programIdentifier, setProgramIdentifier] = useState("");
   const [category, setCategory] = useState<CncChangeCategory>("feed_speed");
   const [changeDescription, setChangeDescription] = useState("");
@@ -94,11 +97,11 @@ function CncChangeLogPage() {
   }
 
   const handleLog = () => {
-    if (!machineName.trim() || !changeDescription.trim() || !reason.trim())
-      return;
+    if (!machineId || !changeDescription.trim() || !reason.trim()) return;
     create.mutate(
       {
-        machineName,
+        facilityId: facility?.id,
+        machineId,
         programIdentifier: programIdentifier || undefined,
         changeCategory: category,
         changeDescription,
@@ -106,7 +109,7 @@ function CncChangeLogPage() {
       },
       {
         onSuccess: () => {
-          setMachineName("");
+          setMachineId("");
           setProgramIdentifier("");
           setChangeDescription("");
           setReason("");
@@ -128,11 +131,25 @@ function CncChangeLogPage() {
         subtitle="Keep this quick — outcome comes later, at verification"
       >
         <div className="grid gap-4 sm:grid-cols-2">
-          <Input
-            placeholder="Machine (e.g. Haas VF-4 #3)"
-            value={machineName}
-            onChange={(e) => setMachineName(e.target.value)}
-          />
+          <div>
+            <Select value={machineId || undefined} onValueChange={setMachineId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select a machine" />
+              </SelectTrigger>
+              <SelectContent>
+                {machines.map((m) => (
+                  <SelectItem key={m.id} value={m.id}>
+                    {machineLabel(m)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {machines.length === 0 ? (
+              <p className="mt-1 text-xs text-muted-foreground">
+                Add machines on the Machines page first.
+              </p>
+            ) : null}
+          </div>
           <Input
             placeholder="Program # (optional)"
             value={programIdentifier}
@@ -270,6 +287,7 @@ function CncChangeLogPage() {
                 onStartVerify={() => setVerifyingId(entry.id)}
                 onCancelVerify={() => setVerifyingId(null)}
                 organizationId={organization.id}
+                machines={machines}
               />
             ))}
           </div>
@@ -285,12 +303,14 @@ function ChangeLogRow({
   onStartVerify,
   onCancelVerify,
   organizationId,
+  machines,
 }: {
   entry: CncChangeLogRow;
   isVerifying: boolean;
   onStartVerify: () => void;
   onCancelVerify: () => void;
   organizationId: string;
+  machines: { id: string; asset_id: string; name: string }[];
 }) {
   const verify = useVerifyCncLogEntry(organizationId);
   const remove = useDeleteCncLogEntry(organizationId);
@@ -299,7 +319,7 @@ function ChangeLogRow({
   const [contribute, setContribute] = useState(false);
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState({
-    machineName: entry.machine_name,
+    machineId: entry.machine_id ?? "",
     programIdentifier: entry.program_identifier ?? "",
     changeCategory: entry.change_category,
     changeDescription: entry.change_description,
@@ -310,13 +330,21 @@ function ChangeLogRow({
     return (
       <div className="rounded-md border border-border p-4">
         <div className="grid gap-3 sm:grid-cols-2">
-          <Input
-            value={draft.machineName}
-            onChange={(e) =>
-              setDraft((d) => ({ ...d, machineName: e.target.value }))
-            }
-            placeholder="Machine"
-          />
+          <Select
+            value={draft.machineId || undefined}
+            onValueChange={(v) => setDraft((d) => ({ ...d, machineId: v }))}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select a machine" />
+            </SelectTrigger>
+            <SelectContent>
+              {machines.map((m) => (
+                <SelectItem key={m.id} value={m.id}>
+                  {machineLabel(m)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           <Input
             value={draft.programIdentifier}
             onChange={(e) =>
@@ -369,7 +397,7 @@ function ChangeLogRow({
             size="sm"
             disabled={
               update.isPending ||
-              !draft.machineName.trim() ||
+              !draft.machineId ||
               !draft.changeDescription.trim() ||
               !draft.reason.trim()
             }

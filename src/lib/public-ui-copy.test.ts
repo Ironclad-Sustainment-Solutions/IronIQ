@@ -24,5 +24,7 @@ describe("public UI copy", () => {
     const firstLabel = home.slice(productsStart).match(/label:\s*"([^"]+)"/);
     expect(firstLabel?.[1]).not.toBe("Assessments");
     expect(firstLabel?.[1]).toBe("Machines");
+    expect(home).toContain('to: "/machines"');
+    expect(home).not.toContain('to: "/assessment"');
   });
 });

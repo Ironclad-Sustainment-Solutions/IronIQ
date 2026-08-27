@@ -162,6 +162,7 @@ const ORDERED_ADDITIONS = [
   "schema_additions_business_development_interactions.sql",
   "schema_additions_cad_conversion.sql",
   "schema_additions_cnc_change_log.sql",
+  "schema_additions_shop_floor.sql",
   "schema_additions_intelligence_layer.sql",
   "schema_additions_product_restrictions.sql",
   "schema_additions_user_approval.sql",

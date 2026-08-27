@@ -7,6 +7,7 @@ export type CncChangeCategory =
 
 export interface CncChangeLogRow {
   id: string;
+  machine_id: string | null;
   machine_name: string;
   program_identifier: string | null;
   change_category: CncChangeCategory;
@@ -33,7 +34,7 @@ export function useCreateCncLogEntry(organizationId?: string | null) {
   return useMutation({
     mutationFn: (input: {
       facilityId?: string | null;
-      machineName: string;
+      machineId: string;
       programIdentifier?: string;
       changeCategory: CncChangeCategory;
       changeDescription: string;
@@ -92,7 +93,7 @@ export function useUpdateCncLogEntry(organizationId?: string | null) {
   return useMutation({
     mutationFn: (input: {
       id: string;
-      machineName: string;
+      machineId: string;
       programIdentifier?: string;
       changeCategory: CncChangeCategory;
       changeDescription: string;
