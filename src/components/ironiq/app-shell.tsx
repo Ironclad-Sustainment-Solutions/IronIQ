@@ -56,15 +56,18 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 
-// The three co-equal product pipelines — rendered with prominent styling,
+// The co-equal product pipelines — rendered with prominent styling,
 // always at the top of the nav, visually distinct from every supporting
 // section below. This is the actual fix for products reading as "blended
 // in with everything else": size, weight, and position now signal these
-// are THE three things this app does, not three more entries in one flat
-// list of equal-looking sections. Intelligence (Ask IronIQ) lives here
-// too now, not under Setup/Reporting-style "support" — it's the shared
-// layer built ON TOP of the three products, closer in kind to them than
-// to Setup or Administration.
+// are THE things this app does, not more entries in one flat list of
+// equal-looking sections. Four pipelines as of Machines' addition
+// (Machines, Assessments, CAD Conversion, CNC Coding) -- was three
+// before that. Intelligence (Ask IronIQ) lives here too, at the same
+// visual tier, but isn't itself one of the pipeline count above: it's
+// the shared layer built ON TOP of the product pipelines, closer in
+// kind to them than to Setup or Administration, not a pipeline of its
+// own with a start/end like the others.
 const HOME_ITEM = { to: "/home", label: "Home", icon: Home };
 
 const PRODUCT_NAV: {
