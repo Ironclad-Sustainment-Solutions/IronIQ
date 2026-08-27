@@ -160,6 +160,12 @@ export function ShopMachineForm({
             ))}
           </SelectContent>
         </Select>
+        {draft.protocol !== "mtconnect" ? (
+          <p className="mt-1 text-xs text-muted-foreground">
+            Select MTConnect to set up a live data feed from this machine
+            instead of logging runs manually.
+          </p>
+        ) : null}
       </Field>
       <div className="sm:col-span-2">
         <Field label="Location">
