@@ -17,7 +17,7 @@ function getClient(): S3Client {
     const secretAccessKey = process.env.S3_SECRET_ACCESS_KEY;
     if (!endpoint || !accessKeyId || !secretAccessKey) {
       throw new Error(
-        "Missing S3_ENDPOINT / S3_ACCESS_KEY_ID / S3_SECRET_ACCESS_KEY. See MIGRATION_PHASE2.md for setup (Cloudflare R2 recommended).",
+        "Missing S3_ENDPOINT / S3_ACCESS_KEY_ID / S3_SECRET_ACCESS_KEY. Object storage is not configured.",
       );
     }
     g.__s3Client = new S3Client({

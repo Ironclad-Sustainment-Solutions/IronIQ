@@ -165,6 +165,7 @@ const ORDERED_ADDITIONS = [
   "schema_additions_intelligence_layer.sql",
   "schema_additions_product_restrictions.sql",
   "schema_additions_user_approval.sql",
+  "schema_additions_signup_request.sql",
   "schema_additions_auth_rate_limiting.sql",
   "schema_additions_session_idle_timeout.sql",
   "schema_additions_cap_join_indexes.sql",

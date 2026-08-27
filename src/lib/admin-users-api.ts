@@ -24,6 +24,8 @@ export interface AdminUserRow {
   job_title: string | null;
   approved: boolean;
   created_at: string;
+  requested_company: string | null;
+  requested_facility: string | null;
   roles: AppRole[];
   organizations: AdminUserOrgMembership[];
 }

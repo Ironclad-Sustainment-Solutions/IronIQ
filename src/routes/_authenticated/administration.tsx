@@ -296,7 +296,7 @@ function UserManagement() {
     <>
       <Panel
         title="Pending approvals"
-        subtitle="New accounts can't sign in until approved here — see db/schema_additions_user_approval.sql"
+        subtitle="New accounts can't sign in until an admin approves them here."
       >
         {pending.length === 0 ? (
           <EmptyState message="No accounts waiting for approval." />
@@ -314,6 +314,9 @@ function UserManagement() {
                   <p className="text-xs text-muted-foreground">
                     {u.email} · requested{" "}
                     {new Date(u.created_at).toLocaleDateString()}
+                    {u.requested_company || u.requested_facility
+                      ? ` · ${[u.requested_company, u.requested_facility].filter(Boolean).join(" / ")}`
+                      : ""}
                   </p>
                 </div>
                 <div className="flex gap-2">
