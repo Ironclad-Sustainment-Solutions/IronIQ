@@ -50,7 +50,8 @@ function mapMachine(row: Record<string, unknown>): ShopMachine {
     model: String(row.model),
     control: row.control as ShopMachine["control"],
     protocol: row.protocol as ShopMachine["protocol"],
-    connection_status: row.connection_status as ShopMachine["connection_status"],
+    connection_status:
+      row.connection_status as ShopMachine["connection_status"],
     location: row.location == null ? null : String(row.location),
     created_at: asIso(row.created_at),
     updated_at: asIso(row.updated_at),
@@ -105,9 +106,7 @@ export const getShopMachine = createServerFn({ method: "GET" })
         `SELECT * FROM public.shop_machines WHERE id = $1`,
         [data.id],
       );
-      return rows[0]
-        ? mapMachine(rows[0] as Record<string, unknown>)
-        : null;
+      return rows[0] ? mapMachine(rows[0] as Record<string, unknown>) : null;
     });
   });
 
@@ -163,6 +162,11 @@ export const updateShopMachine = createServerFn({ method: "POST" })
     }).parse(d),
   )
   .handler(async ({ data, context }) => {
+    if (data.connectionStatus === "live") {
+      throw new Error(
+        "Live machine connections are not implemented. Use not_connected or manual.",
+      );
+    }
     return withUser(context.userId, async (client) => {
       const { rows } = await client.query(
         `UPDATE public.shop_machines
@@ -243,7 +247,8 @@ async function insertRun(
       `SELECT organization_id, facility_id FROM public.shop_machines WHERE id = $1`,
       [data.machineId],
     );
-    if (!machine.rows[0]) throw new Error("Machine not found or not accessible.");
+    if (!machine.rows[0])
+      throw new Error("Machine not found or not accessible.");
     const { rows } = await client.query(
       `INSERT INTO public.shop_machine_run_events
          (machine_id, organization_id, facility_id, occurred_at, part_number,

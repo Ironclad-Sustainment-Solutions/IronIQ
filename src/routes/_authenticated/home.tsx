@@ -127,8 +127,8 @@ function HomePage() {
             {firstName ? `, ${firstName}` : ""}
           </h1>
           <p className="mt-4 max-w-xl text-sm leading-relaxed text-muted-foreground md:text-base">
-            Start with the machines on this floor and one named part. Assessments
-            stay in the sidebar when you need them.
+            Start with the machines on this floor and one named part.
+            Assessments stay in the sidebar when you need them.
           </p>
         </div>
 

@@ -21,11 +21,7 @@ export const MACHINE_PROTOCOLS = [
 ] as const;
 export type MachineProtocol = (typeof MACHINE_PROTOCOLS)[number];
 
-export const CONNECTION_STATUSES = [
-  "not_connected",
-  "manual",
-  "live",
-] as const;
+export const CONNECTION_STATUSES = ["not_connected", "manual", "live"] as const;
 export type ConnectionStatus = (typeof CONNECTION_STATUSES)[number];
 
 export const RUN_SOURCES = ["manual", "csv"] as const;
@@ -206,7 +202,10 @@ export function parseRunCsv(text: string): ParsedRunRow[] {
         cells[index.runtime_minutes],
         `Row ${i + 1}: runtime_minutes`,
       ),
-      idle_minutes: num(cells[index.idle_minutes], `Row ${i + 1}: idle_minutes`),
+      idle_minutes: num(
+        cells[index.idle_minutes],
+        `Row ${i + 1}: idle_minutes`,
+      ),
       downtime_minutes: num(
         cells[index.downtime_minutes],
         `Row ${i + 1}: downtime_minutes`,
@@ -332,7 +331,10 @@ export function beforeAfterDeltas(
       values.parts_per_shift_before,
       values.parts_per_shift_after,
     ),
-    downtime_min: optional(values.downtime_min_before, values.downtime_min_after),
+    downtime_min: optional(
+      values.downtime_min_before,
+      values.downtime_min_after,
+    ),
   };
 }
 

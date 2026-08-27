@@ -49,7 +49,10 @@ describe("parseRunCsv", () => {
 
   it("parses the sample CSV in the repo", () => {
     const csv = readFileSync(
-      join(dirname(fileURLToPath(import.meta.url)), "../../samples/shop-floor-runs.csv"),
+      join(
+        dirname(fileURLToPath(import.meta.url)),
+        "../../samples/shop-floor-runs.csv",
+      ),
       "utf8",
     );
     const rows = parseRunCsv(csv);

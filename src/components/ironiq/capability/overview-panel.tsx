@@ -28,7 +28,11 @@ import {
 import { AlertTriangle, ArrowDown, ChevronDown } from "lucide-react";
 import { useState } from "react";
 import { usePartOutcomeCards } from "@/lib/shop-floor-api";
-import { beforeAfterDeltas, formatDelta } from "@/lib/shop-floor";
+import {
+  beforeAfterDeltas,
+  formatDelta,
+  type PartOutcomeCard,
+} from "@/lib/shop-floor";
 
 export function OverviewPanel({
   organizationId,
@@ -304,6 +308,8 @@ export function OverviewPanel({
             ? (domainById.get(rootGap.domain_id)?.key_question ?? null)
             : null
         }
+        latestCard={latestCard}
+        cardDeltas={cardDeltas}
       />
     </div>
   );
@@ -342,6 +348,8 @@ function CapabilityMap({
   evidence,
   domainName,
   domainQuestion,
+  latestCard,
+  cardDeltas,
 }: {
   problem: CapProblemRow | null;
   impacts: CapImpactRow[];
@@ -353,6 +361,8 @@ function CapabilityMap({
   evidence: CapEvidenceRow[];
   domainName: string | null;
   domainQuestion: string | null;
+  latestCard: PartOutcomeCard | null;
+  cardDeltas: ReturnType<typeof beforeAfterDeltas> | null;
 }) {
   const [openNode, setOpenNode] = useState<string | null>(null);
   const imp = action

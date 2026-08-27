@@ -1,7 +1,11 @@
 import { Printer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DefinitionList } from "@/components/ironiq/layout-primitives";
-import { beforeAfterDeltas, formatDelta, type PartOutcomeCard } from "@/lib/shop-floor";
+import {
+  beforeAfterDeltas,
+  formatDelta,
+  type PartOutcomeCard,
+} from "@/lib/shop-floor";
 import { formatDate } from "@/lib/utils";
 
 export function PartOutcomeCardView({
@@ -67,7 +71,8 @@ export function PartOutcomeCardView({
           {
             label: "Downtime",
             value:
-              card.downtime_min_before == null && card.downtime_min_after == null
+              card.downtime_min_before == null &&
+              card.downtime_min_after == null
                 ? "—"
                 : `${card.downtime_min_before ?? "—"} → ${card.downtime_min_after ?? "—"} min (${formatDelta(deltas.downtime_min, "min")})`,
           },

@@ -134,9 +134,7 @@ function MachinesPage() {
                     <td className="py-2.5 pr-4">
                       {m.make} {m.model}
                     </td>
-                    <td className="py-2.5 pr-4">
-                      {CONTROL_LABELS[m.control]}
-                    </td>
+                    <td className="py-2.5 pr-4">{CONTROL_LABELS[m.control]}</td>
                     <td className="py-2.5 pr-4">
                       {PROTOCOL_LABELS[m.protocol]}
                     </td>

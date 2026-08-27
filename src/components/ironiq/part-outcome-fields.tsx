@@ -64,12 +64,21 @@ export function draftToNumbers(draft: BeforeAfterDraft): BeforeAfterNumbers {
     return n;
   };
   return {
-    cycle_time_sec_before: required(draft.cycleTimeSecBefore, "Cycle time before"),
+    cycle_time_sec_before: required(
+      draft.cycleTimeSecBefore,
+      "Cycle time before",
+    ),
     cycle_time_sec_after: required(draft.cycleTimeSecAfter, "Cycle time after"),
     setup_min_before: required(draft.setupMinBefore, "Setup before"),
     setup_min_after: required(draft.setupMinAfter, "Setup after"),
-    hours_on_part_before: required(draft.hoursOnPartBefore, "Hours on part before"),
-    hours_on_part_after: required(draft.hoursOnPartAfter, "Hours on part after"),
+    hours_on_part_before: required(
+      draft.hoursOnPartBefore,
+      "Hours on part before",
+    ),
+    hours_on_part_after: required(
+      draft.hoursOnPartAfter,
+      "Hours on part after",
+    ),
     parts_per_shift_before: optional(draft.partsPerShiftBefore),
     parts_per_shift_after: optional(draft.partsPerShiftAfter),
     downtime_min_before: optional(draft.downtimeMinBefore),
@@ -222,13 +231,7 @@ function Pair({
   );
 }
 
-function Field({
-  label,
-  children,
-}: {
-  label: string;
-  children: ReactNode;
-}) {
+function Field({ label, children }: { label: string; children: ReactNode }) {
   return (
     <div className="space-y-1.5">
       <Label className="eyebrow">{label}</Label>

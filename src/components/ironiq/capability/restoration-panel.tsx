@@ -605,10 +605,7 @@ function MeasuredImprovement({
       <div className="mt-3 space-y-3">
         <div className="space-y-1.5">
           <FieldLabel>Machine</FieldLabel>
-          <Select
-            value={machineId || undefined}
-            onValueChange={setMachineId}
-          >
+          <Select value={machineId || undefined} onValueChange={setMachineId}>
             <SelectTrigger>
               <SelectValue placeholder="Select a machine" />
             </SelectTrigger>

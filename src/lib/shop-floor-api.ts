@@ -56,7 +56,9 @@ function invalidateMachines(
   facilityId?: string | null,
   machineId?: string,
 ) {
-  void qc.invalidateQueries({ queryKey: ["shop-machines", organizationId, facilityId] });
+  void qc.invalidateQueries({
+    queryKey: ["shop-machines", organizationId, facilityId],
+  });
   void qc.invalidateQueries({ queryKey: ["shop-machines"] });
   if (machineId) {
     void qc.invalidateQueries({ queryKey: ["shop-machine", machineId] });

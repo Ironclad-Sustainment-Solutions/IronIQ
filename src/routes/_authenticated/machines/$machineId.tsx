@@ -322,10 +322,7 @@ function MachineDetailPage() {
         </p>
       </Panel>
 
-      <Panel
-        title="Last 20 runs"
-        subtitle={`${summary.last20.length} shown`}
-      >
+      <Panel title="Last 20 runs" subtitle={`${summary.last20.length} shown`}>
         {summary.last20.length === 0 ? (
           <EmptyState message="not connected — add a manual run or CSV" />
         ) : (

@@ -85,7 +85,7 @@ export const listCncChangeLog = createServerFn({ method: "GET" })
     return withUser(context.userId, async (client) => {
       const { rows } = await client.query(
         `SELECT id, machine_id, machine_name, part_number, program_identifier, change_category, change_description, reason,
-                outcome_description, status, created_at`
+                outcome_description, status, created_at
            FROM public.cnc_change_log
           WHERE organization_id = $1
           ORDER BY created_at DESC`,
