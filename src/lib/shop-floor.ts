@@ -70,6 +70,9 @@ export interface ShopMachine {
   protocol: MachineProtocol;
   connection_status: ConnectionStatus;
   location: string | null;
+  mtconnect_agent_url: string | null;
+  mtconnect_device_name: string | null;
+  current_part_number: string | null;
   created_at: string;
   updated_at: string;
 }
