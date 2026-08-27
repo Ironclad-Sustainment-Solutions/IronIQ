@@ -340,6 +340,7 @@ function CapabilityWorkspace() {
                 openActions={dashboard.openActions}
               />
               <OverviewPanel
+                organizationId={assessment.data?.organization_id}
                 result={result}
                 problem={ws.problem}
                 impacts={ws.impacts}
@@ -435,6 +436,8 @@ function CapabilityWorkspace() {
           {step === "actions" ? (
             <RestorationPanel
               assessmentId={assessmentId}
+              organizationId={assessment.data?.organization_id}
+              facilityId={assessment.data?.facility_id}
               actions={ws.actions}
               gaps={ws.gaps}
               results={ws.results}

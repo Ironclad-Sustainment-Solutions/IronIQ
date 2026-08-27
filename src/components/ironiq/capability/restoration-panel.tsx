@@ -31,20 +31,34 @@ import {
   summarizeImprovement,
 } from "@/lib/capability-scoring";
 import { useCapDelete, useCapUpsert } from "@/lib/capability-api";
+import {
+  PartOutcomeFields,
+  draftToNumbers,
+  emptyBeforeAfterDraft,
+} from "@/components/ironiq/part-outcome-fields";
+import { PartOutcomeCardView } from "@/components/ironiq/part-outcome-card";
+import {
+  usePartOutcomeCards,
+  useSavePartOutcomeCard,
+  useShopMachines,
+} from "@/lib/shop-floor-api";
+import { machineLabel } from "@/lib/shop-floor";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { suggestRestorationActions } from "@/lib/capability-ai.functions";
 import { formatDate } from "@/lib/utils";
 import { toast } from "sonner";
-import {
-  Loader2,
-  Plus,
-  Sparkles,
-  Trash2,
-  TrendingDown,
-  TrendingUp,
-} from "lucide-react";
+import { Loader2, Plus, Sparkles, Trash2 } from "lucide-react";
 
 export function RestorationPanel({
   assessmentId,
+  organizationId,
+  facilityId,
   actions,
   gaps,
   results,
@@ -52,6 +66,8 @@ export function RestorationPanel({
   aiContext,
 }: {
   assessmentId: string;
+  organizationId?: string | null;
+  facilityId?: string | null;
   actions: CapActionRow[];
   gaps: CapRootGapRow[];
   results: CapResultRow[];
@@ -144,6 +160,8 @@ export function RestorationPanel({
             <ActionCard
               key={a.id}
               assessmentId={assessmentId}
+              organizationId={organizationId}
+              facilityId={facilityId}
               action={a}
               gaps={gaps}
               results={results.filter((r) => r.action_id === a.id)}
@@ -166,6 +184,8 @@ export function RestorationPanel({
 
 function ActionCard({
   assessmentId,
+  organizationId,
+  facilityId,
   action,
   gaps,
   results,
@@ -174,6 +194,8 @@ function ActionCard({
   onDelete,
 }: {
   assessmentId: string;
+  organizationId?: string | null;
+  facilityId?: string | null;
   action: CapActionRow;
   gaps: CapRootGapRow[];
   results: CapResultRow[];
@@ -493,6 +515,8 @@ function ActionCard({
 
           <MeasuredImprovement
             action={action}
+            organizationId={organizationId}
+            facilityId={facilityId}
             improvement={improvement}
             results={results}
             onAdd={(values) =>
@@ -514,57 +538,130 @@ function ActionCard({
 
 function MeasuredImprovement({
   action,
+  organizationId,
+  facilityId,
   improvement,
   results,
   onAdd,
 }: {
   action: CapActionRow;
+  organizationId?: string | null;
+  facilityId?: string | null;
   improvement: ReturnType<typeof summarizeImprovement>;
   results: CapResultRow[];
   onAdd: (values: Record<string, unknown>) => void;
 }) {
-  const [value, setValue] = useState("");
-  const [notes, setNotes] = useState("");
+  const cards = usePartOutcomeCards(organizationId, facilityId).data ?? [];
+  const machines = useShopMachines(organizationId, facilityId).data ?? [];
+  const saveCard = useSavePartOutcomeCard(organizationId, facilityId);
+  const existing =
+    cards.find((c) => c.capability_action_id === action.id) ?? null;
+  const [machineId, setMachineId] = useState(existing?.machine_id ?? "");
+  const [draft, setDraft] = useState(
+    emptyBeforeAfterDraft({
+      partNumber: existing?.part_number ?? "",
+      whatChanged: existing?.what_changed ?? action.recommended_action,
+      cycleTimeSecBefore: existing
+        ? String(existing.cycle_time_sec_before)
+        : "",
+      cycleTimeSecAfter: existing ? String(existing.cycle_time_sec_after) : "",
+      setupMinBefore: existing ? String(existing.setup_min_before) : "",
+      setupMinAfter: existing ? String(existing.setup_min_after) : "",
+      hoursOnPartBefore: existing ? String(existing.hours_on_part_before) : "",
+      hoursOnPartAfter: existing ? String(existing.hours_on_part_after) : "",
+      partsPerShiftBefore:
+        existing?.parts_per_shift_before != null
+          ? String(existing.parts_per_shift_before)
+          : "",
+      partsPerShiftAfter:
+        existing?.parts_per_shift_after != null
+          ? String(existing.parts_per_shift_after)
+          : "",
+      downtimeMinBefore:
+        existing?.downtime_min_before != null
+          ? String(existing.downtime_min_before)
+          : "",
+      downtimeMinAfter:
+        existing?.downtime_min_after != null
+          ? String(existing.downtime_min_after)
+          : "",
+      beforeAt: existing?.before_at?.slice(0, 10) ?? "",
+      afterAt: existing?.after_at?.slice(0, 10) ?? "",
+    }),
+  );
 
   return (
     <div className="rounded-md border border-dashed border-border p-3">
-      <FieldLabel>Measured improvement</FieldLabel>
-      <p className="mt-2 font-display text-sm tracking-wide text-foreground">
-        {formatValue(improvement.baseline, action.unit)} →{" "}
-        {formatValue(improvement.target, action.unit)} →{" "}
-        <span
-          className={
-            improvement.targetAchieved ? "text-success" : "text-foreground"
-          }
-        >
-          {formatValue(improvement.actual, action.unit)}
-        </span>
+      <FieldLabel>Measured result</FieldLabel>
+      <p className="mt-1 text-xs text-muted-foreground">
+        Same structured fields as the CNC before/after card — not a free-text
+        note.
       </p>
-      <div className="mt-2 flex flex-wrap gap-4 text-xs text-muted-foreground">
-        <span>
-          Absolute: {improvement.absolute === null ? "—" : improvement.absolute}
-        </span>
-        <span>
-          Change:{" "}
-          {improvement.percent === null ? "—" : `${improvement.percent}%`}
-        </span>
-        <span>
-          Target:{" "}
-          {improvement.targetAchieved === null
-            ? "—"
-            : improvement.targetAchieved
-              ? "Achieved"
-              : "Not yet achieved"}
-        </span>
-        <span className="inline-flex items-center gap-1">
-          Trend:{" "}
-          {improvement.trend === "improving" ? (
-            <TrendingUp className="size-3.5 text-success" />
-          ) : improvement.trend === "declining" ? (
-            <TrendingDown className="size-3.5 text-critical" />
-          ) : null}
-          {improvement.trend}
-        </span>
+      {existing ? (
+        <div className="mt-3">
+          <PartOutcomeCardView card={existing} />
+        </div>
+      ) : null}
+      <div className="mt-3 space-y-3">
+        <div className="space-y-1.5">
+          <FieldLabel>Machine</FieldLabel>
+          <Select value={machineId || undefined} onValueChange={setMachineId}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select a machine" />
+            </SelectTrigger>
+            <SelectContent>
+              {machines.map((m) => (
+                <SelectItem key={m.id} value={m.id}>
+                  {machineLabel(m)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <PartOutcomeFields draft={draft} onChange={setDraft} />
+        <Button
+          variant="outline"
+          disabled={saveCard.isPending}
+          onClick={() => {
+            try {
+              const numbers = draftToNumbers(draft);
+              if (!draft.partNumber.trim() || !draft.whatChanged.trim()) {
+                throw new Error("Part number and what changed are required.");
+              }
+              saveCard.mutate({
+                id: existing?.id,
+                partNumber: draft.partNumber,
+                machineId: machineId || null,
+                capabilityActionId: action.id,
+                whatChanged: draft.whatChanged,
+                cycleTimeSecBefore: numbers.cycle_time_sec_before,
+                cycleTimeSecAfter: numbers.cycle_time_sec_after,
+                setupMinBefore: numbers.setup_min_before,
+                setupMinAfter: numbers.setup_min_after,
+                hoursOnPartBefore: numbers.hours_on_part_before,
+                hoursOnPartAfter: numbers.hours_on_part_after,
+                partsPerShiftBefore: numbers.parts_per_shift_before,
+                partsPerShiftAfter: numbers.parts_per_shift_after,
+                downtimeMinBefore: numbers.downtime_min_before,
+                downtimeMinAfter: numbers.downtime_min_after,
+                beforeAt: draft.beforeAt || undefined,
+                afterAt: draft.afterAt || undefined,
+              });
+              onAdd({
+                actual_value: numbers.cycle_time_sec_after,
+                notes: `cycle ${numbers.cycle_time_sec_before}→${numbers.cycle_time_sec_after}s; setup ${numbers.setup_min_before}→${numbers.setup_min_after}min; hours ${numbers.hours_on_part_before}→${numbers.hours_on_part_after}`,
+              });
+            } catch (error) {
+              toast.error(
+                error instanceof Error
+                  ? error.message
+                  : "Enter the required before/after numbers",
+              );
+            }
+          }}
+        >
+          <Plus className="size-4" /> Save measured result
+        </Button>
       </div>
       {results.length > 0 ? (
         <ul className="mt-2 space-y-1 text-xs text-muted-foreground">
@@ -583,30 +680,12 @@ function MeasuredImprovement({
             ))}
         </ul>
       ) : null}
-      <div className="mt-3 grid gap-2 sm:grid-cols-[10rem_1fr_auto]">
-        <Input
-          placeholder="Actual value"
-          inputMode="decimal"
-          value={value}
-          onChange={(e) => setValue(e.target.value)}
-        />
-        <Input
-          placeholder="Notes"
-          value={notes}
-          onChange={(e) => setNotes(e.target.value)}
-        />
-        <Button
-          variant="outline"
-          onClick={() => {
-            if (value === "") return;
-            onAdd({ actual_value: Number(value), notes });
-            setValue("");
-            setNotes("");
-          }}
-        >
-          <Plus className="size-4" /> Record
-        </Button>
-      </div>
+      <p className="mt-2 text-xs text-muted-foreground">
+        Target vs actual (legacy single metric):{" "}
+        {formatValue(improvement.baseline, action.unit)} →{" "}
+        {formatValue(improvement.target, action.unit)} →{" "}
+        {formatValue(improvement.actual, action.unit)}
+      </p>
     </div>
   );
 }

@@ -126,6 +126,7 @@ function CadConversionPage() {
                     </p>
                     <p className="text-xs text-muted-foreground">
                       {formatBytes(job.byte_size)}
+                      {job.part_number ? ` · part ${job.part_number}` : ""}
                       {job.status === "failed" && job.failure_reason
                         ? ` · ${job.failure_reason}`
                         : ""}

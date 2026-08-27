@@ -34,7 +34,14 @@ import {
   type CncChangeCategory,
   type CncChangeLogRow,
 } from "@/lib/cnc-api";
+import { useShopMachines } from "@/lib/shop-floor-api";
+import { machineLabel } from "@/lib/shop-floor";
 import { useDraftFromPrecedent } from "@/lib/precedent-draft-api";
+import {
+  PartOutcomeFields,
+  draftToNumbers,
+  emptyBeforeAfterDraft,
+} from "@/components/ironiq/part-outcome-fields";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/cnc")({
@@ -68,12 +75,14 @@ const CATEGORY_LABELS: Record<CncChangeCategory, string> = {
 };
 
 function CncChangeLogPage() {
-  const { organization } = useApp();
+  const { organization, facility } = useApp();
   const entries = useCncChangeLog(organization?.id).data ?? [];
+  const machines = useShopMachines(organization?.id, facility?.id).data ?? [];
   const create = useCreateCncLogEntry(organization?.id);
   const draftAI = useDraftFromPrecedent();
 
-  const [machineName, setMachineName] = useState("");
+  const [machineId, setMachineId] = useState("");
+  const [partNumber, setPartNumber] = useState("");
   const [programIdentifier, setProgramIdentifier] = useState("");
   const [category, setCategory] = useState<CncChangeCategory>("feed_speed");
   const [changeDescription, setChangeDescription] = useState("");
@@ -94,11 +103,12 @@ function CncChangeLogPage() {
   }
 
   const handleLog = () => {
-    if (!machineName.trim() || !changeDescription.trim() || !reason.trim())
-      return;
+    if (!machineId || !changeDescription.trim() || !reason.trim()) return;
     create.mutate(
       {
-        machineName,
+        facilityId: facility?.id,
+        machineId,
+        partNumber: partNumber || undefined,
         programIdentifier: programIdentifier || undefined,
         changeCategory: category,
         changeDescription,
@@ -106,7 +116,8 @@ function CncChangeLogPage() {
       },
       {
         onSuccess: () => {
-          setMachineName("");
+          setMachineId("");
+          setPartNumber("");
           setProgramIdentifier("");
           setChangeDescription("");
           setReason("");
@@ -128,10 +139,29 @@ function CncChangeLogPage() {
         subtitle="Keep this quick — outcome comes later, at verification"
       >
         <div className="grid gap-4 sm:grid-cols-2">
+          <div>
+            <Select value={machineId || undefined} onValueChange={setMachineId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select a machine" />
+              </SelectTrigger>
+              <SelectContent>
+                {machines.map((m) => (
+                  <SelectItem key={m.id} value={m.id}>
+                    {machineLabel(m)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {machines.length === 0 ? (
+              <p className="mt-1 text-xs text-muted-foreground">
+                Add machines on the Machines page first.
+              </p>
+            ) : null}
+          </div>
           <Input
-            placeholder="Machine (e.g. Haas VF-4 #3)"
-            value={machineName}
-            onChange={(e) => setMachineName(e.target.value)}
+            placeholder="Part number (e.g. HUB-4410)"
+            value={partNumber}
+            onChange={(e) => setPartNumber(e.target.value)}
           />
           <Input
             placeholder="Program # (optional)"
@@ -270,6 +300,7 @@ function CncChangeLogPage() {
                 onStartVerify={() => setVerifyingId(entry.id)}
                 onCancelVerify={() => setVerifyingId(null)}
                 organizationId={organization.id}
+                machines={machines}
               />
             ))}
           </div>
@@ -285,21 +316,28 @@ function ChangeLogRow({
   onStartVerify,
   onCancelVerify,
   organizationId,
+  machines,
 }: {
   entry: CncChangeLogRow;
   isVerifying: boolean;
   onStartVerify: () => void;
   onCancelVerify: () => void;
   organizationId: string;
+  machines: { id: string; asset_id: string; name: string }[];
 }) {
   const verify = useVerifyCncLogEntry(organizationId);
   const remove = useDeleteCncLogEntry(organizationId);
   const update = useUpdateCncLogEntry(organizationId);
-  const [outcome, setOutcome] = useState("");
+  const [outcomeDraft, setOutcomeDraft] = useState(
+    emptyBeforeAfterDraft({
+      partNumber: entry.part_number ?? "",
+      whatChanged: entry.change_description,
+    }),
+  );
   const [contribute, setContribute] = useState(false);
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState({
-    machineName: entry.machine_name,
+    machineId: entry.machine_id ?? "",
     programIdentifier: entry.program_identifier ?? "",
     changeCategory: entry.change_category,
     changeDescription: entry.change_description,
@@ -310,13 +348,21 @@ function ChangeLogRow({
     return (
       <div className="rounded-md border border-border p-4">
         <div className="grid gap-3 sm:grid-cols-2">
-          <Input
-            value={draft.machineName}
-            onChange={(e) =>
-              setDraft((d) => ({ ...d, machineName: e.target.value }))
-            }
-            placeholder="Machine"
-          />
+          <Select
+            value={draft.machineId || undefined}
+            onValueChange={(v) => setDraft((d) => ({ ...d, machineId: v }))}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select a machine" />
+            </SelectTrigger>
+            <SelectContent>
+              {machines.map((m) => (
+                <SelectItem key={m.id} value={m.id}>
+                  {machineLabel(m)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           <Input
             value={draft.programIdentifier}
             onChange={(e) =>
@@ -369,7 +415,7 @@ function ChangeLogRow({
             size="sm"
             disabled={
               update.isPending ||
-              !draft.machineName.trim() ||
+              !draft.machineId ||
               !draft.changeDescription.trim() ||
               !draft.reason.trim()
             }
@@ -441,12 +487,7 @@ function ChangeLogRow({
 
       {isVerifying ? (
         <div className="mt-4 space-y-3 border-t border-border pt-4">
-          <Textarea
-            placeholder="What actually happened (e.g. cycle time down from 145s to 128s, chatter eliminated)"
-            rows={2}
-            value={outcome}
-            onChange={(e) => setOutcome(e.target.value)}
-          />
+          <PartOutcomeFields draft={outcomeDraft} onChange={setOutcomeDraft} />
           <div className="flex items-start gap-2 rounded-md border border-border bg-muted/20 p-3">
             <Checkbox
               id={`contribute-cnc-${entry.id}`}
@@ -466,17 +507,45 @@ function ChangeLogRow({
           <div className="flex gap-2">
             <Button
               size="sm"
-              disabled={!outcome.trim() || verify.isPending}
-              onClick={() =>
-                verify.mutate(
-                  {
-                    id: entry.id,
-                    outcomeDescription: outcome,
-                    contributeToIntelligence: contribute,
-                  },
-                  { onSuccess: onCancelVerify },
-                )
-              }
+              disabled={verify.isPending}
+              onClick={() => {
+                try {
+                  const numbers = draftToNumbers(outcomeDraft);
+                  if (!outcomeDraft.partNumber.trim()) {
+                    throw new Error("Part number is required");
+                  }
+                  if (!outcomeDraft.whatChanged.trim()) {
+                    throw new Error("What changed is required");
+                  }
+                  verify.mutate(
+                    {
+                      id: entry.id,
+                      partNumber: outcomeDraft.partNumber,
+                      whatChanged: outcomeDraft.whatChanged,
+                      cycleTimeSecBefore: numbers.cycle_time_sec_before,
+                      cycleTimeSecAfter: numbers.cycle_time_sec_after,
+                      setupMinBefore: numbers.setup_min_before,
+                      setupMinAfter: numbers.setup_min_after,
+                      hoursOnPartBefore: numbers.hours_on_part_before,
+                      hoursOnPartAfter: numbers.hours_on_part_after,
+                      partsPerShiftBefore: numbers.parts_per_shift_before,
+                      partsPerShiftAfter: numbers.parts_per_shift_after,
+                      downtimeMinBefore: numbers.downtime_min_before,
+                      downtimeMinAfter: numbers.downtime_min_after,
+                      beforeAt: outcomeDraft.beforeAt || undefined,
+                      afterAt: outcomeDraft.afterAt || undefined,
+                      contributeToIntelligence: contribute,
+                    },
+                    { onSuccess: onCancelVerify },
+                  );
+                } catch (error) {
+                  toast.error(
+                    error instanceof Error
+                      ? error.message
+                      : "Enter the required before/after numbers",
+                  );
+                }
+              }}
             >
               Save outcome
             </Button>

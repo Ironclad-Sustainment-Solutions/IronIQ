@@ -30,6 +30,8 @@ const SignupInput = z.object({
   email: z.string().email(),
   password: z.string().min(8, "Password must be at least 8 characters"),
   fullName: z.string().optional(),
+  company: z.string().optional(),
+  facility: z.string().optional(),
 });
 
 const LoginInput = z.object({
@@ -64,7 +66,11 @@ export const signup = createServerFn({ method: "POST" })
           [
             data.email,
             passwordHash,
-            JSON.stringify({ full_name: data.fullName ?? null }),
+            JSON.stringify({
+              full_name: data.fullName ?? null,
+              requested_company: data.company?.trim() || null,
+              requested_facility: data.facility?.trim() || null,
+            }),
           ],
         );
         return rows[0].id;

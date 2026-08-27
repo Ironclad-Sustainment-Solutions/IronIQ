@@ -38,6 +38,8 @@ function AuthPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
+  const [company, setCompany] = useState("");
+  const [facility, setFacility] = useState("");
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
@@ -51,12 +53,16 @@ function AuthPage() {
     setBusy(true);
     try {
       if (mode === "signup") {
-        await signup({ data: { email, password, fullName } });
+        await signup({
+          data: { email, password, fullName, company, facility },
+        });
         toast.success(
-          "Account created — an admin will review and approve access before you can sign in.",
+          "Request submitted — an admin must approve access before you can sign in.",
         );
         setMode("signin");
         setPassword("");
+        setCompany("");
+        setFacility("");
       } else {
         await login({ data: { email, password } });
         navigate({ to: "/home", replace: true });
@@ -134,21 +140,43 @@ function AuthPage() {
           <p className="mt-1.5 text-sm text-muted-foreground">
             {mode === "signin"
               ? "Access your organization's IronIQ workspace."
-              : "Request access — an admin will review and approve your account before you can sign in."}
+              : "Request access — an admin must approve your account before you can sign in."}
           </p>
 
           <form onSubmit={submit} className="mt-8 space-y-4">
             {mode === "signup" && (
-              <div className="space-y-1.5">
-                <Label htmlFor="fullName">Full name</Label>
-                <Input
-                  id="fullName"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  placeholder="Jordan Vale"
-                  required
-                />
-              </div>
+              <>
+                <div className="space-y-1.5">
+                  <Label htmlFor="fullName">Full name</Label>
+                  <Input
+                    id="fullName"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    placeholder="Jordan Vale"
+                    required
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="company">Company</Label>
+                  <Input
+                    id="company"
+                    value={company}
+                    onChange={(e) => setCompany(e.target.value)}
+                    placeholder="Your company"
+                    required
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="facility">Facility</Label>
+                  <Input
+                    id="facility"
+                    value={facility}
+                    onChange={(e) => setFacility(e.target.value)}
+                    placeholder="Plant or shop name"
+                    required
+                  />
+                </div>
+              </>
             )}
             <div className="space-y-1.5">
               <Label htmlFor="email">Work email</Label>
@@ -181,7 +209,7 @@ function AuthPage() {
               {busy ? (
                 <Loader2 className="size-4 animate-spin" aria-hidden />
               ) : null}
-              {mode === "signin" ? "Sign in" : "Create account"}
+              {mode === "signin" ? "Sign in" : "Request access"}
             </Button>
           </form>
 
@@ -197,7 +225,7 @@ function AuthPage() {
             variant="outline"
             className="w-full"
             disabled
-            title="Google sign-in isn't wired up yet — see MIGRATION_PHASE2.md"
+            title="Google sign-in coming soon"
           >
             Continue with Google (coming soon)
           </Button>

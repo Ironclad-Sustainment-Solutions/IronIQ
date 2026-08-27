@@ -1,8 +1,8 @@
 import { Link, createFileRoute } from "@tanstack/react-router";
 import {
-  Compass,
-  FileImage,
+  Factory,
   Code2,
+  FileImage,
   Sparkles,
   ArrowUpRight,
   ChevronDown,
@@ -20,7 +20,7 @@ export const Route = createFileRoute("/_authenticated/home")({
       {
         name: "description",
         content:
-          "The starting point for IronIQ's three product pipelines — Assessment, CAD Conversion, and CNC Coding.",
+          "Shop-floor starting point — machines, the one-part CNC job, and drawing conversion.",
       },
       { property: "og:title", content: "Home — IronIQ" },
       {
@@ -36,11 +36,18 @@ export const Route = createFileRoute("/_authenticated/home")({
 
 const PRODUCTS = [
   {
-    to: "/assessment",
-    icon: Compass,
-    label: "Assessments",
+    to: "/machines",
+    icon: Factory,
+    label: "Machines",
     description:
-      "Evaluate a machine shop's manufacturing readiness — find capability gaps, document findings backed by evidence, and track corrective work to closure.",
+      "Identify the 1–3 machines on this floor, then log cycles, runtime, idle, and downtime — by part — without a live machine connection.",
+  },
+  {
+    to: "/cnc",
+    icon: Code2,
+    label: "One-part CNC job",
+    description:
+      "Log a change on a named machine, record structured before/after numbers, and print a one-page card for the part you're proving.",
   },
   {
     to: "/cad",
@@ -48,13 +55,6 @@ const PRODUCTS = [
     label: "CAD Conversion",
     description:
       "Turn a scanned or photographed drawing into structured, searchable data — dimensions, tolerances, and title-block info, always reviewed by a person before it's trusted.",
-  },
-  {
-    to: "/cnc",
-    icon: Code2,
-    label: "CNC Coding",
-    description:
-      "Log program and machine changes as you make them, verify outcomes, and build a searchable history that helps solve the same problem faster next time.",
   },
 ];
 
@@ -127,8 +127,8 @@ function HomePage() {
             {firstName ? `, ${firstName}` : ""}
           </h1>
           <p className="mt-4 max-w-xl text-sm leading-relaxed text-muted-foreground md:text-base">
-            Three product pipelines, one shared intelligence layer. Pick where
-            you're headed.
+            Start with the machines on this floor and one named part.
+            Assessments stay in the sidebar when you need them.
           </p>
         </div>
 

@@ -78,18 +78,12 @@ const PRODUCT_NAV: {
   }[];
 }[] = [
   {
-    // The only product with enough sub-pages to need a real accordion —
-    // collapsed by default unless the current route is inside it. See
-    // "Assessment Hub" note in assessment.tsx for why these are grouped
-    // as one pipeline rather than split across sections.
-    //
-    // Readiness Dashboard lives here, not as a separate top-level
-    // "Overview" — checked the actual page's data sources directly
-    // (useFacilityResult, findings, projects, readiness scores) and every
-    // one of them is Assessment-specific; nothing about CAD or CNC
-    // appears anywhere in it. Renamed from "Executive Dashboard" to
-    // "Readiness Dashboard" for the same reason — the old name implied
-    // portfolio-wide, cross-product coverage it never actually had.
+    section: "Machines",
+    items: [{ to: "/machines", label: "Machines", icon: Factory }],
+  },
+  {
+    // Assessment stays in the sidebar for shops that still use it, but
+    // it is no longer the first product a shop-floor customer sees.
     section: "Assessments",
     groupIcon: Compass,
     items: [

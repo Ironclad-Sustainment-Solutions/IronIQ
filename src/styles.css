@@ -183,4 +183,8 @@
     background: white;
     color: black;
   }
+  .part-outcome-card {
+    border-color: #ccc;
+    break-inside: avoid;
+  }
 }

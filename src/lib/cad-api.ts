@@ -18,6 +18,8 @@ export interface CadJobRow {
   status: CadJobStatus;
   failure_reason: string | null;
   storage_path: string;
+  part_number: string | null;
+  part_id: string | null;
   created_at: string;
 }
 

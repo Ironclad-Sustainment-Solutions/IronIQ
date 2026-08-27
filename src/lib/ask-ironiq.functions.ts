@@ -31,6 +31,7 @@ import { requireAuth } from "@/lib/auth/auth-middleware";
 import { checkAndRecordAiUsage } from "@/lib/auth/rate-limit.server";
 import { withUser } from "@/lib/db.server";
 import { embedText, toVectorLiteral } from "@/lib/embeddings.server";
+import { isCycleRuntimeQuestion } from "@/lib/shop-floor";
 
 const MODEL = process.env["AI_MODEL"] ?? "claude-sonnet-5";
 
@@ -101,6 +102,15 @@ export const askIronIQ = createServerFn({ method: "POST" })
     });
 
     if (patterns.length === 0) {
+      if (isCycleRuntimeQuestion(data.question)) {
+        return {
+          answer:
+            "No matching precedent for cycle time or runtime is stored in IronIQ.",
+          patterns: [],
+          usedExternalKnowledge: false,
+          noMatchingPrecedent: true,
+        };
+      }
       // Fallback: nothing in IronIQ's own reviewed precedent matched, so
       // answer from Claude's general knowledge instead of returning
       // nothing — but this MUST be clearly distinguishable from a
@@ -123,6 +133,7 @@ rather than guess.`,
         answer: fallback.text,
         patterns: [],
         usedExternalKnowledge: true,
+        noMatchingPrecedent: true,
       };
     }
 
@@ -139,5 +150,10 @@ rather than guess.`,
       prompt: `Question: ${data.question}\n\nRetrieved patterns:\n\n${context_block}`,
     });
 
-    return { answer: result.text, patterns, usedExternalKnowledge: false };
+    return {
+      answer: result.text,
+      patterns,
+      usedExternalKnowledge: false,
+      noMatchingPrecedent: false,
+    };
   });

@@ -47,6 +47,7 @@ export const listAllUsers = createServerFn({ method: "GET" })
       const { rows } = await client.query(
         `SELECT
            p.id, p.email, p.full_name, p.job_title, p.approved, p.created_at,
+           p.requested_company, p.requested_facility,
            COALESCE(array_agg(DISTINCT r.role) FILTER (WHERE r.role IS NOT NULL), '{}') AS roles,
            COALESCE(
              json_agg(DISTINCT jsonb_build_object(
