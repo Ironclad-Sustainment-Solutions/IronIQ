@@ -35,6 +35,9 @@ export const GAP_CLASSES = [
 ] as const;
 export type GapClass = (typeof GAP_CLASSES)[number];
 
+export const CONTROL_MODES = ["AUTO", "MDI", "JOG"] as const;
+export type ControlMode = (typeof CONTROL_MODES)[number];
+
 export const DEFAULT_IDLE_GAP_MINUTES = 15;
 export const MAX_EVENTS_PER_POST = 100;
 
@@ -75,6 +78,7 @@ export const MachineEventSchema = z.object({
   gap_class: z.enum(GAP_CLASSES).nullable().optional(),
   alarm_code: nullableString,
   alarm_active: z.boolean().nullable().optional(),
+  control_mode: z.enum(CONTROL_MODES).nullable().optional(),
   quality: QualitySchema.nullable().optional(),
 });
 

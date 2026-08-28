@@ -51,6 +51,7 @@ export interface StoredMachineEvent {
   gap_class: string | null;
   alarm_code: string | null;
   alarm_active: boolean | null;
+  control_mode: string | null;
   quality: { source_ok: boolean; notes?: string | null } | null;
 }
 
@@ -152,10 +153,10 @@ export function createPgMachineEventStore(
            controller_make, controller_model, capture_path, event_type, ts_utc,
            state, prev_state, program_name, part_id, job_id, cycle_seq,
            cycle_time_s, runtime_cutting_s, spindle_on_s, idle_since_prev_cycle_s,
-           gap_class, alarm_code, alarm_active, quality
+           gap_class, alarm_code, alarm_active, control_mode, quality
          ) VALUES (
            $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,
-           $20,$21,$22,$23,$24,$25,$26,$27
+           $20,$21,$22,$23,$24,$25,$26,$27,$28
          )
          ON CONFLICT ON CONSTRAINT shop_machine_events_idempotency DO NOTHING
          RETURNING id`,
@@ -186,6 +187,7 @@ export function createPgMachineEventStore(
           row.gap_class,
           row.alarm_code,
           row.alarm_active,
+          row.control_mode,
           row.quality,
         ],
       );
@@ -242,6 +244,7 @@ function mapStored(row: Record<string, unknown>): StoredMachineEvent {
     gap_class: row.gap_class == null ? null : String(row.gap_class),
     alarm_code: row.alarm_code == null ? null : String(row.alarm_code),
     alarm_active: row.alarm_active == null ? null : Boolean(row.alarm_active),
+    control_mode: row.control_mode == null ? null : String(row.control_mode),
     quality:
       quality && typeof quality === "object"
         ? (quality as StoredMachineEvent["quality"])
@@ -281,6 +284,7 @@ function toStored(
     gap_class: resolveGapClass(event, idleGapMinutes),
     alarm_code: asText(event.alarm_code),
     alarm_active: event.alarm_active ?? null,
+    control_mode: event.control_mode ?? null,
     quality: event.quality ?? null,
   };
 }

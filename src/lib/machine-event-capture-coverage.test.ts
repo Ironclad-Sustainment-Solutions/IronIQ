@@ -13,10 +13,8 @@ import {
  * Grede V1 capture-coverage: POST iss.machine_event.v1 through the same
  * handler and edge-secret auth as POST /api/ironiq/v1/machine-events,
  * then read stored rows back. Asserts Matt's six plus alarm/heartbeat/
- * capture_path/plant_id/quality are persisted with the posted values.
- *
- * Control mode AUTO vs jog/MDI is not in the schema — asserted NOT
- * captured; this file does not add that column.
+ * capture_path/plant_id/quality/control_mode are persisted with the
+ * posted values.
  */
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "../..");
@@ -42,9 +40,6 @@ const shared = {
   quality: { source_ok: true, notes: null as string | null },
 };
 
-/** Extra field the edge might send later. Must not be stored in V1. */
-const NOT_CAPTURED_CONTROL_MODE = "AUTO";
-
 const stateChange = {
   ...shared,
   event_type: "state_change",
@@ -61,7 +56,7 @@ const stateChange = {
   gap_class: null,
   alarm_code: null,
   alarm_active: false,
-  control_mode: NOT_CAPTURED_CONTROL_MODE,
+  control_mode: "AUTO",
 };
 
 const cycleEnd = {
@@ -172,7 +167,6 @@ function expectIdentity(row: StoredMachineEvent) {
   expect(row.shop_machine_id).toBe(demoMachine.id);
   expect(row.organization_id).toBe(demoMachine.organization_id);
   expect(row.facility_id).toBe(demoMachine.facility_id);
-  expect(row).not.toHaveProperty("control_mode");
 }
 
 describe("Grede V1 capture coverage", () => {
@@ -226,6 +220,7 @@ describe("Grede V1 capture coverage", () => {
     expect(storedState.cycle_seq).toBe(41);
     expect(storedState.alarm_code).toBeNull();
     expect(storedState.alarm_active).toBe(false);
+    expect(storedState.control_mode).toBe("AUTO");
 
     const storedCycle = byType(rows, "cycle_end");
     expectIdentity(storedCycle);
@@ -241,6 +236,7 @@ describe("Grede V1 capture coverage", () => {
     expect(storedCycle.idle_since_prev_cycle_s).toBe(16 * 60);
     expect(storedCycle.gap_class).toBe("SETUP_CANDIDATE");
     expect(storedCycle.job_id).toBe("JOB-77");
+    expect(storedCycle.control_mode).toBeNull();
 
     const storedHeartbeat = byType(rows, "heartbeat");
     expectIdentity(storedHeartbeat);
@@ -248,6 +244,7 @@ describe("Grede V1 capture coverage", () => {
     expect(storedHeartbeat.event_type).toBe("heartbeat");
     expect(storedHeartbeat.state).toBe("IDLE");
     expect(storedHeartbeat.program_name).toBe("O5123");
+    expect(storedHeartbeat.control_mode).toBeNull();
 
     const storedAlarm = byType(rows, "alarm");
     expectIdentity(storedAlarm);
@@ -258,16 +255,40 @@ describe("Grede V1 capture coverage", () => {
     expect(storedAlarm.alarm_code).toBe("102");
     expect(storedAlarm.alarm_active).toBe(true);
     expect(storedAlarm.gap_class).toBe("ALARM");
+    expect(storedAlarm.control_mode).toBeNull();
   });
 
-  it("does not capture control mode AUTO vs jog/MDI — field is not in the schema", () => {
+  it("stores omitted or null control_mode as null and rejects invalid values", async () => {
+    const store = createMemoryMachineEventStore([demoMachine]);
+
+    const omitted = await postAuthorized(store, cycleEnd);
+    expect(omitted.response.status).toBe(202);
+    const withNull = await postAuthorized(store, {
+      ...heartbeat,
+      control_mode: null,
+    });
+    expect(withNull.response.status).toBe(202);
+    const invalid = await postAuthorized(store, {
+      ...stateChange,
+      control_mode: "MEM",
+    });
+    expect(invalid.response.status).toBe(400);
+    expect(invalid.json.error).toBe("invalid payload");
+
+    const rows = await store.listByMachineId("MC-UMC750-01");
+    expect(byType(rows, "cycle_end").control_mode).toBeNull();
+    expect(byType(rows, "heartbeat").control_mode).toBeNull();
+    expect(
+      rows.filter((row) => row.event_type === "state_change"),
+    ).toHaveLength(0);
+  });
+
+  it("includes control_mode AUTO | MDI | JOG on the event schema", () => {
     const schema = readFileSync(
       join(root, "db/schema_additions_machine_events.sql"),
       "utf8",
     );
-    expect(schema).not.toMatch(/control_mode/i);
-    expect(schema).not.toMatch(/\bAUTO\b/);
-    expect(schema).not.toMatch(/\bMDI\b/);
-    expect(schema).not.toMatch(/\bjog\b/i);
+    expect(schema).toMatch(/shop_machine_event_control_mode/);
+    expect(schema).toMatch(/'AUTO', 'MDI', 'JOG'/);
   });
 });

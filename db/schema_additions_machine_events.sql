@@ -37,6 +37,14 @@ DO $$ BEGIN
   );
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
+-- Haas Q104 / execution mode, Fanuc MEM vs MDI vs JOG/handle.
+-- Null when the pipe cannot read mode (e.g. discrete I/O). Not feed override.
+DO $$ BEGIN
+  CREATE TYPE public.shop_machine_event_control_mode AS ENUM (
+    'AUTO', 'MDI', 'JOG'
+  );
+EXCEPTION WHEN duplicate_object THEN NULL; END $$;
+
 CREATE TABLE IF NOT EXISTS public.shop_machine_events (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   organization_id UUID NOT NULL REFERENCES public.organizations(id) ON DELETE CASCADE,
@@ -69,6 +77,7 @@ CREATE TABLE IF NOT EXISTS public.shop_machine_events (
   gap_class public.shop_machine_event_gap_class,
   alarm_code TEXT,
   alarm_active BOOLEAN,
+  control_mode public.shop_machine_event_control_mode,
   quality JSONB,
 
   ingested_at TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -83,6 +92,9 @@ CREATE INDEX IF NOT EXISTS idx_shop_machine_events_part_ts
   ON public.shop_machine_events(part_id, ts_utc);
 CREATE INDEX IF NOT EXISTS idx_shop_machine_events_shop_machine
   ON public.shop_machine_events(shop_machine_id);
+
+ALTER TABLE public.shop_machine_events
+  ADD COLUMN IF NOT EXISTS control_mode public.shop_machine_event_control_mode;
 
 GRANT SELECT, INSERT, UPDATE, DELETE ON public.shop_machine_events TO app_user;
 GRANT ALL ON public.shop_machine_events TO app_admin;
