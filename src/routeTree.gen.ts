@@ -40,12 +40,11 @@ import { Route as AuthenticatedFieldIndexRouteImport } from './routes/_authentic
 import { Route as AuthenticatedFieldFieldIdRouteImport } from './routes/_authenticated/field/$fieldId'
 import { Route as AuthenticatedMachinesIndexRouteImport } from './routes/_authenticated/machines/index'
 import { Route as AuthenticatedMachinesMachineIdRouteImport } from './routes/_authenticated/machines/$machineId'
-import { Route as AuthenticatedMachinesProgramMapRouteImport } from './routes/_authenticated/machines/program-map'
+import { Route as AuthenticatedMachinesImprovementsRouteImport } from './routes/_authenticated/machines/improvements'
 import { Route as AuthenticatedProductionIndexRouteImport } from './routes/_authenticated/production.index'
 import { Route as AuthenticatedProductionLibrariesRouteImport } from './routes/_authenticated/production.libraries'
 import { Route as AuthenticatedProductionNewRouteImport } from './routes/_authenticated/production.new'
 import { Route as AuthenticatedProductionJobsJobIdRouteImport } from './routes/_authenticated/production.jobs.$jobId'
-import { Route as ApiIroniqV1MachineEventsRouteImport } from './routes/api/ironiq/v1/machine-events'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -214,10 +213,10 @@ const AuthenticatedMachinesMachineIdRoute =
     path: '/machines/$machineId',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
-const AuthenticatedMachinesProgramMapRoute =
-  AuthenticatedMachinesProgramMapRouteImport.update({
-    id: '/machines/program-map',
-    path: '/machines/program-map',
+const AuthenticatedMachinesImprovementsRoute =
+  AuthenticatedMachinesImprovementsRouteImport.update({
+    id: '/machines/improvements',
+    path: '/machines/improvements',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 const AuthenticatedProductionIndexRoute =
@@ -243,12 +242,6 @@ const AuthenticatedProductionJobsJobIdRoute =
     id: '/jobs/$jobId',
     path: '/jobs/$jobId',
     getParentRoute: () => AuthenticatedProductionRoute,
-  } as any)
-const ApiIroniqV1MachineEventsRoute =
-  ApiIroniqV1MachineEventsRouteImport.update({
-    id: '/api/ironiq/v1/machine-events',
-    path: '/api/ironiq/v1/machine-events',
-    getParentRoute: () => rootRouteImport,
   } as any)
 
 export interface FileRoutesByFullPath {
@@ -277,7 +270,7 @@ export interface FileRoutesByFullPath {
   '/capability/$assessmentId': typeof AuthenticatedCapabilityAssessmentIdRoute
   '/field/$fieldId': typeof AuthenticatedFieldFieldIdRoute
   '/machines/$machineId': typeof AuthenticatedMachinesMachineIdRoute
-  '/machines/program-map': typeof AuthenticatedMachinesProgramMapRoute
+  '/machines/improvements': typeof AuthenticatedMachinesImprovementsRoute
   '/production/libraries': typeof AuthenticatedProductionLibrariesRoute
   '/production/new': typeof AuthenticatedProductionNewRoute
   '/assessments/': typeof AuthenticatedAssessmentsIndexRoute
@@ -287,7 +280,6 @@ export interface FileRoutesByFullPath {
   '/machines/': typeof AuthenticatedMachinesIndexRoute
   '/production/': typeof AuthenticatedProductionIndexRoute
   '/production/jobs/$jobId': typeof AuthenticatedProductionJobsJobIdRoute
-  '/api/ironiq/v1/machine-events': typeof ApiIroniqV1MachineEventsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -314,7 +306,7 @@ export interface FileRoutesByTo {
   '/capability/$assessmentId': typeof AuthenticatedCapabilityAssessmentIdRoute
   '/field/$fieldId': typeof AuthenticatedFieldFieldIdRoute
   '/machines/$machineId': typeof AuthenticatedMachinesMachineIdRoute
-  '/machines/program-map': typeof AuthenticatedMachinesProgramMapRoute
+  '/machines/improvements': typeof AuthenticatedMachinesImprovementsRoute
   '/production/libraries': typeof AuthenticatedProductionLibrariesRoute
   '/production/new': typeof AuthenticatedProductionNewRoute
   '/assessments': typeof AuthenticatedAssessmentsIndexRoute
@@ -324,7 +316,6 @@ export interface FileRoutesByTo {
   '/machines': typeof AuthenticatedMachinesIndexRoute
   '/production': typeof AuthenticatedProductionIndexRoute
   '/production/jobs/$jobId': typeof AuthenticatedProductionJobsJobIdRoute
-  '/api/ironiq/v1/machine-events': typeof ApiIroniqV1MachineEventsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -354,7 +345,7 @@ export interface FileRoutesById {
   '/_authenticated/capability/$assessmentId': typeof AuthenticatedCapabilityAssessmentIdRoute
   '/_authenticated/field/$fieldId': typeof AuthenticatedFieldFieldIdRoute
   '/_authenticated/machines/$machineId': typeof AuthenticatedMachinesMachineIdRoute
-  '/_authenticated/machines/program-map': typeof AuthenticatedMachinesProgramMapRoute
+  '/_authenticated/machines/improvements': typeof AuthenticatedMachinesImprovementsRoute
   '/_authenticated/production/libraries': typeof AuthenticatedProductionLibrariesRoute
   '/_authenticated/production/new': typeof AuthenticatedProductionNewRoute
   '/_authenticated/assessments/': typeof AuthenticatedAssessmentsIndexRoute
@@ -364,7 +355,6 @@ export interface FileRoutesById {
   '/_authenticated/machines/': typeof AuthenticatedMachinesIndexRoute
   '/_authenticated/production/': typeof AuthenticatedProductionIndexRoute
   '/_authenticated/production/jobs/$jobId': typeof AuthenticatedProductionJobsJobIdRoute
-  '/api/ironiq/v1/machine-events': typeof ApiIroniqV1MachineEventsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -394,7 +384,7 @@ export interface FileRouteTypes {
     | '/capability/$assessmentId'
     | '/field/$fieldId'
     | '/machines/$machineId'
-    | '/machines/program-map'
+    | '/machines/improvements'
     | '/production/libraries'
     | '/production/new'
     | '/assessments/'
@@ -404,7 +394,6 @@ export interface FileRouteTypes {
     | '/machines/'
     | '/production/'
     | '/production/jobs/$jobId'
-    | '/api/ironiq/v1/machine-events'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -431,7 +420,7 @@ export interface FileRouteTypes {
     | '/capability/$assessmentId'
     | '/field/$fieldId'
     | '/machines/$machineId'
-    | '/machines/program-map'
+    | '/machines/improvements'
     | '/production/libraries'
     | '/production/new'
     | '/assessments'
@@ -441,7 +430,6 @@ export interface FileRouteTypes {
     | '/machines'
     | '/production'
     | '/production/jobs/$jobId'
-    | '/api/ironiq/v1/machine-events'
   id:
     | '__root__'
     | '/'
@@ -470,7 +458,7 @@ export interface FileRouteTypes {
     | '/_authenticated/capability/$assessmentId'
     | '/_authenticated/field/$fieldId'
     | '/_authenticated/machines/$machineId'
-    | '/_authenticated/machines/program-map'
+    | '/_authenticated/machines/improvements'
     | '/_authenticated/production/libraries'
     | '/_authenticated/production/new'
     | '/_authenticated/assessments/'
@@ -480,14 +468,12 @@ export interface FileRouteTypes {
     | '/_authenticated/machines/'
     | '/_authenticated/production/'
     | '/_authenticated/production/jobs/$jobId'
-    | '/api/ironiq/v1/machine-events'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
-  ApiIroniqV1MachineEventsRoute: typeof ApiIroniqV1MachineEventsRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -709,11 +695,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedMachinesMachineIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
-    '/_authenticated/machines/program-map': {
-      id: '/_authenticated/machines/program-map'
-      path: '/machines/program-map'
-      fullPath: '/machines/program-map'
-      preLoaderRoute: typeof AuthenticatedMachinesProgramMapRouteImport
+    '/_authenticated/machines/improvements': {
+      id: '/_authenticated/machines/improvements'
+      path: '/machines/improvements'
+      fullPath: '/machines/improvements'
+      preLoaderRoute: typeof AuthenticatedMachinesImprovementsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/production/': {
@@ -743,13 +729,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/production/jobs/$jobId'
       preLoaderRoute: typeof AuthenticatedProductionJobsJobIdRouteImport
       parentRoute: typeof AuthenticatedProductionRoute
-    }
-    '/api/ironiq/v1/machine-events': {
-      id: '/api/ironiq/v1/machine-events'
-      path: '/api/ironiq/v1/machine-events'
-      fullPath: '/api/ironiq/v1/machine-events'
-      preLoaderRoute: typeof ApiIroniqV1MachineEventsRouteImport
-      parentRoute: typeof rootRouteImport
     }
   }
 }
@@ -800,7 +779,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedCapabilityAssessmentIdRoute: typeof AuthenticatedCapabilityAssessmentIdRoute
   AuthenticatedFieldFieldIdRoute: typeof AuthenticatedFieldFieldIdRoute
   AuthenticatedMachinesMachineIdRoute: typeof AuthenticatedMachinesMachineIdRoute
-  AuthenticatedMachinesProgramMapRoute: typeof AuthenticatedMachinesProgramMapRoute
+  AuthenticatedMachinesImprovementsRoute: typeof AuthenticatedMachinesImprovementsRoute
   AuthenticatedAssessmentsIndexRoute: typeof AuthenticatedAssessmentsIndexRoute
   AuthenticatedBusinessDevelopmentIndexRoute: typeof AuthenticatedBusinessDevelopmentIndexRoute
   AuthenticatedCapabilityIndexRoute: typeof AuthenticatedCapabilityIndexRoute
@@ -835,7 +814,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
     AuthenticatedCapabilityAssessmentIdRoute,
   AuthenticatedFieldFieldIdRoute: AuthenticatedFieldFieldIdRoute,
   AuthenticatedMachinesMachineIdRoute: AuthenticatedMachinesMachineIdRoute,
-  AuthenticatedMachinesProgramMapRoute: AuthenticatedMachinesProgramMapRoute,
+  AuthenticatedMachinesImprovementsRoute:
+    AuthenticatedMachinesImprovementsRoute,
   AuthenticatedAssessmentsIndexRoute: AuthenticatedAssessmentsIndexRoute,
   AuthenticatedBusinessDevelopmentIndexRoute:
     AuthenticatedBusinessDevelopmentIndexRoute,
@@ -851,7 +831,6 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
-  ApiIroniqV1MachineEventsRoute: ApiIroniqV1MachineEventsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
