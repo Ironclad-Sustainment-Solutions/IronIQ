@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<MTConnectStreams xmlns="urn:mtconnect.org:MTConnectStreams:1.3">
+  <Header creationTime="2026-08-27T14:32:01Z" sender="Haas" instanceId="1" version="1.3" bufferSize="2048" nextSequence="102" firstSequence="1" lastSequence="101"/>
+  <Streams>
+    <DeviceStream name="HaasNGC" uuid="haas-umc750-01">
+      <ComponentStream component="Controller" name="controller">
+        <Events>
+          <Availability dataItemId="avail" timestamp="2026-08-27T14:32:01Z" sequence="90">AVAILABLE</Availability>
+          <EmergencyStop dataItemId="estop" timestamp="2026-08-27T14:32:01Z" sequence="91">ARMED</EmergencyStop>
+          <ControllerMode dataItemId="mode" timestamp="2026-08-27T14:32:01Z" sequence="92">AUTOMATIC</ControllerMode>
+          <Execution dataItemId="exec" timestamp="2026-08-27T14:32:01Z" sequence="93">ACTIVE</Execution>
+          <Program dataItemId="pgm" timestamp="2026-08-27T14:32:01Z" sequence="94">O5123</Program>
+          <PartCount dataItemId="pc" timestamp="2026-08-27T14:32:01Z" sequence="95">41</PartCount>
+        </Events>
+        <Condition>
+          <Normal dataItemId="system" timestamp="2026-08-27T14:32:01Z" sequence="96" type="SYSTEM"/>
+        </Condition>
+      </ComponentStream>
+    </DeviceStream>
+  </Streams>
+</MTConnectStreams>

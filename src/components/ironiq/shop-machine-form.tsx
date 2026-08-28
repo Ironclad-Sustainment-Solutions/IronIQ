@@ -186,12 +186,10 @@ export function ShopMachineForm({
                 placeholder="http://192.168.1.50:5000"
               />
               <p className="mt-1 text-xs text-muted-foreground">
-                IronIQ connects to this URL directly from the cloud — it must be
-                reachable from the public internet (a public IP/hostname, or a
-                firewall rule forwarding a specific port), not just a local
-                network address like 192.168.x.x. If your MTConnect agent only
-                exists on your internal network with no way to reach it from
-                outside, this won't work without a network change on your end.
+                For a machine on a private shop LAN, run the Edge app on that
+                network (facility key from Floor setup). Cloud "Sync now" only
+                works when this URL is reachable from the public internet — a
+                public IP/hostname or a forwarded port — not 192.168.x.x.
               </p>
             </Field>
           </div>

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<MTConnectDevices xmlns="urn:mtconnect.org:MTConnectDevices:1.3">
+  <Header creationTime="2026-08-27T14:00:00Z" sender="Haas" instanceId="1" version="1.3" bufferSize="2048"/>
+  <Devices>
+    <Device name="HaasNGC" uuid="haas-umc750-01" id="dev">
+      <Description>Haas NGC</Description>
+    </Device>
+  </Devices>
+</MTConnectDevices>

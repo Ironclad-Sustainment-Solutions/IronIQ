@@ -143,6 +143,11 @@ function MachineDetailPage() {
 
       {machine.protocol === "mtconnect" ? (
         <Panel title="MTConnect live sync">
+          <p className="mb-3 text-sm text-muted-foreground">
+            Live LAN feeds use the Edge app on the shop network, not this cloud
+            pull. "Sync now" is the exception when this MTConnect agent is
+            reachable from the public internet.
+          </p>
           {machine.mtconnect_agent_url ? (
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="text-sm text-muted-foreground">
