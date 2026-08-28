@@ -27,6 +27,7 @@ import {
   Compass,
   Home,
   Handshake,
+  Package,
 } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { IronIQMark } from "@/components/ironiq/ironiq-mark";
@@ -82,7 +83,11 @@ const PRODUCT_NAV: {
 }[] = [
   {
     section: "Machines",
-    items: [{ to: "/machines", label: "Machines", icon: Factory }],
+    groupIcon: Factory,
+    items: [
+      { to: "/machines", label: "Machines", icon: Factory },
+      { to: "/machines/parts", label: "Parts", icon: Package },
+    ],
   },
   {
     // Assessment stays in the sidebar for shops that still use it, but
@@ -236,7 +241,13 @@ const SECTION_TO_PRODUCT: Record<string, RestrictableProduct> = {
 };
 
 function isItemActive(pathname: string, to: string): boolean {
-  return pathname === to || pathname.startsWith(`${to}/`);
+  if (pathname === to) return true;
+  if (!pathname.startsWith(`${to}/`)) return false;
+  // `/machines` would otherwise also match `/machines/parts`.
+  if (to === "/machines" && pathname.startsWith("/machines/parts")) {
+    return false;
+  }
+  return true;
 }
 
 export function AppShell({ children }: { children: ReactNode }) {
