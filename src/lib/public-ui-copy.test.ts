@@ -44,4 +44,27 @@ describe("public UI copy", () => {
       expect(page).not.toMatch(/schema_additions_machine_events/);
     }
   });
+
+  it("does not leak internal filenames on home, auth, or Floor View", () => {
+    for (const rel of [
+      "src/routes/auth.tsx",
+      "src/routes/_authenticated/home.tsx",
+      "src/routes/_authenticated/floor.tsx",
+    ]) {
+      const text = source(rel);
+      expect(text).not.toMatch(/MIGRATION_PHASE2\.md/);
+      expect(text).not.toMatch(/schema_additions_[a-z0-9_]+\.sql/);
+    }
+  });
+
+  it("gives IronIQ Edge (Floor View, Parts, Improvements) its own nav section, separate from Machines", () => {
+    const shell = source("src/components/ironiq/app-shell.tsx");
+    expect(shell).toContain('to: "/machines"');
+    expect(shell).toContain('section: "IronIQ Edge"');
+    expect(shell).toContain('label: "Floor View"');
+    expect(shell).toContain('to: "/floor"');
+    expect(source("src/routes/_authenticated/machines/index.tsx")).toContain(
+      "Machine master",
+    );
+  });
 });
