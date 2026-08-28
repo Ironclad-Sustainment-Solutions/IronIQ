@@ -63,6 +63,31 @@ function stripTrailingSlash(url: string): string {
   return url.endsWith("/") ? url.slice(0, -1) : url;
 }
 
+// IronIQ's cloud servers can only ever reach a public IP/hostname --
+// never a private LAN address, no matter how correctly everything else
+// is configured. This is genuinely common to get wrong (a private
+// address looks completely normal from inside the customer's own
+// network), so rather than let it surface as a bare, confusing network
+// error, detect the common private ranges and say so directly.
+function isLikelyUnreachablePrivateHost(hostname: string): boolean {
+  if (
+    hostname === "localhost" ||
+    hostname === "127.0.0.1" ||
+    hostname === "::1"
+  ) {
+    return true;
+  }
+  const parts = hostname.split(".").map(Number);
+  if (parts.length !== 4 || parts.some((p) => Number.isNaN(p))) return false;
+  const [a, b] = parts;
+  return (
+    a === 10 ||
+    (a === 172 && b >= 16 && b <= 31) ||
+    (a === 192 && b === 168) ||
+    (a === 169 && b === 254) // link-local
+  );
+}
+
 async function fetchXml(url: string, timeoutMs = 10_000): Promise<Document> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
@@ -70,8 +95,17 @@ async function fetchXml(url: string, timeoutMs = 10_000): Promise<Document> {
   try {
     response = await fetch(url, { signal: controller.signal });
   } catch (error) {
+    let hostname = "";
+    try {
+      hostname = new URL(url).hostname;
+    } catch {
+      // ignore -- url was already validated further up the call chain
+    }
+    const hint = isLikelyUnreachablePrivateHost(hostname)
+      ? ` "${hostname}" looks like a private network address (e.g. 192.168.x.x, 10.x.x.x, or localhost) -- IronIQ's cloud servers can only reach a public IP or hostname, never a private one on your local network, no matter how everything else is configured. This URL needs to be reachable from the public internet (a public IP/hostname, or a firewall rule forwarding a specific port).`
+      : "";
     throw new Error(
-      `Could not reach MTConnect agent at ${url}: ${error instanceof Error ? error.message : String(error)}`,
+      `Could not reach MTConnect agent at ${url}: ${error instanceof Error ? error.message : String(error)}.${hint}`,
     );
   } finally {
     clearTimeout(timeout);
