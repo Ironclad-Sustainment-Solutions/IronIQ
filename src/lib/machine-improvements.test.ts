@@ -247,4 +247,40 @@ describe("summarizeCaptureEvents", () => {
     expect(summary.setup_candidate_idle_s).toBe(0);
     expect(summary.first_piece_candidate_idle_s).toBe(0);
   });
+
+  it("sums correctly when cycle_time_s/idle_since_prev_cycle_s arrive as strings, not numbers", () => {
+    // Real regression: shop_machine_events.cycle_time_s and
+    // idle_since_prev_cycle_s are NUMERIC columns. node-pg returns
+    // NUMERIC as a JS string, not a number (specifically to avoid
+    // silent float-precision loss) -- unlike INTEGER columns (e.g.
+    // cycle_seq), which node-pg does return as real numbers. The
+    // MachineCaptureEvent type claims `number | null` for these fields,
+    // but that's only true once something coerces them; a caller
+    // passing raw query rows straight through would previously hit
+    // `0 += "100"` here, which is STRING CONCATENATION once either side
+    // of `+=` is a string, not numeric addition -- silently producing a
+    // garbage-large total after enough iterations, not a thrown error.
+    // This test uses `as unknown as number` specifically to simulate
+    // that real runtime shape despite what the type annotation says.
+    const summary = summarizeCaptureEvents([
+      event({
+        ts_utc: "2026-08-15T09:00:00.000Z",
+        event_type: CYCLE_END_EVENT_TYPE,
+        cycle_seq: 1,
+        cycle_time_s: "100" as unknown as number,
+        idle_since_prev_cycle_s: "50" as unknown as number,
+        gap_class: SETUP_CANDIDATE_GAP_CLASS,
+      }),
+      event({
+        ts_utc: "2026-08-15T09:05:00.000Z",
+        event_type: CYCLE_END_EVENT_TYPE,
+        cycle_seq: 2,
+        cycle_time_s: "140" as unknown as number,
+      }),
+    ]);
+    expect(summary.cycles).toBe(2);
+    expect(summary.cycle_time_s).toBe(240);
+    expect(summary.setup_candidate_idle_s).toBe(50);
+    expect(typeof summary.cycle_time_s).toBe("number");
+  });
 });

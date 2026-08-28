@@ -28,8 +28,13 @@ import { Route as AuthenticatedIntakeRouteImport } from './routes/_authenticated
 import { Route as AuthenticatedOrganizationsRouteImport } from './routes/_authenticated/organizations'
 import { Route as AuthenticatedProductionRouteImport } from './routes/_authenticated/production'
 import { Route as AuthenticatedProjectsRouteImport } from './routes/_authenticated/projects'
+import { Route as AuthenticatedQualityRouteImport } from './routes/_authenticated/quality'
 import { Route as AuthenticatedReportsRouteImport } from './routes/_authenticated/reports'
+import { Route as AuthenticatedSuppliersRouteImport } from './routes/_authenticated/suppliers'
+import { Route as AuthenticatedSustainmentRouteImport } from './routes/_authenticated/sustainment'
 import { Route as AuthenticatedTemplatesRouteImport } from './routes/_authenticated/templates'
+import { Route as AuthenticatedToolingFixturesRouteImport } from './routes/_authenticated/tooling-fixtures'
+import { Route as AuthenticatedWorkInstructionsRouteImport } from './routes/_authenticated/work-instructions'
 import { Route as AuthenticatedAssessmentsIndexRouteImport } from './routes/_authenticated/assessments/index'
 import { Route as AuthenticatedAssessmentsAssessmentIdRouteImport } from './routes/_authenticated/assessments/$assessmentId'
 import { Route as AuthenticatedAssessmentsNewRouteImport } from './routes/_authenticated/assessments/new'
@@ -147,16 +152,44 @@ const AuthenticatedProjectsRoute = AuthenticatedProjectsRouteImport.update({
   path: '/projects',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedQualityRoute = AuthenticatedQualityRouteImport.update({
+  id: '/quality',
+  path: '/quality',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedReportsRoute = AuthenticatedReportsRouteImport.update({
   id: '/reports',
   path: '/reports',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedSuppliersRoute = AuthenticatedSuppliersRouteImport.update({
+  id: '/suppliers',
+  path: '/suppliers',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedSustainmentRoute =
+  AuthenticatedSustainmentRouteImport.update({
+    id: '/sustainment',
+    path: '/sustainment',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedTemplatesRoute = AuthenticatedTemplatesRouteImport.update({
   id: '/templates',
   path: '/templates',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedToolingFixturesRoute =
+  AuthenticatedToolingFixturesRouteImport.update({
+    id: '/tooling-fixtures',
+    path: '/tooling-fixtures',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
+const AuthenticatedWorkInstructionsRoute =
+  AuthenticatedWorkInstructionsRouteImport.update({
+    id: '/work-instructions',
+    path: '/work-instructions',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedAssessmentsIndexRoute =
   AuthenticatedAssessmentsIndexRouteImport.update({
     id: '/assessments/',
@@ -290,8 +323,13 @@ export interface FileRoutesByFullPath {
   '/organizations': typeof AuthenticatedOrganizationsRoute
   '/production': typeof AuthenticatedProductionRouteWithChildren
   '/projects': typeof AuthenticatedProjectsRoute
+  '/quality': typeof AuthenticatedQualityRoute
   '/reports': typeof AuthenticatedReportsRoute
+  '/suppliers': typeof AuthenticatedSuppliersRoute
+  '/sustainment': typeof AuthenticatedSustainmentRoute
   '/templates': typeof AuthenticatedTemplatesRoute
+  '/tooling-fixtures': typeof AuthenticatedToolingFixturesRoute
+  '/work-instructions': typeof AuthenticatedWorkInstructionsRoute
   '/assessments/$assessmentId': typeof AuthenticatedAssessmentsAssessmentIdRoute
   '/assessments/new': typeof AuthenticatedAssessmentsNewRoute
   '/business-development/$prospectId': typeof AuthenticatedBusinessDevelopmentProspectIdRoute
@@ -330,8 +368,13 @@ export interface FileRoutesByTo {
   '/intake': typeof AuthenticatedIntakeRoute
   '/organizations': typeof AuthenticatedOrganizationsRoute
   '/projects': typeof AuthenticatedProjectsRoute
+  '/quality': typeof AuthenticatedQualityRoute
   '/reports': typeof AuthenticatedReportsRoute
+  '/suppliers': typeof AuthenticatedSuppliersRoute
+  '/sustainment': typeof AuthenticatedSustainmentRoute
   '/templates': typeof AuthenticatedTemplatesRoute
+  '/tooling-fixtures': typeof AuthenticatedToolingFixturesRoute
+  '/work-instructions': typeof AuthenticatedWorkInstructionsRoute
   '/assessments/$assessmentId': typeof AuthenticatedAssessmentsAssessmentIdRoute
   '/assessments/new': typeof AuthenticatedAssessmentsNewRoute
   '/business-development/$prospectId': typeof AuthenticatedBusinessDevelopmentProspectIdRoute
@@ -373,8 +416,13 @@ export interface FileRoutesById {
   '/_authenticated/organizations': typeof AuthenticatedOrganizationsRoute
   '/_authenticated/production': typeof AuthenticatedProductionRouteWithChildren
   '/_authenticated/projects': typeof AuthenticatedProjectsRoute
+  '/_authenticated/quality': typeof AuthenticatedQualityRoute
   '/_authenticated/reports': typeof AuthenticatedReportsRoute
+  '/_authenticated/suppliers': typeof AuthenticatedSuppliersRoute
+  '/_authenticated/sustainment': typeof AuthenticatedSustainmentRoute
   '/_authenticated/templates': typeof AuthenticatedTemplatesRoute
+  '/_authenticated/tooling-fixtures': typeof AuthenticatedToolingFixturesRoute
+  '/_authenticated/work-instructions': typeof AuthenticatedWorkInstructionsRoute
   '/_authenticated/assessments/$assessmentId': typeof AuthenticatedAssessmentsAssessmentIdRoute
   '/_authenticated/assessments/new': typeof AuthenticatedAssessmentsNewRoute
   '/_authenticated/business-development/$prospectId': typeof AuthenticatedBusinessDevelopmentProspectIdRoute
@@ -416,8 +464,13 @@ export interface FileRouteTypes {
     | '/organizations'
     | '/production'
     | '/projects'
+    | '/quality'
     | '/reports'
+    | '/suppliers'
+    | '/sustainment'
     | '/templates'
+    | '/tooling-fixtures'
+    | '/work-instructions'
     | '/assessments/$assessmentId'
     | '/assessments/new'
     | '/business-development/$prospectId'
@@ -456,8 +509,13 @@ export interface FileRouteTypes {
     | '/intake'
     | '/organizations'
     | '/projects'
+    | '/quality'
     | '/reports'
+    | '/suppliers'
+    | '/sustainment'
     | '/templates'
+    | '/tooling-fixtures'
+    | '/work-instructions'
     | '/assessments/$assessmentId'
     | '/assessments/new'
     | '/business-development/$prospectId'
@@ -498,8 +556,13 @@ export interface FileRouteTypes {
     | '/_authenticated/organizations'
     | '/_authenticated/production'
     | '/_authenticated/projects'
+    | '/_authenticated/quality'
     | '/_authenticated/reports'
+    | '/_authenticated/suppliers'
+    | '/_authenticated/sustainment'
     | '/_authenticated/templates'
+    | '/_authenticated/tooling-fixtures'
+    | '/_authenticated/work-instructions'
     | '/_authenticated/assessments/$assessmentId'
     | '/_authenticated/assessments/new'
     | '/_authenticated/business-development/$prospectId'
@@ -663,6 +726,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedProjectsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/quality': {
+      id: '/_authenticated/quality'
+      path: '/quality'
+      fullPath: '/quality'
+      preLoaderRoute: typeof AuthenticatedQualityRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/reports': {
       id: '/_authenticated/reports'
       path: '/reports'
@@ -670,11 +740,39 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedReportsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/suppliers': {
+      id: '/_authenticated/suppliers'
+      path: '/suppliers'
+      fullPath: '/suppliers'
+      preLoaderRoute: typeof AuthenticatedSuppliersRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/sustainment': {
+      id: '/_authenticated/sustainment'
+      path: '/sustainment'
+      fullPath: '/sustainment'
+      preLoaderRoute: typeof AuthenticatedSustainmentRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/templates': {
       id: '/_authenticated/templates'
       path: '/templates'
       fullPath: '/templates'
       preLoaderRoute: typeof AuthenticatedTemplatesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/tooling-fixtures': {
+      id: '/_authenticated/tooling-fixtures'
+      path: '/tooling-fixtures'
+      fullPath: '/tooling-fixtures'
+      preLoaderRoute: typeof AuthenticatedToolingFixturesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/work-instructions': {
+      id: '/_authenticated/work-instructions'
+      path: '/work-instructions'
+      fullPath: '/work-instructions'
+      preLoaderRoute: typeof AuthenticatedWorkInstructionsRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/assessments/': {
@@ -852,8 +950,13 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedOrganizationsRoute: typeof AuthenticatedOrganizationsRoute
   AuthenticatedProductionRoute: typeof AuthenticatedProductionRouteWithChildren
   AuthenticatedProjectsRoute: typeof AuthenticatedProjectsRoute
+  AuthenticatedQualityRoute: typeof AuthenticatedQualityRoute
   AuthenticatedReportsRoute: typeof AuthenticatedReportsRoute
+  AuthenticatedSuppliersRoute: typeof AuthenticatedSuppliersRoute
+  AuthenticatedSustainmentRoute: typeof AuthenticatedSustainmentRoute
   AuthenticatedTemplatesRoute: typeof AuthenticatedTemplatesRoute
+  AuthenticatedToolingFixturesRoute: typeof AuthenticatedToolingFixturesRoute
+  AuthenticatedWorkInstructionsRoute: typeof AuthenticatedWorkInstructionsRoute
   AuthenticatedAssessmentsAssessmentIdRoute: typeof AuthenticatedAssessmentsAssessmentIdRoute
   AuthenticatedAssessmentsNewRoute: typeof AuthenticatedAssessmentsNewRoute
   AuthenticatedBusinessDevelopmentProspectIdRoute: typeof AuthenticatedBusinessDevelopmentProspectIdRoute
@@ -887,8 +990,13 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedOrganizationsRoute: AuthenticatedOrganizationsRoute,
   AuthenticatedProductionRoute: AuthenticatedProductionRouteWithChildren,
   AuthenticatedProjectsRoute: AuthenticatedProjectsRoute,
+  AuthenticatedQualityRoute: AuthenticatedQualityRoute,
   AuthenticatedReportsRoute: AuthenticatedReportsRoute,
+  AuthenticatedSuppliersRoute: AuthenticatedSuppliersRoute,
+  AuthenticatedSustainmentRoute: AuthenticatedSustainmentRoute,
   AuthenticatedTemplatesRoute: AuthenticatedTemplatesRoute,
+  AuthenticatedToolingFixturesRoute: AuthenticatedToolingFixturesRoute,
+  AuthenticatedWorkInstructionsRoute: AuthenticatedWorkInstructionsRoute,
   AuthenticatedAssessmentsAssessmentIdRoute:
     AuthenticatedAssessmentsAssessmentIdRoute,
   AuthenticatedAssessmentsNewRoute: AuthenticatedAssessmentsNewRoute,

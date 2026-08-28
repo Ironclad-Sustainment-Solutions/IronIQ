@@ -66,24 +66,21 @@ describe("public UI copy", () => {
     }
   });
 
-  it("gives IronIQ Edge (Floor View, Parts, Improvements) its own nav section, grouped with Intelligence rather than as a peer of Machines/Assessments/CAD/CNC", () => {
+  it("distributes former IronIQ Edge features (Floor View, Parts, Improvements) into the Capability/Operations taxonomy rather than keeping them as their own section", () => {
     const shell = source("src/components/ironiq/app-shell.tsx");
     expect(shell).toContain('to: "/machines"');
-    expect(shell).toContain('section: "IronIQ Edge"');
+    expect(shell).not.toContain('section: "IronIQ Edge"');
     expect(shell).toContain('label: "Floor View"');
     expect(shell).toContain('to: "/floor"');
     expect(source("src/routes/_authenticated/machines/index.tsx")).toContain(
       "Machine master",
     );
-    // IronIQ Edge and Ask IronIQ live in their own INTELLIGENCE_NAV
-    // array, not PRODUCT_NAV -- confirm the section header appears
-    // after PRODUCT_NAV's declaration closes, not inside it.
-    const productNavEnd = shell.indexOf("const INTELLIGENCE_NAV");
-    const productNavText = shell.slice(0, productNavEnd);
-    expect(productNavText).not.toContain('section: "IronIQ Edge"');
-    expect(shell.indexOf('section: "Intelligence"')).toBeGreaterThan(
-      productNavEnd,
-    );
+    // Parts lives under Capability, Floor View/Improvements under
+    // Operations -- confirm both taxonomy sections exist and neither
+    // resurrects a standalone "IronIQ Edge" heading.
+    expect(shell).toContain('section: "Capability"');
+    expect(shell).toContain('section: "Operations"');
+    expect(shell).toContain('section: "Intelligence"');
   });
 
   it("does not put Grede-only product copy on Edge or field surfaces", () => {

@@ -18,7 +18,6 @@ import {
   Calculator,
   Cpu,
   Wrench,
-  Gauge,
   Menu,
   ClipboardList,
   UploadCloud,
@@ -29,6 +28,8 @@ import {
   Home,
   Handshake,
   Package,
+  Users,
+  Shield,
 } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { IronIQMark } from "@/components/ironiq/ironiq-mark";
@@ -59,137 +60,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 
-// The co-equal product pipelines — rendered with prominent styling,
-// always at the top of the nav, visually distinct from every supporting
-// section below. This is the actual fix for products reading as "blended
-// in with everything else": size, weight, and position now signal these
-// are THE things this app does, not more entries in one flat list of
-// equal-looking sections. Four pipelines (Machines, Assessments, CAD
-// Conversion, CNC Coding) -- IronIQ Edge briefly lived here too, but per
-// direct feedback it isn't a peer of these: it doesn't have a start/end
-// the way an assessment or a CAD conversion job does, it's a live data
-// feed that enriches the others. Moved to its own INTELLIGENCE_NAV
-// section below, alongside Ask IronIQ, both of which are the same kind
-// of thing: cross-cutting capability layered on top of the pipelines,
-// not a pipeline itself.
 const HOME_ITEM = { to: "/home", label: "Home", icon: Home };
-
-const PRODUCT_NAV: {
-  section: string;
-  groupIcon?: typeof LayoutDashboard;
-  items: {
-    to: string;
-    label: string;
-    icon: typeof LayoutDashboard;
-    heading?: string;
-  }[];
-}[] = [
-  {
-    section: "Machines",
-    groupIcon: Factory,
-    items: [{ to: "/machines", label: "Machines", icon: Factory }],
-  },
-  {
-    // Assessment stays in the sidebar for shops that still use it, but
-    // it is no longer the first product a shop-floor customer sees.
-    section: "Assessments",
-    groupIcon: Compass,
-    items: [
-      {
-        to: "/dashboard",
-        label: "Readiness Dashboard",
-        icon: LayoutDashboard,
-        heading: "Overview",
-      },
-      { to: "/assessment", label: "Assessment Hub", icon: Compass },
-      {
-        to: "/intake",
-        label: "Bulk Intake",
-        icon: UploadCloud,
-        heading: "Start an assessment",
-      },
-      { to: "/assessments", label: "Assessments", icon: ClipboardCheck },
-      { to: "/capability", label: "Capability Assessment", icon: Gauge },
-      { to: "/field", label: "Field Assessment", icon: ClipboardList },
-      {
-        to: "/findings",
-        label: "Findings",
-        icon: AlertTriangle,
-        heading: "Findings & follow-up",
-      },
-      { to: "/projects", label: "Improvement Projects", icon: TrendingUp },
-    ],
-  },
-  {
-    // Single-item pipelines render as a direct link, not a dropdown with
-    // nothing to expand into — same prominent tier as Assessment, just no
-    // chevron since there's only one destination.
-    section: "CAD Conversion",
-    items: [{ to: "/cad", label: "CAD Conversion", icon: FileImage }],
-  },
-  {
-    section: "CNC Coding",
-    items: [{ to: "/cnc", label: "CNC Coding Enhancement", icon: Code2 }],
-  },
-];
-
-// Its own labeled section, separate from PRODUCT_NAV, positioned
-// directly after Products and before Business Development -- per direct
-// feedback, IronIQ Edge doesn't belong as a peer of
-// Machines/Assessments/CAD/CNC. It belongs with Ask IronIQ instead: both
-// are cross-cutting capabilities that sit on top of / alongside the core
-// product pipelines rather than being one themselves -- Edge feeds
-// real-time shop-floor data in, Ask IronIQ answers questions grounded in
-// accumulated data, neither is itself a pipeline with a start/end the
-// way Machines/Assessments/CAD/CNC are. Still rendered at the same
-// visual tier as Products (tier="product"), not demoted to
-// Setup/Administration's quieter styling -- this is live, working
-// capability, not app configuration. (Position within the nav has moved
-// twice on direct feedback: first alongside Products as a sixth peer,
-// then to the very bottom near Coming Soon, now here -- second from the
-// top, ahead of Business Development.)
-const INTELLIGENCE_NAV: {
-  section: string;
-  groupIcon?: typeof LayoutDashboard;
-  items: { to: string; label: string; icon: typeof LayoutDashboard }[];
-}[] = [
-  {
-    section: "Intelligence",
-    groupIcon: Sparkles,
-    items: [{ to: "/ask-ironiq", label: "Ask IronIQ", icon: Sparkles }],
-  },
-  {
-    section: "IronIQ Edge",
-    groupIcon: LayoutGrid,
-    items: [
-      { to: "/floor", label: "Floor View", icon: LayoutGrid },
-      { to: "/machines/parts", label: "Parts", icon: Package },
-      {
-        to: "/machines/improvements",
-        label: "Improvements",
-        icon: TrendingUp,
-      },
-    ],
-  },
-];
-
-// Internal-only, gated to platform staff — deliberately given the same
-// visual prominence as PRODUCT_NAV (its own label, "product"-tier
-// styling), not folded into Setup/Reporting as an afterthought, since
-// it's a genuinely equal-weight concern for IronIQ staff, just not one
-// any customer should ever see.
-const BUSINESS_DEV_NAV: {
-  section: string;
-  groupIcon?: typeof LayoutDashboard;
-  items: { to: string; label: string; icon: typeof LayoutDashboard }[];
-}[] = [
-  {
-    section: "Business Leads",
-    items: [
-      { to: "/business-development", label: "Business Leads", icon: Handshake },
-    ],
-  },
-];
 
 // Its own clearly separated tier, not lumped in with Reporting/
 // Administration below — Setup is the prerequisite you do BEFORE using
@@ -197,16 +68,144 @@ const BUSINESS_DEV_NAV: {
 // facility; see PrerequisiteGate in layout-primitives.tsx), which makes
 // it a genuinely different kind of thing than "output you get from using
 // the products" (Reporting) or "managing the app itself" (Administration).
-const SETUP_NAV: {
+interface NavItem {
+  to: string;
+  label: string;
+  icon: typeof LayoutDashboard;
+  heading?: string;
+  // Item-level now, not section-level: CAD & Drawings and CNC Programs
+  // both live inside the same "Engineering" group as Technical Data and
+  // Tooling & Fixtures, which aren't restrictable products themselves --
+  // restricting "cad" must hide only the CAD & Drawings item, not the
+  // whole Engineering section.
+  restrictedProduct?: RestrictableProduct;
+}
+
+interface NavGroup {
   section: string;
   groupIcon?: typeof LayoutDashboard;
-  items: {
-    to: string;
-    label: string;
-    icon: typeof LayoutDashboard;
-    heading?: string;
-  }[];
-}[] = [
+  items: NavItem[];
+}
+
+// Sidebar taxonomy: Capability / Engineering / Operations / Intelligence,
+// replacing the earlier Machines/Assessments/CAD Conversion/CNC Coding
+// product-pipeline structure. Every section renders at the same visual
+// weight now -- no more "prominent product tier" vs "quieter support
+// tier" distinction; that only made sense when there were 3-4 flagship
+// products competing for attention against admin/setup sections. This
+// taxonomy groups by function (what kind of work) instead, so a uniform
+// treatment across all of them is the right call.
+//
+// Mapped existing routes onto the new labels where a real page already
+// existed for the concept (Parts, Machines, CAD & Drawings, CNC
+// Programs, Production, Capability Health = Dashboard, Risks = Findings,
+// Insights = Ask IronIQ, Actions = Improvement Projects -- the last two
+// confirmed directly). Processes maps to the existing Capability
+// Assessment feature (process/criteria domains).
+//
+// Four labels have no existing page behind them at all (Suppliers,
+// Tooling & Fixtures, Work Instructions, Quality) and one is a
+// low-confidence guess with nothing solid to point to (Sustainment) --
+// all five route to NotYetBuiltPage rather than a dead link or silently
+// disappearing from the layout, so the nav visually matches the target
+// taxonomy now without pretending something exists that doesn't.
+//
+// Two existing IronIQ Edge routes (Floor View, Improvements) don't have
+// an obvious slot in this taxonomy at all -- rather than lose
+// reachability of working features, they're kept as extra items under
+// Operations alongside Production, which is the closest fit.
+const CAPABILITY_NAV: NavGroup[] = [
+  {
+    section: "Capability",
+    groupIcon: Package,
+    items: [
+      { to: "/machines/parts", label: "Parts", icon: Package },
+      { to: "/machines", label: "Machines", icon: Factory },
+      // The Assessment Hub, not /capability directly -- it's the actual
+      // entry point linking onward to Assessments, Capability
+      // Assessment, and Field Assessment. Mapping "Processes" to just
+      // one of those three would strand the other two with no way back
+      // in from this taxonomy at all.
+      { to: "/assessment", label: "Processes", icon: Users },
+      { to: "/suppliers", label: "Suppliers", icon: Building2 },
+    ],
+  },
+];
+
+const ENGINEERING_NAV: NavGroup[] = [
+  {
+    section: "Engineering",
+    groupIcon: FileImage,
+    items: [
+      { to: "/intake", label: "Technical Data", icon: UploadCloud },
+      {
+        to: "/cad",
+        label: "CAD & Drawings",
+        icon: FileImage,
+        restrictedProduct: "cad",
+      },
+      {
+        to: "/cnc",
+        label: "CNC Programs",
+        icon: Code2,
+        restrictedProduct: "cnc",
+      },
+      { to: "/tooling-fixtures", label: "Tooling & Fixtures", icon: Wrench },
+    ],
+  },
+];
+
+const OPERATIONS_NAV: NavGroup[] = [
+  {
+    section: "Operations",
+    groupIcon: Cpu,
+    items: [
+      { to: "/production", label: "Production", icon: Cpu },
+      { to: "/floor", label: "Floor View", icon: LayoutGrid },
+      { to: "/machines/improvements", label: "Improvements", icon: TrendingUp },
+      {
+        to: "/work-instructions",
+        label: "Work Instructions",
+        icon: ClipboardList,
+      },
+      { to: "/quality", label: "Quality", icon: ClipboardCheck },
+      { to: "/projects", label: "Actions", icon: Compass },
+    ],
+  },
+];
+
+const INTELLIGENCE_TAXONOMY_NAV: NavGroup[] = [
+  {
+    section: "Intelligence",
+    groupIcon: Sparkles,
+    items: [
+      { to: "/dashboard", label: "Capability Health", icon: LayoutDashboard },
+      { to: "/sustainment", label: "Sustainment", icon: Shield },
+      {
+        to: "/findings",
+        label: "Risks",
+        icon: AlertTriangle,
+        restrictedProduct: "assessment",
+      },
+      { to: "/ask-ironiq", label: "Insights", icon: Sparkles },
+    ],
+  },
+];
+
+const BUSINESS_DEV_NAV: NavGroup[] = [
+  {
+    section: "Business",
+    items: [
+      {
+        to: "/business-development",
+        label: "Business Development",
+        icon: Handshake,
+      },
+    ],
+  },
+];
+
+const SETUP_NAV: NavGroup[] = [
   {
     section: "Setup",
     items: [
@@ -218,11 +217,7 @@ const SETUP_NAV: {
 ];
 
 // Ordered per direct feedback: Administration before Reporting.
-const OTHER_NAV: {
-  section: string;
-  groupIcon?: typeof LayoutDashboard;
-  items: { to: string; label: string; icon: typeof LayoutDashboard }[];
-}[] = [
+const OTHER_NAV: NavGroup[] = [
   {
     section: "Administration",
     items: [{ to: "/administration", label: "Administration", icon: Settings }],
@@ -234,48 +229,31 @@ const OTHER_NAV: {
 ];
 
 // Deliberately grouped together, de-emphasized: Manufacturing Estimating
-// (RFQ/quoting) answers a question about Ironclad's own internal
-// operations, same reasoning Executive Rollup was held back for — neither
-// is one of the three customer-facing product pipelines or proven
-// priority yet, so both live in the same quiet, collapsed-by-default
-// section rather than competing visually with the real products above.
-const LATER_NAV: {
-  section: string;
-  groupIcon?: typeof LayoutDashboard;
-  items: {
-    to: string;
-    label: string;
-    icon: typeof LayoutDashboard;
-    heading?: string;
-  }[];
-}[] = [
+// (RFQ/quoting) and Executive Rollup answer questions about Ironclad's
+// own internal operations, not proven priority yet. Production itself
+// moved out of here into Operations (now a first-class item, not a
+// placeholder) -- kept everything else in this list as before.
+const LATER_NAV: NavGroup[] = [
   {
     section: "Coming Soon",
     items: [
       { to: "/executive-rollup", label: "Executive Rollup", icon: TrendingUp },
       { to: "/estimates", label: "Estimating", icon: Calculator },
-      { to: "/production", label: "Production Flow", icon: Cpu },
       { to: "/production/libraries", label: "Machine & Tooling", icon: Wrench },
     ],
   },
 ];
 
 const ALL_NAV_GROUPS = [
-  ...PRODUCT_NAV,
-  ...INTELLIGENCE_NAV,
+  ...CAPABILITY_NAV,
+  ...ENGINEERING_NAV,
+  ...OPERATIONS_NAV,
+  ...INTELLIGENCE_TAXONOMY_NAV,
+  ...BUSINESS_DEV_NAV,
   ...SETUP_NAV,
   ...OTHER_NAV,
   ...LATER_NAV,
 ];
-
-// Maps a PRODUCT_NAV section name to the product-restriction enum value —
-// only Assessment/CAD/CNC are restrictable products; Intelligence sits on
-// top of them and isn't itself something an org gets restricted from.
-const SECTION_TO_PRODUCT: Record<string, RestrictableProduct> = {
-  Assessments: "assessment",
-  "CAD Conversion": "cad",
-  "CNC Coding": "cnc",
-};
 
 function isItemActive(pathname: string, to: string): boolean {
   if (pathname === to) return true;
@@ -366,16 +344,33 @@ function NavLinks({
 }) {
   const isPlatformStaff =
     roles.includes("ironiq_admin") || roles.includes("consultant");
-  const isSectionVisible = (section: string) => {
-    const product = SECTION_TO_PRODUCT[section];
-    return !product || !restrictedProducts.includes(product);
-  };
-  const visibleProductNav = PRODUCT_NAV.filter((g) =>
-    isSectionVisible(g.section),
-  );
+
+  // Item-level filtering now, not section-level: CAD & Drawings and CNC
+  // Programs live inside the same "Engineering" group as Technical Data
+  // and Tooling & Fixtures (which aren't restrictable products
+  // themselves), so restricting "cad" must hide only that one item, not
+  // the whole group.
+  const filterItems = (items: NavItem[]) =>
+    items.filter(
+      (item) =>
+        !item.restrictedProduct ||
+        !restrictedProducts.includes(item.restrictedProduct),
+    );
+  const visibleGroup = (group: NavGroup): NavGroup => ({
+    ...group,
+    items: filterItems(group.items),
+  });
+
+  const visibleCapabilityNav = CAPABILITY_NAV.map(visibleGroup);
+  const visibleEngineeringNav = ENGINEERING_NAV.map(visibleGroup);
+  const visibleOperationsNav = OPERATIONS_NAV.map(visibleGroup);
+  const visibleIntelligenceNav = INTELLIGENCE_TAXONOMY_NAV.map(visibleGroup);
+
   const visibleAllGroups = [
-    ...visibleProductNav,
-    ...INTELLIGENCE_NAV,
+    ...visibleCapabilityNav,
+    ...visibleEngineeringNav,
+    ...visibleOperationsNav,
+    ...visibleIntelligenceNav,
     ...(isPlatformStaff ? BUSINESS_DEV_NAV : []),
     ...SETUP_NAV,
     ...OTHER_NAV,
@@ -430,6 +425,22 @@ function NavLinks({
     );
   }
 
+  // Every section renders at the same uniform tier now (see the taxonomy
+  // comment above CAPABILITY_NAV) -- no more bold "product" styling vs
+  // quieter "support" styling; Capability/Engineering/Operations/
+  // Intelligence/Business/Setup all read as equal-weight functional
+  // groupings, matching the target sidebar design.
+  const sectionGroups: { label: string; groups: NavGroup[] }[] = [
+    { label: "Capability", groups: visibleCapabilityNav },
+    { label: "Engineering", groups: visibleEngineeringNav },
+    { label: "Operations", groups: visibleOperationsNav },
+    { label: "Intelligence", groups: visibleIntelligenceNav },
+    ...(isPlatformStaff
+      ? [{ label: "Business", groups: BUSINESS_DEV_NAV }]
+      : []),
+    { label: "Setup", groups: SETUP_NAV },
+  ];
+
   return (
     <>
       <Link
@@ -447,45 +458,10 @@ function NavLinks({
         <span className="truncate">{HOME_ITEM.label}</span>
       </Link>
 
-      <div className="my-3 border-t border-sidebar-border" />
-      <p className="mb-1.5 px-3 text-[10px] font-semibold uppercase tracking-widest text-primary/80">
-        Products
-      </p>
-      {visibleProductNav.map((group) => (
-        <NavSection
-          key={group.section}
-          group={group}
-          pathname={pathname}
-          isExpanded={expanded === group.section}
-          onToggle={() => toggle(group.section)}
-          onNavigate={onNavigate}
-          tier="product"
-        />
-      ))}
-
-      <div className="my-3 border-t border-sidebar-border" />
-      <p className="mb-1.5 px-3 text-[10px] font-semibold uppercase tracking-widest text-primary/80">
-        Intelligence
-      </p>
-      {INTELLIGENCE_NAV.map((group) => (
-        <NavSection
-          key={group.section}
-          group={group}
-          pathname={pathname}
-          isExpanded={expanded === group.section}
-          onToggle={() => toggle(group.section)}
-          onNavigate={onNavigate}
-          tier="product"
-        />
-      ))}
-
-      {isPlatformStaff ? (
-        <>
+      {sectionGroups.map(({ label, groups }) => (
+        <div key={label}>
           <div className="my-3 border-t border-sidebar-border" />
-          <p className="mb-1.5 px-3 text-[10px] font-semibold uppercase tracking-widest text-primary/80">
-            Business Development
-          </p>
-          {BUSINESS_DEV_NAV.map((group) => (
+          {groups.map((group) => (
             <NavSection
               key={group.section}
               group={group}
@@ -493,23 +469,10 @@ function NavLinks({
               isExpanded={expanded === group.section}
               onToggle={() => toggle(group.section)}
               onNavigate={onNavigate}
-              tier="product"
+              tier="support"
             />
           ))}
-        </>
-      ) : null}
-
-      <div className="my-3 border-t border-sidebar-border" />
-      {SETUP_NAV.map((group) => (
-        <NavSection
-          key={group.section}
-          group={group}
-          pathname={pathname}
-          isExpanded={expanded === group.section}
-          onToggle={() => toggle(group.section)}
-          onNavigate={onNavigate}
-          tier="support"
-        />
+        </div>
       ))}
 
       <div className="my-3 border-t border-sidebar-border" />
