@@ -82,7 +82,11 @@ const PRODUCT_NAV: {
 }[] = [
   {
     section: "Machines",
-    items: [{ to: "/machines", label: "Machines", icon: Factory }],
+    groupIcon: Factory,
+    items: [
+      { to: "/machines", label: "Machines", icon: Factory },
+      { to: "/machines/improvements", label: "Improvements", icon: TrendingUp },
+    ],
   },
   {
     // Assessment stays in the sidebar for shops that still use it, but
