@@ -814,7 +814,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
     AuthenticatedCapabilityAssessmentIdRoute,
   AuthenticatedFieldFieldIdRoute: AuthenticatedFieldFieldIdRoute,
   AuthenticatedMachinesMachineIdRoute: AuthenticatedMachinesMachineIdRoute,
-  AuthenticatedMachinesImprovementsRoute: AuthenticatedMachinesImprovementsRoute,
+  AuthenticatedMachinesImprovementsRoute:
+    AuthenticatedMachinesImprovementsRoute,
   AuthenticatedAssessmentsIndexRoute: AuthenticatedAssessmentsIndexRoute,
   AuthenticatedBusinessDevelopmentIndexRoute:
     AuthenticatedBusinessDevelopmentIndexRoute,
