@@ -334,10 +334,14 @@ export async function captureFromMachineImprovement(
         `SELECT ts_utc, machine_id, part_id, program_name, event_type,
                 cycle_seq, cycle_time_s, idle_since_prev_cycle_s, gap_class
            FROM public.shop_machine_events
-          WHERE machine_id = $1 AND part_id = $2 AND ts_utc >= $3 AND ts_utc < $4`,
+          WHERE machine_id = $1 AND part_id = $2
+            AND organization_id = $3 AND facility_id = $4
+            AND ts_utc >= $5 AND ts_utc < $6`,
         [
           query.machine_id,
           query.part_id,
+          row.organization_id,
+          row.facility_id,
           windowStart.toISOString(),
           windowEnd.toISOString(),
         ],

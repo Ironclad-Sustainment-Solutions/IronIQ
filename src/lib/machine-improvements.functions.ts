@@ -207,11 +207,15 @@ async function loadCaptureEvents(
          FROM public.${MACHINE_CAPTURE_EVENTS_TABLE}
         WHERE machine_id = $1
           AND part_id = $2
-          AND ts_utc >= $3
-          AND ts_utc < $4`,
+          AND organization_id = $3
+          AND facility_id = $4
+          AND ts_utc >= $5
+          AND ts_utc < $6`,
       [
         query.machine_id,
         query.part_id,
+        change.organization_id,
+        change.facility_id,
         windowStart.toISOString(),
         windowEnd.toISOString(),
       ],

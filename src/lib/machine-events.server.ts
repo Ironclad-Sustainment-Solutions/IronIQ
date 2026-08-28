@@ -48,6 +48,13 @@ export async function resolveMachineEventTable(
   return null;
 }
 
+function eventTimeColumn(table: MachineEventTable): string {
+  // Ingest table uses spec column ts_utc. Floor's TypeScript model names
+  // that instant occurred_at. Alias only in the SELECT list — WHERE/ORDER
+  // must use the real column.
+  return table === "shop_machine_events" ? "ts_utc" : "occurred_at";
+}
+
 export function mapMachineEvent(row: Record<string, unknown>): MachineEvent {
   return {
     id: String(row.id),
@@ -62,8 +69,13 @@ export function mapMachineEvent(row: Record<string, unknown>): MachineEvent {
   };
 }
 
-const EVENT_SELECT = `id, organization_id, facility_id, machine_id, occurred_at,
+function eventSelect(table: MachineEventTable): string {
+  const timeCol = eventTimeColumn(table);
+  const timeExpr =
+    timeCol === "occurred_at" ? "occurred_at" : `${timeCol} AS occurred_at`;
+  return `id, organization_id, facility_id, machine_id, ${timeExpr},
        event_type, state, part_id, program_name`;
+}
 
 export async function listMachineEventsForFloor(
   client: PoolClient,
@@ -80,6 +92,8 @@ export async function listMachineEventsForFloor(
   if (input.assetIds.length === 0) return { table, events: [] };
 
   const from = qualifiedTable(table);
+  const select = eventSelect(table);
+  const timeCol = eventTimeColumn(table);
   const scope = `organization_id = $1
           AND facility_id = $2
           AND machine_id = ANY($3::text[])`;
@@ -88,12 +102,12 @@ export async function listMachineEventsForFloor(
   try {
     // Sequential on one client — node-pg does not multiplex a connection.
     const windowRows = await client.query(
-      `SELECT ${EVENT_SELECT}
+      `SELECT ${select}
          FROM ${from}
         WHERE ${scope}
-          AND occurred_at >= $4
-          AND occurred_at < $5
-        ORDER BY occurred_at ASC, id ASC`,
+          AND ${timeCol} >= $4
+          AND ${timeCol} < $5
+        ORDER BY ${timeCol} ASC, id ASC`,
       [
         ...scopeParams,
         input.windowStart.toISOString(),
@@ -101,11 +115,11 @@ export async function listMachineEventsForFloor(
       ],
     );
     const carryRows = await client.query(
-      `SELECT DISTINCT ON (machine_id) ${EVENT_SELECT}
+      `SELECT DISTINCT ON (machine_id) ${select}
          FROM ${from}
         WHERE ${scope}
-          AND occurred_at < $4
-        ORDER BY machine_id, occurred_at DESC, id DESC`,
+          AND ${timeCol} < $4
+        ORDER BY machine_id, ${timeCol} DESC, id DESC`,
       [...scopeParams, input.windowStart.toISOString()],
     );
 

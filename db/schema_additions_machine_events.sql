@@ -1,12 +1,13 @@
 -- =====================================================================
--- Grede Biscoe V1: iss.machine_event.v1 ingest from an IronIQ Edge box.
+-- IronIQ Edge: iss.machine_event.v1 ingest from an IronIQ Edge box.
 --
 -- Additive shop-floor table. Does not replace shop_machine_run_events
 -- (manual/CSV + MTConnect "Sync now") and does not create a competing
 -- machines or plants registry. Spec machine_id maps to
 -- shop_machines.asset_id. Spec plant_id is stored as text on the event
--- (e.g. grede-biscoe). organization_id / facility_id come from the
--- existing shop machine / facility.
+-- (any shop's plant label, e.g. a demo value like grede-biscoe).
+-- organization_id / facility_id come from the existing shop machine /
+-- facility that owns the authenticated edge key — never from plant_id.
 --
 -- One row per state change or cycle end (or accepted heartbeat / alarm).
 -- Not a 10 Hz stream. IronIQ never talks to the CNC; this is edge-push
@@ -83,7 +84,7 @@ CREATE TABLE IF NOT EXISTS public.shop_machine_events (
   ingested_at TIMESTAMPTZ NOT NULL DEFAULT now(),
 
   CONSTRAINT shop_machine_events_idempotency
-    UNIQUE NULLS NOT DISTINCT (machine_id, ts_utc, event_type, cycle_seq)
+    UNIQUE NULLS NOT DISTINCT (organization_id, facility_id, machine_id, ts_utc, event_type, cycle_seq)
 );
 
 CREATE INDEX IF NOT EXISTS idx_shop_machine_events_machine_ts
