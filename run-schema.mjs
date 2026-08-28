@@ -177,6 +177,7 @@ const ORDERED_ADDITIONS = [
   "schema_additions_cap_join_indexes.sql",
   "schema_additions_intelligence_pattern_origin.sql",
   "schema_additions_intelligence_pattern_hnsw_index.sql",
+  "schema_additions_intelligence_machines_product.sql",
 ];
 
 const dbDir = new URL("./db/", import.meta.url);

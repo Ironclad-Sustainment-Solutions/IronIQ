@@ -20,7 +20,7 @@
 import { withUser } from "@/lib/db.server";
 import { generatePatternFromEvent } from "@/lib/intelligence-pattern-ai.server";
 
-type IntelligenceProduct = "assessment" | "cad" | "cnc";
+type IntelligenceProduct = "assessment" | "cad" | "cnc" | "machines";
 
 async function insertEvent(
   userId: string,
@@ -248,5 +248,144 @@ export async function captureFromCncChangeLog(
     problem_summary,
     resolution_summary: row.change_description,
     outcome_summary: row.outcome_description,
+  });
+}
+
+/**
+ * Captures a pattern from a saved shop_machine_improvements change window
+ * -- the Machines/IronIQ Edge analog of a closed finding or a CNC change
+ * log entry: a real problem, a real change, a measurable outcome. Unlike
+ * those two, the before/after numbers aren't stored directly on the row
+ * -- they're computed from shop_machine_events the same way
+ * getMachineImprovementComparison does, re-derived here rather than
+ * trusting a client-supplied summary, matching every other capture
+ * function in this file.
+ */
+export async function captureFromMachineImprovement(
+  userId: string,
+  improvementId: string,
+): Promise<void> {
+  const {
+    eventQueryFromImprovement,
+    computeImprovementBeforeAfter,
+    formatHoursDelta,
+    hoursToMakePart,
+  } = await import("@/lib/machine-improvements");
+
+  const row = await withUser(userId, async (client) => {
+    const { rows } = await client.query(
+      `SELECT i.*, p.part_number,
+              m.asset_id AS machine_asset_id,
+              CASE WHEN m.id IS NULL THEN NULL ELSE m.asset_id || ' — ' || m.name END AS machine_label
+         FROM public.shop_machine_improvements i
+         JOIN public.shop_parts p ON p.id = i.part_id
+         JOIN public.shop_machines m ON m.id = i.machine_id
+        WHERE i.id = $1`,
+      [improvementId],
+    );
+    return rows[0] as
+      | {
+          organization_id: string;
+          facility_id: string;
+          title: string;
+          machine_id: string;
+          part_id: string;
+          part_number: string | null;
+          machine_asset_id: string | null;
+          machine_label: string | null;
+          changed_at: string;
+          window_before_hours: string;
+          window_after_hours: string;
+        }
+      | undefined;
+  });
+  if (!row) return;
+
+  const change = {
+    id: improvementId,
+    organization_id: row.organization_id,
+    facility_id: row.facility_id,
+    plant_id: row.facility_id,
+    part_id: row.part_id,
+    machine_id: row.machine_id,
+    title: row.title,
+    changed_at: row.changed_at,
+    window_before_hours: Number(row.window_before_hours),
+    window_after_hours: Number(row.window_after_hours),
+    created_at: row.changed_at,
+    updated_at: row.changed_at,
+    part_number: row.part_number,
+    machine_asset_id: row.machine_asset_id,
+    machine_label: row.machine_label,
+    plant_name: null,
+  };
+  const query = eventQueryFromImprovement(change);
+  if (!query) return; // no asset_id/part_number to match events against
+
+  const beforeMs = change.window_before_hours * 60 * 60 * 1000;
+  const afterMs = change.window_after_hours * 60 * 60 * 1000;
+  const changedAt = new Date(change.changed_at);
+  const windowStart = new Date(changedAt.getTime() - beforeMs);
+  const windowEnd = new Date(changedAt.getTime() + afterMs);
+
+  const events = await withUser(userId, async (client) => {
+    try {
+      const { rows } = await client.query(
+        `SELECT ts_utc, machine_id, part_id, program_name, event_type,
+                cycle_seq, cycle_time_s, idle_since_prev_cycle_s, gap_class
+           FROM public.shop_machine_events
+          WHERE machine_id = $1 AND part_id = $2 AND ts_utc >= $3 AND ts_utc < $4`,
+        [
+          query.machine_id,
+          query.part_id,
+          windowStart.toISOString(),
+          windowEnd.toISOString(),
+        ],
+      );
+      return rows as {
+        ts_utc: string;
+        machine_id: string;
+        part_id: string | null;
+        program_name: string | null;
+        event_type: string;
+        cycle_seq: number | null;
+        cycle_time_s: number | null;
+        idle_since_prev_cycle_s: number | null;
+        gap_class: string | null;
+      }[];
+    } catch {
+      return null; // table not present or query failed -- nothing to capture
+    }
+  });
+  if (!events) return;
+
+  const comparison = computeImprovementBeforeAfter(query, events);
+  if (comparison.status !== "report") return;
+  if (comparison.before.status !== "ok" || comparison.after.status !== "ok") {
+    // Not enough real data on one side to say anything meaningful --
+    // capturing "we don't know" as a precedent would be worse than not
+    // capturing at all.
+    return;
+  }
+
+  const machineContext =
+    row.machine_label ?? row.machine_asset_id ?? "a shop-floor machine";
+  const partContext = row.part_number ? ` making part ${row.part_number}` : "";
+  const problem_summary = `${row.title}\n\nMachine: ${machineContext}${partContext}`;
+
+  const cycleDelta = formatHoursDelta(
+    hoursToMakePart(comparison.before.summary),
+    hoursToMakePart(comparison.after.summary),
+  );
+  const resolution_summary = `Cycle time to make one part: ${cycleDelta}.`;
+
+  await insertEvent(userId, "machines", {
+    organization_id: row.organization_id,
+    facility_id: row.facility_id,
+    source_table: "shop_machine_improvements",
+    source_id: improvementId,
+    problem_summary,
+    resolution_summary,
+    outcome_summary: null,
   });
 }

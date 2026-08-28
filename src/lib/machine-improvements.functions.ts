@@ -257,3 +257,30 @@ export const getMachineImprovementComparison = createServerFn({
       return { improvement, comparison };
     });
   });
+
+const ContributeInput = z.object({ id: z.string().uuid() });
+
+export const contributeMachineImprovementPattern = createServerFn({
+  method: "POST",
+})
+  .middleware([requireAuth])
+  .inputValidator((d: unknown) => ContributeInput.parse(d))
+  .handler(async ({ data, context }) => {
+    // Confirm the caller actually has RLS-scoped access to this specific
+    // improvement before capturing anything from it -- same pattern as
+    // every other Intelligence-capture trigger in this codebase: a
+    // browser-session action must go through the normal authorization
+    // path first, even though captureFromMachineImprovement itself
+    // re-derives everything server-side rather than trusting client input.
+    const owned = await withUser(context.userId, async (client) => {
+      const { rows } = await client.query(
+        "SELECT 1 FROM public.shop_machine_improvements WHERE id = $1",
+        [data.id],
+      );
+      return rows.length > 0;
+    });
+    if (!owned) throw new Error("Change not found or not accessible.");
+    const { captureFromMachineImprovement } =
+      await import("@/lib/intelligence-capture.server");
+    await captureFromMachineImprovement(context.userId, data.id);
+  });
