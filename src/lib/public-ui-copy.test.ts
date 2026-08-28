@@ -42,7 +42,16 @@ describe("public UI copy", () => {
     for (const page of [auth, home, index]) {
       expect(page).not.toMatch(/IRONIQ_EDGE_INGEST_SECRET/);
       expect(page).not.toMatch(/schema_additions_machine_events/);
+      expect(page).not.toMatch(/edge\/README/);
+      expect(page).not.toMatch(/go\.mod/);
     }
+  });
+
+  it("tells Floor that live LAN feeds use the Edge app, not cloud pull", () => {
+    const floor = source("src/routes/_authenticated/floor.tsx");
+    expect(floor).toMatch(/Live LAN feeds use the Edge app/);
+    expect(floor).toMatch(/not cloud pull/);
+    expect(floor).toContain("Generate a facility key below (shown once)");
   });
 
   it("does not leak internal filenames on home, auth, or Floor View", () => {

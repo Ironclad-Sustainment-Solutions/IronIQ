@@ -123,9 +123,7 @@ function FloorPage() {
         />
       ) : null}
 
-      {view && !view.eventsAvailable ? (
-        <EdgeSetupPanel facilityId={facility.id} />
-      ) : null}
+      <EdgeSetupPanel facilityId={facility.id} />
 
       <Panel
         title="Machines"
@@ -343,10 +341,9 @@ function EdgeSetupPanel({ facilityId }: { facilityId: string }) {
   return (
     <Panel title="IronIQ Edge setup">
       <p className="text-sm text-muted-foreground">
-        Not connected — machine events have not been ingested yet. Floor reads
-        events pushed from an IronIQ Edge box on your own network; it never
-        talks to a CNC directly. Generate a facility key below and point your
-        edge box at{" "}
+        Live LAN feeds use the Edge app on the shop network, not cloud pull.
+        Floor reads events the Edge app pushes; IronIQ never talks to a CNC.
+        Generate a facility key below (shown once) and point the Edge app at{" "}
         <code className="text-foreground">
           POST /api/ironiq/v1/machine-events
         </code>

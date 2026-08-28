@@ -54,6 +54,19 @@ jobs:
         # session.ts's sessionConfig()), never at build time.
         run: npm run build
 
+  edge-agent:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.22.2"
+      - name: Test and build IronIQ Edge
+        working-directory: edge
+        run: |
+          go test ./...
+          go build -o ironiq-edge .
+
   schema-check:
     runs-on: ubuntu-latest
     services:

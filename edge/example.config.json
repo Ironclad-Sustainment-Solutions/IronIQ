@@ -1,0 +1,18 @@
+{
+  "ironiq_url": "https://your-ironiq-host.example",
+  "facility_key": "",
+  "plant_id": "shop-south",
+  "poll_interval_s": 5,
+  "heartbeat_s": 60,
+  "buffer_path": "edge-buffer.json",
+  "machines": [
+    {
+      "asset_id": "MC-UMC750-01",
+      "mtconnect_url": "http://192.168.1.50:8082",
+      "device_name": "",
+      "controller_make": "Haas",
+      "controller_model": "UMC-750",
+      "machine_serial": ""
+    }
+  ]
+}
