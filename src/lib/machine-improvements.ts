@@ -144,10 +144,23 @@ export function summarizeCaptureEvents(
   let firstPieceIdleS = 0;
   const seenSeq = new Set<number>();
   for (const event of events) {
+    // A raw NUMERIC column from Postgres comes back through node-pg as a
+    // string, not a JS number (node-pg only returns real/double
+    // precision columns as native numbers, specifically to avoid silent
+    // float-precision loss on NUMERIC/DECIMAL). MachineCaptureEvent's
+    // type claims `number | null` for these fields, but that's only true
+    // once something coerces them -- callers passing rows straight from
+    // a query would otherwise hit `0 += "100"` here, which is STRING
+    // CONCATENATION in JS (not numeric addition) once either side is a
+    // string, silently producing a garbage-large "number" after enough
+    // iterations rather than an error. Number(...) here makes this
+    // function correct regardless of what shape of value actually
+    // arrives, not just what the type annotation promises.
+    const idle = Number(event.idle_since_prev_cycle_s ?? 0);
     if (event.gap_class === SETUP_CANDIDATE_GAP_CLASS) {
-      setupIdleS += event.idle_since_prev_cycle_s ?? 0;
+      setupIdleS += idle;
     } else if (event.gap_class === FIRST_PIECE_CANDIDATE_GAP_CLASS) {
-      firstPieceIdleS += event.idle_since_prev_cycle_s ?? 0;
+      firstPieceIdleS += idle;
     }
     if (event.event_type !== CYCLE_END_EVENT_TYPE) continue;
     if (event.cycle_seq == null) {
@@ -156,7 +169,7 @@ export function summarizeCaptureEvents(
       seenSeq.add(event.cycle_seq);
       cycles += 1;
     }
-    cycleTimeS += event.cycle_time_s ?? 0;
+    cycleTimeS += Number(event.cycle_time_s ?? 0);
   }
   return {
     cycles: round3(cycles),
