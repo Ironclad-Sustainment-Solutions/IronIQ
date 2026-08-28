@@ -8,6 +8,10 @@ dist/
 .DS_Store
 edge/ironiq-edge
 edge/ironiq-edge.exe
+# Cross-compiled by scripts/build-edge-binaries.sh during the production
+# build (see render.yaml) -- regenerated fresh on every deploy, never
+# committed.
+public/downloads/
 edge/edge-buffer.json
 edge/edge-buffer.json.tmp
 edge/edge.config.json

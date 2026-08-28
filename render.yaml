@@ -9,7 +9,7 @@ services:
     name: ironiq-insight
     runtime: node
     plan: starter
-    buildCommand: npm ci && npm run build
+    buildCommand: (sudo apt-get update -qq && sudo apt-get install -y --no-install-recommends golang-go) || (apt-get update -qq && apt-get install -y --no-install-recommends golang-go) || echo "Could not install Go -- edge agent download binaries will not be built this deploy, app build continues regardless"; npm ci && ./scripts/build-edge-binaries.sh && npm run build
     startCommand: npm run start
     envVars:
       - key: NODE_VERSION
