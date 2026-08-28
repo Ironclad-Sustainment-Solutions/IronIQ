@@ -1,6 +1,7 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import {
   LayoutDashboard,
+  LayoutGrid,
   Building2,
   Factory,
   ClipboardCheck,
@@ -82,7 +83,10 @@ const PRODUCT_NAV: {
 }[] = [
   {
     section: "Machines",
-    items: [{ to: "/machines", label: "Machines", icon: Factory }],
+    items: [
+      { to: "/machines", label: "Machines", icon: Factory },
+      { to: "/floor", label: "Floor", icon: LayoutGrid },
+    ],
   },
   {
     // Assessment stays in the sidebar for shops that still use it, but

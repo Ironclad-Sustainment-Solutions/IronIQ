@@ -27,4 +27,26 @@ describe("public UI copy", () => {
     expect(home).toContain('to: "/machines"');
     expect(home).not.toContain('to: "/assessment"');
   });
+
+  it("does not leak internal filenames on home, auth, or Floor", () => {
+    for (const rel of [
+      "src/routes/auth.tsx",
+      "src/routes/_authenticated/home.tsx",
+      "src/routes/_authenticated/floor.tsx",
+    ]) {
+      const text = source(rel);
+      expect(text).not.toMatch(/MIGRATION_PHASE2\.md/);
+      expect(text).not.toMatch(/schema_additions_[a-z0-9_]+\.sql/);
+    }
+  });
+
+  it("adds Floor under Machines without replacing the machine master", () => {
+    const shell = source("src/components/ironiq/app-shell.tsx");
+    expect(shell).toContain('to: "/machines"');
+    expect(shell).toContain('label: "Floor"');
+    expect(shell).toContain('to: "/floor"');
+    expect(source("src/routes/_authenticated/machines/index.tsx")).toContain(
+      "Machine master",
+    );
+  });
 });
