@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { Globe } from "lucide-react";
 import {
@@ -18,6 +18,9 @@ import {
 } from "@/lib/ask-ironiq-api";
 
 export const Route = createFileRoute("/_authenticated/ask-ironiq")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    q: typeof search.q === "string" ? search.q : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "Ask IronIQ — IronIQ" },
@@ -63,11 +66,29 @@ const ALL_PRODUCTS: IntelligenceProductFilter[] = [
 ];
 
 function AskIronIQPage() {
+  const { q } = Route.useSearch();
   const { organization, facility } = useApp();
-  const [question, setQuestion] = useState("");
+  const [question, setQuestion] = useState(q ?? "");
   const [selectedProducts, setSelectedProducts] =
     useState<IntelligenceProductFilter[]>(ALL_PRODUCTS);
   const ask = useAskIronIQ();
+
+  // Arrived here from the universal search palette with a natural-
+  // language question already typed elsewhere -- auto-submit once
+  // rather than making the person retype/re-click after they already
+  // asked. Only fires once per mount (an empty dependency array plus a
+  // guard on `q` itself, not `ask` or `organization`, which change
+  // identity on every render and would otherwise cause a submit loop).
+  useEffect(() => {
+    if (!q) return;
+    ask.mutate({
+      question: q,
+      products: ALL_PRODUCTS,
+      organizationId: organization?.id,
+      facilityId: facility?.id,
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentionally once-only (see comment above), not on every ask/organization/facility identity change
+  }, [q]);
 
   const toggleProduct = (p: IntelligenceProductFilter) => {
     setSelectedProducts((current) =>

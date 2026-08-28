@@ -42,6 +42,7 @@ import {
 } from "@/lib/product-access-api";
 import { ROLE_LABELS, type AppRole } from "@/lib/domain";
 import { useNotifications } from "@/lib/api";
+import { UniversalSearchDialog } from "@/components/ironiq/universal-search-dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -756,6 +757,9 @@ function TopBar() {
       />
 
       <div className="ml-auto flex items-center gap-1">
+        <div className="hidden md:block">
+          <UniversalSearchDialog />
+        </div>
         <DropdownMenu>
           <DropdownMenuTrigger className="relative rounded-sm p-2 text-muted-foreground transition-colors hover:bg-accent hover:text-foreground">
             <Bell className="size-4" aria-hidden />

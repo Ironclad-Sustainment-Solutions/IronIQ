@@ -227,6 +227,7 @@ function HomePage() {
         <Reveal>
           <Link
             to="/ask-ironiq"
+            search={{ q: undefined }}
             className="flex items-center justify-between rounded-lg border border-border bg-muted/10 p-5 transition-colors hover:border-primary/50 hover:bg-muted/20"
           >
             <div className="flex items-center gap-3">
