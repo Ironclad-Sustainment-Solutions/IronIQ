@@ -44,6 +44,7 @@ import { Route as AuthenticatedProductionIndexRouteImport } from './routes/_auth
 import { Route as AuthenticatedProductionLibrariesRouteImport } from './routes/_authenticated/production.libraries'
 import { Route as AuthenticatedProductionNewRouteImport } from './routes/_authenticated/production.new'
 import { Route as AuthenticatedProductionJobsJobIdRouteImport } from './routes/_authenticated/production.jobs.$jobId'
+import { Route as ApiIroniqV1MachineEventsRouteImport } from './routes/api/ironiq/v1/machine-events'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -236,6 +237,12 @@ const AuthenticatedProductionJobsJobIdRoute =
     path: '/jobs/$jobId',
     getParentRoute: () => AuthenticatedProductionRoute,
   } as any)
+const ApiIroniqV1MachineEventsRoute =
+  ApiIroniqV1MachineEventsRouteImport.update({
+    id: '/api/ironiq/v1/machine-events',
+    path: '/api/ironiq/v1/machine-events',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -272,6 +279,7 @@ export interface FileRoutesByFullPath {
   '/machines/': typeof AuthenticatedMachinesIndexRoute
   '/production/': typeof AuthenticatedProductionIndexRoute
   '/production/jobs/$jobId': typeof AuthenticatedProductionJobsJobIdRoute
+  '/api/ironiq/v1/machine-events': typeof ApiIroniqV1MachineEventsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -307,6 +315,7 @@ export interface FileRoutesByTo {
   '/machines': typeof AuthenticatedMachinesIndexRoute
   '/production': typeof AuthenticatedProductionIndexRoute
   '/production/jobs/$jobId': typeof AuthenticatedProductionJobsJobIdRoute
+  '/api/ironiq/v1/machine-events': typeof ApiIroniqV1MachineEventsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -345,6 +354,7 @@ export interface FileRoutesById {
   '/_authenticated/machines/': typeof AuthenticatedMachinesIndexRoute
   '/_authenticated/production/': typeof AuthenticatedProductionIndexRoute
   '/_authenticated/production/jobs/$jobId': typeof AuthenticatedProductionJobsJobIdRoute
+  '/api/ironiq/v1/machine-events': typeof ApiIroniqV1MachineEventsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -383,6 +393,7 @@ export interface FileRouteTypes {
     | '/machines/'
     | '/production/'
     | '/production/jobs/$jobId'
+    | '/api/ironiq/v1/machine-events'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -418,6 +429,7 @@ export interface FileRouteTypes {
     | '/machines'
     | '/production'
     | '/production/jobs/$jobId'
+    | '/api/ironiq/v1/machine-events'
   id:
     | '__root__'
     | '/'
@@ -455,12 +467,14 @@ export interface FileRouteTypes {
     | '/_authenticated/machines/'
     | '/_authenticated/production/'
     | '/_authenticated/production/jobs/$jobId'
+    | '/api/ironiq/v1/machine-events'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
+  ApiIroniqV1MachineEventsRoute: typeof ApiIroniqV1MachineEventsRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -710,6 +724,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedProductionJobsJobIdRouteImport
       parentRoute: typeof AuthenticatedProductionRoute
     }
+    '/api/ironiq/v1/machine-events': {
+      id: '/api/ironiq/v1/machine-events'
+      path: '/api/ironiq/v1/machine-events'
+      fullPath: '/api/ironiq/v1/machine-events'
+      preLoaderRoute: typeof ApiIroniqV1MachineEventsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -808,6 +829,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
+  ApiIroniqV1MachineEventsRoute: ApiIroniqV1MachineEventsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

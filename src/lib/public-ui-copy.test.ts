@@ -27,4 +27,14 @@ describe("public UI copy", () => {
     expect(home).toContain('to: "/machines"');
     expect(home).not.toContain('to: "/assessment"');
   });
+
+  it("does not put the edge ingest secret or schema filenames on public/auth/home", () => {
+    const auth = source("src/routes/auth.tsx");
+    const home = source("src/routes/_authenticated/home.tsx");
+    const index = source("src/routes/index.tsx");
+    for (const page of [auth, home, index]) {
+      expect(page).not.toMatch(/IRONIQ_EDGE_INGEST_SECRET/);
+      expect(page).not.toMatch(/schema_additions_machine_events/);
+    }
+  });
 });
