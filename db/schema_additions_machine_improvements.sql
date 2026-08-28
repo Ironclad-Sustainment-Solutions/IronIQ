@@ -10,8 +10,10 @@
 -- (the RFQ/estimating catalog). Grede "plant" is IronIQ's facility:
 -- plant_id is the facility UUID (CHECK plant_id = facility_id).
 --
--- Does NOT create a machine events table. Ingest owns that schema;
--- query helpers treat a missing events relation as "cannot compute".
+-- Does NOT create a machine events table. Ingest PR #73 owns
+-- public.shop_machine_events (iss.machine_event.v1: ts_utc, cycle_end,
+-- cycle_seq, cycle_time_s, idle_since_prev_cycle_s, gap_class).
+-- Query helpers treat a missing events relation as "cannot compute".
 -- =====================================================================
 
 CREATE TABLE IF NOT EXISTS public.shop_machine_improvements (

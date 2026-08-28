@@ -1,26 +1,24 @@
 /**
  * Saved machine-change windows. Before/after values are computed from
- * capture events, not typed into part_outcome_cards.
+ * iss.machine_event.v1 rows on public.shop_machine_events (ingest PR #73).
+ * This module does not create or alter that table.
  *
- * The events relation is owned by the sibling ingest PR. This module
- * queries it when present and does not create or alter that table.
- *
- * Expected ingest shape (do not invent a second events schema here):
- *   public.shop_machine_events (
- *     machine_id UUID,
- *     part_id UUID,
- *     occurred_at TIMESTAMPTZ,
- *     event_type TEXT,          -- CYCLE | SETUP_CANDIDATE | …
- *     cycle_time_s NUMERIC,
- *     idle_s NUMERIC,           -- SETUP_CANDIDATE idle duration
- *     cycles NUMERIC
- *   )
+ * Ingest contract (source of truth):
+ *   time:            ts_utc
+ *   event_type:      state_change | cycle_end | alarm | heartbeat
+ *   cycles:          event_type = cycle_end (cycle_seq identifies the cycle)
+ *   cycle time:      cycle_time_s
+ *   idle:            idle_since_prev_cycle_s
+ *   setup idle:      gap_class = SETUP_CANDIDATE (not an event_type)
+ *   machine_id:      shop_machines.asset_id (text, not the UUID PK)
+ *   part_id:         text part number
+ *   program_name:    program on the event
  */
 
 export const MACHINE_CAPTURE_EVENTS_TABLE = "shop_machine_events";
 
-export const CYCLE_EVENT_TYPE = "CYCLE";
-export const SETUP_CANDIDATE_EVENT_TYPE = "SETUP_CANDIDATE";
+export const CYCLE_END_EVENT_TYPE = "cycle_end";
+export const SETUP_CANDIDATE_GAP_CLASS = "SETUP_CANDIDATE";
 
 export interface ShopMachineImprovement {
   id: string;
@@ -36,17 +34,21 @@ export interface ShopMachineImprovement {
   created_at: string;
   updated_at: string;
   part_number: string | null;
+  machine_asset_id: string | null;
   machine_label: string | null;
 }
 
+/** iss.machine_event.v1 row fields used to compute before/after. */
 export interface MachineCaptureEvent {
-  occurred_at: string;
+  ts_utc: string;
   machine_id: string;
   part_id: string | null;
+  program_name: string | null;
   event_type: string;
+  cycle_seq: number | null;
   cycle_time_s: number | null;
-  idle_s: number | null;
-  cycles: number | null;
+  idle_since_prev_cycle_s: number | null;
+  gap_class: string | null;
 }
 
 export interface ImprovementWindowBounds {
@@ -62,14 +64,14 @@ export interface EventWindowSummary {
   event_count: number;
 }
 
-export type ImprovementEventQuery = Pick<
-  ShopMachineImprovement,
-  | "machine_id"
-  | "part_id"
-  | "changed_at"
-  | "window_before_hours"
-  | "window_after_hours"
->;
+/** Match events by ingest spec ids: machine_id = asset_id, part_id = part number. */
+export type ImprovementEventQuery = {
+  machine_id: string;
+  part_id: string;
+  changed_at: string | Date;
+  window_before_hours: number;
+  window_after_hours: number;
+};
 
 export type ImprovementComparison =
   | {
@@ -99,11 +101,11 @@ export function improvementWindows(change: {
 }
 
 export function eventInHalfOpenWindow(
-  occurredAt: string | Date,
+  tsUtc: string | Date,
   start: Date,
   end: Date,
 ): boolean {
-  const t = toDate(occurredAt).getTime();
+  const t = toDate(tsUtc).getTime();
   return t >= start.getTime() && t < end.getTime();
 }
 
@@ -119,7 +121,7 @@ export function eventsForImprovementWindow(
     (event) =>
       event.machine_id === change.machine_id &&
       event.part_id === change.part_id &&
-      eventInHalfOpenWindow(event.occurred_at, start, end),
+      eventInHalfOpenWindow(event.ts_utc, start, end),
   );
 }
 
@@ -129,22 +131,38 @@ export function summarizeCaptureEvents(
   let cycles = 0;
   let cycleTimeS = 0;
   let setupIdleS = 0;
+  const seenSeq = new Set<number>();
   for (const event of events) {
-    const type = event.event_type.trim().toUpperCase();
-    if (type === SETUP_CANDIDATE_EVENT_TYPE) {
-      setupIdleS += event.idle_s ?? event.cycle_time_s ?? 0;
-      continue;
+    if (event.gap_class === SETUP_CANDIDATE_GAP_CLASS) {
+      setupIdleS += event.idle_since_prev_cycle_s ?? 0;
     }
-    if (type === CYCLE_EVENT_TYPE || type === "") {
-      cycles += event.cycles ?? 1;
-      cycleTimeS += event.cycle_time_s ?? 0;
+    if (event.event_type !== CYCLE_END_EVENT_TYPE) continue;
+    if (event.cycle_seq == null) {
+      cycles += 1;
+    } else if (!seenSeq.has(event.cycle_seq)) {
+      seenSeq.add(event.cycle_seq);
+      cycles += 1;
     }
+    cycleTimeS += event.cycle_time_s ?? 0;
   }
   return {
     cycles: round3(cycles),
     cycle_time_s: round3(cycleTimeS),
     setup_candidate_idle_s: round3(setupIdleS),
     event_count: events.length,
+  };
+}
+
+export function eventQueryFromImprovement(
+  improvement: ShopMachineImprovement,
+): ImprovementEventQuery | null {
+  if (!improvement.machine_asset_id || !improvement.part_number) return null;
+  return {
+    machine_id: improvement.machine_asset_id,
+    part_id: improvement.part_number,
+    changed_at: improvement.changed_at,
+    window_before_hours: improvement.window_before_hours,
+    window_after_hours: improvement.window_after_hours,
   };
 }
 

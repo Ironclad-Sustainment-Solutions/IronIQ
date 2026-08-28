@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
-  CYCLE_EVENT_TYPE,
-  SETUP_CANDIDATE_EVENT_TYPE,
+  CYCLE_END_EVENT_TYPE,
+  SETUP_CANDIDATE_GAP_CLASS,
   computeImprovementBeforeAfter,
   eventsForImprovementWindow,
   summarizeCaptureEvents,
@@ -9,8 +9,8 @@ import {
 } from "./machine-improvements";
 
 const CHANGE = {
-  machine_id: "m1",
-  part_id: "p1",
+  machine_id: "MC-UMC750-01",
+  part_id: "HUB-4410",
   changed_at: "2026-08-15T12:00:00.000Z",
   window_before_hours: 24,
   window_after_hours: 24,
@@ -18,62 +18,85 @@ const CHANGE = {
 
 function event(
   partial: Partial<MachineCaptureEvent> &
-    Pick<MachineCaptureEvent, "occurred_at" | "event_type">,
+    Pick<MachineCaptureEvent, "ts_utc" | "event_type">,
 ): MachineCaptureEvent {
   return {
     machine_id: CHANGE.machine_id,
     part_id: CHANGE.part_id,
+    program_name: "O5123",
+    cycle_seq: null,
     cycle_time_s: null,
-    idle_s: null,
-    cycles: null,
+    idle_since_prev_cycle_s: null,
+    gap_class: null,
     ...partial,
   };
 }
 
-const beforeCycle = event({
-  occurred_at: "2026-08-15T08:00:00.000Z",
-  event_type: CYCLE_EVENT_TYPE,
-  cycles: 10,
-  cycle_time_s: 1200,
+const beforeCycleA = event({
+  ts_utc: "2026-08-15T08:00:00.000Z",
+  event_type: CYCLE_END_EVENT_TYPE,
+  cycle_seq: 40,
+  cycle_time_s: 200,
+  idle_since_prev_cycle_s: 30,
 });
-const beforeSetup = event({
-  occurred_at: "2026-08-15T09:00:00.000Z",
-  event_type: SETUP_CANDIDATE_EVENT_TYPE,
-  idle_s: 600,
+const beforeCycleB = event({
+  ts_utc: "2026-08-15T09:00:00.000Z",
+  event_type: CYCLE_END_EVENT_TYPE,
+  cycle_seq: 41,
+  cycle_time_s: 187.4,
+  idle_since_prev_cycle_s: 960,
+  gap_class: SETUP_CANDIDATE_GAP_CLASS,
 });
-const afterCycle = event({
-  occurred_at: "2026-08-15T14:00:00.000Z",
-  event_type: CYCLE_EVENT_TYPE,
-  cycles: 16,
-  cycle_time_s: 960,
+const beforeHeartbeat = event({
+  ts_utc: "2026-08-15T09:05:00.000Z",
+  event_type: "heartbeat",
 });
-const afterSetup = event({
-  occurred_at: "2026-08-15T15:00:00.000Z",
-  event_type: SETUP_CANDIDATE_EVENT_TYPE,
-  idle_s: 180,
+const afterCycleA = event({
+  ts_utc: "2026-08-15T14:00:00.000Z",
+  event_type: CYCLE_END_EVENT_TYPE,
+  cycle_seq: 50,
+  cycle_time_s: 142,
+  idle_since_prev_cycle_s: 20,
+});
+const afterCycleB = event({
+  ts_utc: "2026-08-15T15:00:00.000Z",
+  event_type: CYCLE_END_EVENT_TYPE,
+  cycle_seq: 51,
+  cycle_time_s: 138,
+  idle_since_prev_cycle_s: 180,
+  gap_class: SETUP_CANDIDATE_GAP_CLASS,
+});
+const afterCycleC = event({
+  ts_utc: "2026-08-15T16:00:00.000Z",
+  event_type: CYCLE_END_EVENT_TYPE,
+  cycle_seq: 52,
+  cycle_time_s: 140,
+  idle_since_prev_cycle_s: 15,
 });
 
 describe("computeImprovementBeforeAfter", () => {
-  it("computes different before/after totals from events around changed_at", () => {
+  it("computes different before/after totals from ingest-shaped events around changed_at", () => {
     const comparison = computeImprovementBeforeAfter(CHANGE, [
-      beforeCycle,
-      beforeSetup,
-      afterCycle,
-      afterSetup,
+      beforeCycleA,
+      beforeCycleB,
+      beforeHeartbeat,
+      afterCycleA,
+      afterCycleB,
+      afterCycleC,
     ]);
     expect(comparison.status).toBe("computed");
     if (comparison.status !== "computed") return;
     expect(comparison.before).toEqual({
-      cycles: 10,
-      cycle_time_s: 1200,
-      setup_candidate_idle_s: 600,
-      event_count: 2,
+      cycles: 2,
+      cycle_time_s: 387.4,
+      setup_candidate_idle_s: 960,
+      event_count: 3,
     });
     expect(comparison.after).toEqual({
-      cycles: 16,
-      cycle_time_s: 960,
+      cycles: 3,
+      cycle_time_s: 420,
       setup_candidate_idle_s: 180,
-      event_count: 2,
+      event_count: 3,
     });
     expect(comparison.after.cycles).not.toBe(comparison.before.cycles);
     expect(comparison.after.cycle_time_s).not.toBe(
@@ -94,8 +117,8 @@ describe("computeImprovementBeforeAfter", () => {
 
   it("does not fake success when a window has no events", () => {
     const comparison = computeImprovementBeforeAfter(CHANGE, [
-      beforeCycle,
-      beforeSetup,
+      beforeCycleA,
+      beforeCycleB,
     ]);
     expect(comparison).toMatchObject({
       status: "cannot_compute",
@@ -105,9 +128,9 @@ describe("computeImprovementBeforeAfter", () => {
 
   it("puts an event at changed_at in the after window, not before", () => {
     const atChange = event({
-      occurred_at: CHANGE.changed_at,
-      event_type: CYCLE_EVENT_TYPE,
-      cycles: 1,
+      ts_utc: CHANGE.changed_at,
+      event_type: CYCLE_END_EVENT_TYPE,
+      cycle_seq: 42,
       cycle_time_s: 10,
     });
     expect(
@@ -120,32 +143,71 @@ describe("computeImprovementBeforeAfter", () => {
 
   it("ignores events outside the windows or on another machine/part", () => {
     const tooEarly = event({
-      occurred_at: "2026-08-13T12:00:00.000Z",
-      event_type: CYCLE_EVENT_TYPE,
-      cycles: 99,
+      ts_utc: "2026-08-13T12:00:00.000Z",
+      event_type: CYCLE_END_EVENT_TYPE,
+      cycle_seq: 1,
       cycle_time_s: 99,
     });
     const otherMachine = event({
-      occurred_at: "2026-08-15T08:00:00.000Z",
-      event_type: CYCLE_EVENT_TYPE,
-      machine_id: "other",
-      cycles: 50,
+      ts_utc: "2026-08-15T08:00:00.000Z",
+      event_type: CYCLE_END_EVENT_TYPE,
+      machine_id: "MC-OTHER",
+      cycle_seq: 99,
+      cycle_time_s: 50,
+    });
+    const otherPart = event({
+      ts_utc: "2026-08-15T08:00:00.000Z",
+      event_type: CYCLE_END_EVENT_TYPE,
+      part_id: "BRK-220",
+      cycle_seq: 98,
       cycle_time_s: 50,
     });
     const before = eventsForImprovementWindow(
-      [beforeCycle, tooEarly, otherMachine, afterCycle],
+      [beforeCycleA, tooEarly, otherMachine, otherPart, afterCycleA],
       CHANGE,
       "before",
     );
-    expect(before).toEqual([beforeCycle]);
+    expect(before).toEqual([beforeCycleA]);
   });
 });
 
 describe("summarizeCaptureEvents", () => {
-  it("sums CYCLE cycle_time_s separately from SETUP_CANDIDATE idle", () => {
-    const summary = summarizeCaptureEvents([beforeCycle, beforeSetup]);
-    expect(summary.cycles).toBe(10);
-    expect(summary.cycle_time_s).toBe(1200);
-    expect(summary.setup_candidate_idle_s).toBe(600);
+  it("counts cycle_end + cycle_seq, sums cycle_time_s, and SETUP_CANDIDATE idle from gap_class", () => {
+    const summary = summarizeCaptureEvents([
+      beforeCycleA,
+      beforeCycleB,
+      beforeHeartbeat,
+      event({
+        ts_utc: "2026-08-15T09:10:00.000Z",
+        event_type: "state_change",
+      }),
+      event({
+        ts_utc: "2026-08-15T09:11:00.000Z",
+        event_type: "alarm",
+      }),
+    ]);
+    expect(summary.cycles).toBe(2);
+    expect(summary.cycle_time_s).toBe(387.4);
+    expect(summary.setup_candidate_idle_s).toBe(960);
+  });
+
+  it("does not treat SETUP_CANDIDATE or CYCLE as event_type", () => {
+    const summary = summarizeCaptureEvents([
+      event({
+        ts_utc: "2026-08-15T08:00:00.000Z",
+        event_type: "SETUP_CANDIDATE",
+        cycle_time_s: 999,
+        idle_since_prev_cycle_s: 999,
+      }),
+      event({
+        ts_utc: "2026-08-15T08:01:00.000Z",
+        event_type: "CYCLE",
+        cycle_seq: 10,
+        cycle_time_s: 100,
+      }),
+    ]);
+    expect(summary.cycles).toBe(0);
+    expect(summary.cycle_time_s).toBe(0);
+    expect(summary.setup_candidate_idle_s).toBe(0);
   });
 });

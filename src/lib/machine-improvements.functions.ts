@@ -12,6 +12,7 @@ import { withUser } from "@/lib/db.server";
 import {
   MACHINE_CAPTURE_EVENTS_TABLE,
   computeImprovementBeforeAfter,
+  eventQueryFromImprovement,
   type ImprovementComparison,
   type MachineCaptureEvent,
   type ShopMachineImprovement,
@@ -38,19 +39,26 @@ function mapImprovement(row: Record<string, unknown>): ShopMachineImprovement {
     created_at: asIso(row.created_at),
     updated_at: asIso(row.updated_at),
     part_number: row.part_number == null ? null : String(row.part_number),
+    machine_asset_id:
+      row.machine_asset_id == null ? null : String(row.machine_asset_id),
     machine_label: row.machine_label == null ? null : String(row.machine_label),
   };
 }
 
 function mapCaptureEvent(row: Record<string, unknown>): MachineCaptureEvent {
   return {
-    occurred_at: asIso(row.occurred_at),
+    ts_utc: asIso(row.ts_utc),
     machine_id: String(row.machine_id),
     part_id: row.part_id == null ? null : String(row.part_id),
+    program_name: row.program_name == null ? null : String(row.program_name),
     event_type: row.event_type == null ? "" : String(row.event_type),
+    cycle_seq: row.cycle_seq == null ? null : Number(row.cycle_seq),
     cycle_time_s: row.cycle_time_s == null ? null : Number(row.cycle_time_s),
-    idle_s: row.idle_s == null ? null : Number(row.idle_s),
-    cycles: row.cycles == null ? null : Number(row.cycles),
+    idle_since_prev_cycle_s:
+      row.idle_since_prev_cycle_s == null
+        ? null
+        : Number(row.idle_since_prev_cycle_s),
+    gap_class: row.gap_class == null ? null : String(row.gap_class),
   };
 }
 
@@ -63,6 +71,7 @@ function isMissingRelationError(error: unknown): boolean {
 const IMPROVEMENT_SELECT = `
   SELECT i.*,
          p.part_number,
+         m.asset_id AS machine_asset_id,
          CASE
            WHEN m.id IS NULL THEN NULL
            ELSE m.asset_id || ' — ' || m.name
@@ -179,6 +188,9 @@ async function loadCaptureEvents(
   );
   if (!present.rows[0]?.rel) return null;
 
+  const query = eventQueryFromImprovement(change);
+  if (!query) return [];
+
   const beforeMs = change.window_before_hours * 60 * 60 * 1000;
   const afterMs = change.window_after_hours * 60 * 60 * 1000;
   const changedAt = new Date(change.changed_at);
@@ -187,16 +199,16 @@ async function loadCaptureEvents(
 
   try {
     const { rows } = await client.query(
-      `SELECT occurred_at, machine_id, part_id, event_type,
-              cycle_time_s, idle_s, cycles
+      `SELECT ts_utc, machine_id, part_id, program_name, event_type,
+              cycle_seq, cycle_time_s, idle_since_prev_cycle_s, gap_class
          FROM public.${MACHINE_CAPTURE_EVENTS_TABLE}
         WHERE machine_id = $1
           AND part_id = $2
-          AND occurred_at >= $3
-          AND occurred_at < $4`,
+          AND ts_utc >= $3
+          AND ts_utc < $4`,
       [
-        change.machine_id,
-        change.part_id,
+        query.machine_id,
+        query.part_id,
         windowStart.toISOString(),
         windowEnd.toISOString(),
       ],
@@ -225,9 +237,19 @@ export const getMachineImprovementComparison = createServerFn({
         throw new Error("Saved change not found or not accessible.");
       }
       const improvement = mapImprovement(rows[0] as Record<string, unknown>);
+      const query = eventQueryFromImprovement(improvement);
+      if (!query) {
+        const comparison: ImprovementComparison = {
+          status: "cannot_compute",
+          reason: "empty_window",
+          detail:
+            "No machine events in the before and/or after window, so before/after cannot be computed yet.",
+        };
+        return { improvement, comparison };
+      }
       const events = await loadCaptureEvents(client, improvement);
       const comparison: ImprovementComparison = computeImprovementBeforeAfter(
-        improvement,
+        query,
         events,
       );
       return { improvement, comparison };
