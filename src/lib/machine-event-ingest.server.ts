@@ -91,7 +91,9 @@ export interface MachineEventStore {
 }
 
 export interface FacilityAuthStore {
-  resolveFacilityByEdgeKey(providedKey: string): Promise<AuthenticatedFacility | null>;
+  resolveFacilityByEdgeKey(
+    providedKey: string,
+  ): Promise<AuthenticatedFacility | null>;
 }
 
 export interface HandleMachineEventsOptions {
@@ -161,7 +163,10 @@ export function createMemoryFacilityAuthStore(
     async resolveFacilityByEdgeKey(providedKey) {
       const match = facilities.find((f) => f.key === providedKey);
       if (!match) return null;
-      return { facilityId: match.facilityId, organizationId: match.organizationId };
+      return {
+        facilityId: match.facilityId,
+        organizationId: match.organizationId,
+      };
     },
   };
 }
@@ -170,21 +175,31 @@ function hashEdgeKey(key: string): string {
   return createHash("sha256").update(key).digest("hex");
 }
 
-export function createPgFacilityAuthStore(client: PoolClient): FacilityAuthStore {
+export function createPgFacilityAuthStore(
+  client: PoolClient,
+): FacilityAuthStore {
   return {
     async resolveFacilityByEdgeKey(providedKey) {
-      const { rows } = await client.query<{ id: string; organization_id: string }>(
+      const { rows } = await client.query<{
+        id: string;
+        organization_id: string;
+      }>(
         `SELECT id, organization_id FROM public.facilities WHERE edge_ingest_key_hash = $1`,
         [hashEdgeKey(providedKey)],
       );
       if (rows.length !== 1) return null;
-      return { facilityId: String(rows[0].id), organizationId: String(rows[0].organization_id) };
+      return {
+        facilityId: String(rows[0].id),
+        organizationId: String(rows[0].organization_id),
+      };
     },
   };
 }
 
 /** Generates a new edge ingest key for a facility. Returns the plaintext once -- never stored, never retrievable again. */
-export async function generateFacilityEdgeIngestKey(facilityId: string): Promise<string> {
+export async function generateFacilityEdgeIngestKey(
+  facilityId: string,
+): Promise<string> {
   const { randomBytes } = await import("node:crypto");
   const plaintext = randomBytes(32).toString("base64url");
   const hash = hashEdgeKey(plaintext);
@@ -437,37 +452,47 @@ export async function handleMachineEventsRequest(
     return jsonResponse(401, { error: "Unauthorized" });
   }
 
-  let body: unknown;
   try {
-    body = await request.json();
-  } catch {
-    return jsonResponse(400, {
-      error: "invalid payload",
-      details: ["body: must be JSON"],
-    });
-  }
-
-  const parsed = parseMachineEventPayload(body);
-  if (!parsed.ok) {
-    return jsonResponse(400, {
-      error: "invalid payload",
-      details: parsed.details,
-    });
-  }
-
-  const idleGapMinutes =
-    options.idleGapMinutes ??
-    idleGapMinutesFromEnv(process.env.IRONIQ_IDLE_GAP_MINUTES);
-
-  try {
-    const run = async (
+    // Authenticate BEFORE touching the request body at all -- doing
+    // payload parsing/validation first (as an earlier version of this
+    // function did) meant an unauthenticated caller with a garbage key
+    // could still learn the exact shape of a valid payload from 400
+    // validation error details, before ever being rejected. Fail
+    // closed on auth first; an unauthenticated request gets nothing
+    // else evaluated.
+    const facilityAuth = options.facilityAuth;
+    const resolveFacility = async (
       store: MachineEventStore,
-      facilityAuth: FacilityAuthStore,
+      auth: FacilityAuthStore,
     ) => {
-      const facility = await facilityAuth.resolveFacilityByEdgeKey(provided);
-      if (!facility) {
-        return jsonResponse(401, { error: "Unauthorized" });
+      const facility = await auth.resolveFacilityByEdgeKey(provided);
+      if (!facility) return null;
+
+      let body: unknown;
+      try {
+        body = await request.json();
+      } catch {
+        return {
+          response: jsonResponse(400, {
+            error: "invalid payload",
+            details: ["body: must be JSON"],
+          }),
+        };
       }
+
+      const parsed = parseMachineEventPayload(body);
+      if (!parsed.ok) {
+        return {
+          response: jsonResponse(400, {
+            error: "invalid payload",
+            details: parsed.details,
+          }),
+        };
+      }
+
+      const idleGapMinutes =
+        options.idleGapMinutes ??
+        idleGapMinutesFromEnv(process.env.IRONIQ_IDLE_GAP_MINUTES);
       const result = await ingestMachineEvents(
         parsed.events,
         store,
@@ -475,17 +500,24 @@ export async function handleMachineEventsRequest(
         idleGapMinutes,
       );
       if ("error" in result) {
-        return jsonResponse(400, result);
+        return { response: jsonResponse(400, result) };
       }
-      return jsonResponse(202, result);
+      return { response: jsonResponse(202, result) };
     };
 
-    if (options.store && options.facilityAuth) {
-      return await run(options.store, options.facilityAuth);
+    if (options.store && facilityAuth) {
+      const outcome = await resolveFacility(options.store, facilityAuth);
+      if (!outcome) return jsonResponse(401, { error: "Unauthorized" });
+      return outcome.response;
     }
-    return await withAdmin((client) =>
-      run(createPgMachineEventStore(client), createPgFacilityAuthStore(client)),
-    );
+    return await withAdmin(async (client) => {
+      const outcome = await resolveFacility(
+        createPgMachineEventStore(client),
+        createPgFacilityAuthStore(client),
+      );
+      if (!outcome) return jsonResponse(401, { error: "Unauthorized" });
+      return outcome.response;
+    });
   } catch (error) {
     console.error(error);
     return jsonResponse(500, { error: "internal error" });

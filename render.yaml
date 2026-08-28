@@ -34,7 +34,5 @@ services:
         sync: false
       - key: S3_REGION
         value: auto
-      - key: IRONIQ_EDGE_INGEST_SECRET
-        sync: false
       - key: IRONIQ_IDLE_GAP_MINUTES
         value: "15"

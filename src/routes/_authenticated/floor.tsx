@@ -17,12 +17,16 @@ import {
 import { useApp } from "@/context/app-context";
 import { useFloorView } from "@/lib/machine-events-api";
 import {
+  useEdgeIngestKeyInfo,
+  useGenerateEdgeIngestKey,
+} from "@/lib/edge-ingest-admin-api";
+import {
   formatFloorHours,
   type FloorMachineRow,
   type FloorState,
   type FloorTimelineSegment,
 } from "@/lib/machine-events";
-import { cn } from "@/lib/utils";
+import { cn, formatDate } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated/floor")({
   head: () => ({
@@ -120,12 +124,7 @@ function FloorPage() {
       ) : null}
 
       {view && !view.eventsAvailable ? (
-        <Panel title="Events not available">
-          <p className="text-sm text-muted-foreground">
-            Not connected — machine events have not been ingested yet. Floor
-            reads events; IronIQ never talks to a CNC.
-          </p>
-        </Panel>
+        <EdgeSetupPanel facilityId={facility.id} />
       ) : null}
 
       <Panel
@@ -333,5 +332,69 @@ function TimelineBar({ segments }: { segments: FloorTimelineSegment[] }) {
         );
       })}
     </div>
+  );
+}
+
+function EdgeSetupPanel({ facilityId }: { facilityId: string }) {
+  const keyInfo = useEdgeIngestKeyInfo(facilityId);
+  const generateKey = useGenerateEdgeIngestKey(facilityId);
+  const [revealedKey, setRevealedKey] = useState<string | null>(null);
+
+  return (
+    <Panel title="IronIQ Edge setup">
+      <p className="text-sm text-muted-foreground">
+        Not connected — machine events have not been ingested yet. Floor reads
+        events pushed from an IronIQ Edge box on your own network; it never
+        talks to a CNC directly. Generate a facility key below and point your
+        edge box at{" "}
+        <code className="text-foreground">
+          POST /api/ironiq/v1/machine-events
+        </code>
+        .
+      </p>
+
+      {revealedKey ? (
+        <div className="mt-3 rounded-md bg-muted p-3">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            Edge ingest key — copy it now, it won't be shown again
+          </p>
+          <code className="mt-1 block break-all text-sm text-foreground">
+            {revealedKey}
+          </code>
+          <p className="mt-2 text-xs text-muted-foreground">
+            One key per facility, not per machine — your edge box can post
+            events for any machine registered at this facility using this same
+            key.
+          </p>
+        </div>
+      ) : (
+        <p className="mt-2 text-xs text-muted-foreground">
+          {keyInfo.data?.hint
+            ? `Active key ends in …${keyInfo.data.hint} (created ${
+                keyInfo.data.createdAt
+                  ? formatDate(keyInfo.data.createdAt)
+                  : "recently"
+              }). Generating a new one replaces it immediately.`
+            : "No edge ingest key yet — generate one to connect an edge box."}
+        </p>
+      )}
+
+      <Button
+        variant="outline"
+        className="mt-3"
+        disabled={generateKey.isPending}
+        onClick={() =>
+          generateKey.mutate(undefined, {
+            onSuccess: (result) => setRevealedKey(result.apiKey),
+          })
+        }
+      >
+        {generateKey.isPending
+          ? "Generating…"
+          : keyInfo.data?.hint
+            ? "Generate new key"
+            : "Generate edge ingest key"}
+      </Button>
+    </Panel>
   );
 }
