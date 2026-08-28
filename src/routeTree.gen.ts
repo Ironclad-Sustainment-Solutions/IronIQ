@@ -40,6 +40,7 @@ import { Route as AuthenticatedFieldIndexRouteImport } from './routes/_authentic
 import { Route as AuthenticatedFieldFieldIdRouteImport } from './routes/_authenticated/field/$fieldId'
 import { Route as AuthenticatedMachinesIndexRouteImport } from './routes/_authenticated/machines/index'
 import { Route as AuthenticatedMachinesMachineIdRouteImport } from './routes/_authenticated/machines/$machineId'
+import { Route as AuthenticatedMachinesProgramMapRouteImport } from './routes/_authenticated/machines/program-map'
 import { Route as AuthenticatedProductionIndexRouteImport } from './routes/_authenticated/production.index'
 import { Route as AuthenticatedProductionLibrariesRouteImport } from './routes/_authenticated/production.libraries'
 import { Route as AuthenticatedProductionNewRouteImport } from './routes/_authenticated/production.new'
@@ -212,6 +213,12 @@ const AuthenticatedMachinesMachineIdRoute =
     path: '/machines/$machineId',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedMachinesProgramMapRoute =
+  AuthenticatedMachinesProgramMapRouteImport.update({
+    id: '/machines/program-map',
+    path: '/machines/program-map',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedProductionIndexRoute =
   AuthenticatedProductionIndexRouteImport.update({
     id: '/',
@@ -263,6 +270,7 @@ export interface FileRoutesByFullPath {
   '/capability/$assessmentId': typeof AuthenticatedCapabilityAssessmentIdRoute
   '/field/$fieldId': typeof AuthenticatedFieldFieldIdRoute
   '/machines/$machineId': typeof AuthenticatedMachinesMachineIdRoute
+  '/machines/program-map': typeof AuthenticatedMachinesProgramMapRoute
   '/production/libraries': typeof AuthenticatedProductionLibrariesRoute
   '/production/new': typeof AuthenticatedProductionNewRoute
   '/assessments/': typeof AuthenticatedAssessmentsIndexRoute
@@ -298,6 +306,7 @@ export interface FileRoutesByTo {
   '/capability/$assessmentId': typeof AuthenticatedCapabilityAssessmentIdRoute
   '/field/$fieldId': typeof AuthenticatedFieldFieldIdRoute
   '/machines/$machineId': typeof AuthenticatedMachinesMachineIdRoute
+  '/machines/program-map': typeof AuthenticatedMachinesProgramMapRoute
   '/production/libraries': typeof AuthenticatedProductionLibrariesRoute
   '/production/new': typeof AuthenticatedProductionNewRoute
   '/assessments': typeof AuthenticatedAssessmentsIndexRoute
@@ -336,6 +345,7 @@ export interface FileRoutesById {
   '/_authenticated/capability/$assessmentId': typeof AuthenticatedCapabilityAssessmentIdRoute
   '/_authenticated/field/$fieldId': typeof AuthenticatedFieldFieldIdRoute
   '/_authenticated/machines/$machineId': typeof AuthenticatedMachinesMachineIdRoute
+  '/_authenticated/machines/program-map': typeof AuthenticatedMachinesProgramMapRoute
   '/_authenticated/production/libraries': typeof AuthenticatedProductionLibrariesRoute
   '/_authenticated/production/new': typeof AuthenticatedProductionNewRoute
   '/_authenticated/assessments/': typeof AuthenticatedAssessmentsIndexRoute
@@ -374,6 +384,7 @@ export interface FileRouteTypes {
     | '/capability/$assessmentId'
     | '/field/$fieldId'
     | '/machines/$machineId'
+    | '/machines/program-map'
     | '/production/libraries'
     | '/production/new'
     | '/assessments/'
@@ -409,6 +420,7 @@ export interface FileRouteTypes {
     | '/capability/$assessmentId'
     | '/field/$fieldId'
     | '/machines/$machineId'
+    | '/machines/program-map'
     | '/production/libraries'
     | '/production/new'
     | '/assessments'
@@ -446,6 +458,7 @@ export interface FileRouteTypes {
     | '/_authenticated/capability/$assessmentId'
     | '/_authenticated/field/$fieldId'
     | '/_authenticated/machines/$machineId'
+    | '/_authenticated/machines/program-map'
     | '/_authenticated/production/libraries'
     | '/_authenticated/production/new'
     | '/_authenticated/assessments/'
@@ -682,6 +695,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedMachinesMachineIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/machines/program-map': {
+      id: '/_authenticated/machines/program-map'
+      path: '/machines/program-map'
+      fullPath: '/machines/program-map'
+      preLoaderRoute: typeof AuthenticatedMachinesProgramMapRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/production/': {
       id: '/_authenticated/production/'
       path: '/'
@@ -759,6 +779,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedCapabilityAssessmentIdRoute: typeof AuthenticatedCapabilityAssessmentIdRoute
   AuthenticatedFieldFieldIdRoute: typeof AuthenticatedFieldFieldIdRoute
   AuthenticatedMachinesMachineIdRoute: typeof AuthenticatedMachinesMachineIdRoute
+  AuthenticatedMachinesProgramMapRoute: typeof AuthenticatedMachinesProgramMapRoute
   AuthenticatedAssessmentsIndexRoute: typeof AuthenticatedAssessmentsIndexRoute
   AuthenticatedBusinessDevelopmentIndexRoute: typeof AuthenticatedBusinessDevelopmentIndexRoute
   AuthenticatedCapabilityIndexRoute: typeof AuthenticatedCapabilityIndexRoute
@@ -793,6 +814,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
     AuthenticatedCapabilityAssessmentIdRoute,
   AuthenticatedFieldFieldIdRoute: AuthenticatedFieldFieldIdRoute,
   AuthenticatedMachinesMachineIdRoute: AuthenticatedMachinesMachineIdRoute,
+  AuthenticatedMachinesProgramMapRoute: AuthenticatedMachinesProgramMapRoute,
   AuthenticatedAssessmentsIndexRoute: AuthenticatedAssessmentsIndexRoute,
   AuthenticatedBusinessDevelopmentIndexRoute:
     AuthenticatedBusinessDevelopmentIndexRoute,

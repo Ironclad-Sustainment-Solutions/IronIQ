@@ -1,4 +1,5 @@
 import type { PoolClient } from "pg";
+import type { MachineProgramPart } from "@/lib/machine-program-parts";
 import type { PartOutcomeCard, ShopPart } from "@/lib/shop-floor";
 
 export function asIso(value: unknown): string {
@@ -109,4 +110,43 @@ export async function upsertShopPart(
     ],
   );
   return mapShopPart(rows[0] as Record<string, unknown>);
+}
+
+export function mapMachineProgramPart(
+  row: Record<string, unknown>,
+): MachineProgramPart {
+  return {
+    id: String(row.id),
+    organization_id: String(row.organization_id),
+    facility_id: String(row.facility_id),
+    plant_id: String(row.plant_id),
+    program_name: String(row.program_name),
+    part_id: String(row.part_id),
+    valid_from: asIso(row.valid_from),
+    valid_to: asIsoOrNull(row.valid_to),
+    created_at: asIso(row.created_at),
+    updated_at: asIso(row.updated_at),
+  };
+}
+
+/**
+ * Plant + program + timestamp → part_id, or null if unmapped / expired.
+ * Ingest (`POST /api/ironiq/v1/machine-events`) should call this on POST
+ * and keep program_name with part_id=null when the lookup misses.
+ */
+export async function resolvePartId(
+  client: PoolClient,
+  plantId: string,
+  programName: string,
+  at: string | Date,
+): Promise<string | null> {
+  const occurred = at instanceof Date ? at : new Date(at);
+  if (Number.isNaN(occurred.getTime())) {
+    throw new Error("timestamp is not a valid date");
+  }
+  const { rows } = await client.query<{ part_id: string }>(
+    `SELECT public.resolve_part_id($1, $2, $3::timestamptz) AS part_id`,
+    [plantId, programName.trim(), occurred.toISOString()],
+  );
+  return rows[0]?.part_id ?? null;
 }

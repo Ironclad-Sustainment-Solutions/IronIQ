@@ -67,9 +67,14 @@ function MachinesPage() {
         title="Machines"
         description="Start with 1–3 machines on this floor. Cycle counts and runtime are entered by hand or CSV — nothing here pretends to be a live machine connection."
         actions={
-          <Button variant="outline" onClick={() => setAdding((v) => !v)}>
-            {adding ? "Cancel" : "Add machine"}
-          </Button>
+          <div className="flex gap-2">
+            <Button asChild variant="outline">
+              <Link to="/machines/program-map">Program → part map</Link>
+            </Button>
+            <Button variant="outline" onClick={() => setAdding((v) => !v)}>
+              {adding ? "Cancel" : "Add machine"}
+            </Button>
+          </div>
         }
       />
 
