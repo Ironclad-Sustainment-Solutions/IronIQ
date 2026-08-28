@@ -63,14 +63,14 @@ import {
 // section below. This is the actual fix for products reading as "blended
 // in with everything else": size, weight, and position now signal these
 // are THE things this app does, not more entries in one flat list of
-// equal-looking sections. Five pipelines as of IronIQ Edge's addition
-// (Machines, IronIQ Edge, Assessments, CAD Conversion, CNC Coding) --
-// was four with just Machines, three before that. Intelligence (Ask
-// IronIQ) lives here too, at the same visual tier, but isn't itself one
-// of the pipeline count above: it's the shared layer built ON TOP of the
-// product pipelines, closer in kind to them than to Setup or
-// Administration, not a pipeline of its own with a start/end like the
-// others.
+// equal-looking sections. Four pipelines (Machines, Assessments, CAD
+// Conversion, CNC Coding) -- IronIQ Edge briefly lived here too, but per
+// direct feedback it isn't a peer of these: it doesn't have a start/end
+// the way an assessment or a CAD conversion job does, it's a live data
+// feed that enriches the others. Moved to its own INTELLIGENCE_NAV
+// section below, alongside Ask IronIQ, both of which are the same kind
+// of thing: cross-cutting capability layered on top of the pipelines,
+// not a pipeline itself.
 const HOME_ITEM = { to: "/home", label: "Home", icon: Home };
 
 const PRODUCT_NAV: {
@@ -87,27 +87,6 @@ const PRODUCT_NAV: {
     section: "Machines",
     groupIcon: Factory,
     items: [{ to: "/machines", label: "Machines", icon: Factory }],
-  },
-  {
-    // IronIQ Edge: real-time, event-driven shop-floor monitoring fed by
-    // edge-pushed machine events (/api/ironiq/v1/machine-events) --
-    // genuinely distinct from Machines (a static asset/machine master
-    // with manual/CSV/MTConnect-pull data entry). Floor view, part
-    // lookup, and improvement tracking all read from the same
-    // shop_machine_events stream, which is enough of its own coherent
-    // product surface to be a fifth co-equal pipeline here rather than
-    // three extra tabs bolted onto Machines.
-    section: "IronIQ Edge",
-    groupIcon: LayoutGrid,
-    items: [
-      { to: "/floor", label: "Floor View", icon: LayoutGrid },
-      { to: "/machines/parts", label: "Parts", icon: Package },
-      {
-        to: "/machines/improvements",
-        label: "Improvements",
-        icon: TrendingUp,
-      },
-    ],
   },
   {
     // Assessment stays in the sidebar for shops that still use it, but
@@ -151,9 +130,43 @@ const PRODUCT_NAV: {
     section: "CNC Coding",
     items: [{ to: "/cnc", label: "CNC Coding Enhancement", icon: Code2 }],
   },
+];
+
+// Its own labeled section, separate from PRODUCT_NAV and positioned
+// toward the bottom of the nav (after Setup/Administration/Reporting,
+// still before the genuinely-not-built-yet Coming Soon section) --
+// per direct feedback, IronIQ Edge doesn't belong as a peer of
+// Machines/Assessments/CAD/CNC. It belongs with Ask IronIQ instead: both
+// are cross-cutting capabilities that sit on top of / alongside the core
+// product pipelines rather than being one themselves -- Edge feeds
+// real-time shop-floor data in, Ask IronIQ answers questions grounded in
+// accumulated data, neither is itself a pipeline with a start/end the
+// way Machines/Assessments/CAD/CNC are. Still rendered at the same
+// visual tier as Products (tier="product"), not demoted to
+// Setup/Administration's quieter styling -- this is live, working
+// capability, not app configuration.
+const INTELLIGENCE_NAV: {
+  section: string;
+  groupIcon?: typeof LayoutDashboard;
+  items: { to: string; label: string; icon: typeof LayoutDashboard }[];
+}[] = [
   {
     section: "Intelligence",
+    groupIcon: Sparkles,
     items: [{ to: "/ask-ironiq", label: "Ask IronIQ", icon: Sparkles }],
+  },
+  {
+    section: "IronIQ Edge",
+    groupIcon: LayoutGrid,
+    items: [
+      { to: "/floor", label: "Floor View", icon: LayoutGrid },
+      { to: "/machines/parts", label: "Parts", icon: Package },
+      {
+        to: "/machines/improvements",
+        label: "Improvements",
+        icon: TrendingUp,
+      },
+    ],
   },
 ];
 
@@ -246,6 +259,7 @@ const LATER_NAV: {
 
 const ALL_NAV_GROUPS = [
   ...PRODUCT_NAV,
+  ...INTELLIGENCE_NAV,
   ...SETUP_NAV,
   ...OTHER_NAV,
   ...LATER_NAV,
@@ -359,6 +373,7 @@ function NavLinks({
   const visibleAllGroups = [
     ...visibleProductNav,
     ...(isPlatformStaff ? BUSINESS_DEV_NAV : []),
+    ...INTELLIGENCE_NAV,
     ...SETUP_NAV,
     ...OTHER_NAV,
     ...LATER_NAV,
@@ -488,6 +503,22 @@ function NavLinks({
           onToggle={() => toggle(group.section)}
           onNavigate={onNavigate}
           tier="support"
+        />
+      ))}
+
+      <div className="my-3 border-t border-sidebar-border" />
+      <p className="mb-1.5 px-3 text-[10px] font-semibold uppercase tracking-widest text-primary/80">
+        Intelligence
+      </p>
+      {INTELLIGENCE_NAV.map((group) => (
+        <NavSection
+          key={group.section}
+          group={group}
+          pathname={pathname}
+          isExpanded={expanded === group.section}
+          onToggle={() => toggle(group.section)}
+          onNavigate={onNavigate}
+          tier="product"
         />
       ))}
 

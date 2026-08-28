@@ -57,7 +57,7 @@ describe("public UI copy", () => {
     }
   });
 
-  it("gives IronIQ Edge (Floor View, Parts, Improvements) its own nav section, separate from Machines", () => {
+  it("gives IronIQ Edge (Floor View, Parts, Improvements) its own nav section, grouped with Intelligence rather than as a peer of Machines/Assessments/CAD/CNC", () => {
     const shell = source("src/components/ironiq/app-shell.tsx");
     expect(shell).toContain('to: "/machines"');
     expect(shell).toContain('section: "IronIQ Edge"');
@@ -65,6 +65,15 @@ describe("public UI copy", () => {
     expect(shell).toContain('to: "/floor"');
     expect(source("src/routes/_authenticated/machines/index.tsx")).toContain(
       "Machine master",
+    );
+    // IronIQ Edge and Ask IronIQ live in their own INTELLIGENCE_NAV
+    // array, not PRODUCT_NAV -- confirm the section header appears
+    // after PRODUCT_NAV's declaration closes, not inside it.
+    const productNavEnd = shell.indexOf("const INTELLIGENCE_NAV");
+    const productNavText = shell.slice(0, productNavEnd);
+    expect(productNavText).not.toContain('section: "IronIQ Edge"');
+    expect(shell.indexOf('section: "Intelligence"')).toBeGreaterThan(
+      productNavEnd,
     );
   });
 });
