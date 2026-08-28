@@ -41,13 +41,14 @@ function PartCapturePage() {
   const { organization, facility } = useApp();
   const [query, setQuery] = useState("");
   const [lookedUp, setLookedUp] = useState<string | null>(null);
-  const parts = useShopParts(organization?.id, facility?.id).data ?? [];
+  const partsQuery = useShopParts(organization?.id, facility?.id);
   const captureQuery = usePartCapture(organization?.id, facility?.id, lookedUp);
-  const capture = captureQuery.data ?? null;
+  const capture = captureQuery.data;
 
   const matches = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return [];
+    const parts = partsQuery.data ?? [];
     return parts
       .filter(
         (part) =>
@@ -56,7 +57,7 @@ function PartCapturePage() {
           part.id.toLowerCase() === q,
       )
       .slice(0, 12);
-  }, [parts, query]);
+  }, [partsQuery.data, query]);
 
   function lookUp(partId: string) {
     const trimmed = partId.trim();
