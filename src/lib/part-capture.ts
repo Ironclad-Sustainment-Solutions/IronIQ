@@ -2,43 +2,48 @@
  * V1 part capture view: event-derived totals for a searched part_id.
  *
  * Hours to make a part is derived here (sum of cycle_time_s + attributed
- * SETUP_CANDIDATE idle). It is not a CNC tag and is not read from the control.
+ * SETUP_CANDIDATE idle_since_prev_cycle_s). It is not a CNC tag.
  *
- * Event rows come from public.machine_events (sibling ingest PR). This
- * module does not define that table.
+ * Rows come from public.shop_machine_events (ingest PR, iss.machine_event.v1).
+ * This module does not create that table.
  */
 
 import type { ShopPart } from "@/lib/shop-floor";
 
 export const CYCLE_END = "cycle_end";
-export const IDLE_GAP = "idle_gap";
 export const SETUP_CANDIDATE = "SETUP_CANDIDATE";
 
-export type MachineEventType = typeof CYCLE_END | typeof IDLE_GAP;
-export type IdleGapTag = typeof SETUP_CANDIDATE;
+export const MACHINE_EVENT_TYPES = [
+  "state_change",
+  "cycle_end",
+  "alarm",
+  "heartbeat",
+] as const;
+export type MachineEventType = (typeof MACHINE_EVENT_TYPES)[number];
 
 /**
- * Row shape matching the ingest spec for public.machine_events.
- * part_id is null when the program has not been mapped to a shop part.
+ * Stored row from public.shop_machine_events, matching iss.machine_event.v1.
+ * machine_id is shop_machines.asset_id. part_id is null when unmapped.
  */
-export interface MachineEvent {
+export interface ShopMachineEvent {
   id: string;
   organization_id: string;
   facility_id: string;
+  shop_machine_id: string;
   machine_id: string;
-  asset_id: string;
   machine_name: string | null;
-  occurred_at: string;
+  ts_utc: string;
   event_type: string;
+  program_name: string | null;
   part_id: string | null;
   cycle_time_s: number | null;
-  idle_time_s: number | null;
-  idle_tag: string | null;
+  idle_since_prev_cycle_s: number | null;
+  gap_class: string | null;
 }
 
 export interface PartMachineTotal {
+  shop_machine_id: string;
   machine_id: string;
-  asset_id: string;
   machine_name: string | null;
   cycles: number;
   cycle_time_s: number;
@@ -46,12 +51,12 @@ export interface PartMachineTotal {
 
 export interface SetupCandidateGap {
   id: string;
+  shop_machine_id: string;
   machine_id: string;
-  asset_id: string;
   machine_name: string | null;
-  occurred_at: string;
-  idle_time_s: number;
-  idle_tag: typeof SETUP_CANDIDATE;
+  ts_utc: string;
+  idle_since_prev_cycle_s: number;
+  gap_class: typeof SETUP_CANDIDATE;
 }
 
 export interface PartCaptureSummary {
@@ -66,11 +71,13 @@ export interface PartCaptureSummary {
 }
 
 export function isCycleEnd(eventType: string): boolean {
-  return eventType.toLowerCase() === CYCLE_END;
+  return eventType === CYCLE_END;
 }
 
-export function isSetupCandidateTag(tag: string | null | undefined): boolean {
-  return tag === SETUP_CANDIDATE;
+export function isSetupCandidateGap(
+  gapClass: string | null | undefined,
+): boolean {
+  return gapClass === SETUP_CANDIDATE;
 }
 
 /** Hours = (sum cycle_time_s + attributed idle seconds) / 3600. */
@@ -98,7 +105,7 @@ export function emptyPartCaptureSummary(
 }
 
 function eventMatchesPart(
-  event: MachineEvent,
+  event: ShopMachineEvent,
   partId: string,
   shopPart?: ShopPart | null,
 ): boolean {
@@ -118,7 +125,7 @@ function eventMatchesPart(
  * appear — even if they were passed in by mistake.
  */
 export function summarizePartCapture(
-  events: MachineEvent[],
+  events: ShopMachineEvent[],
   partId: string,
   shopPart: ShopPart | null = null,
 ): PartCaptureSummary {
@@ -128,9 +135,9 @@ export function summarizePartCapture(
   const cycleEnds = scoped.filter((event) => isCycleEnd(event.event_type));
   const gaps = scoped.filter(
     (event) =>
-      isSetupCandidateTag(event.idle_tag) &&
-      event.idle_time_s != null &&
-      Number(event.idle_time_s) >= 0,
+      isSetupCandidateGap(event.gap_class) &&
+      event.idle_since_prev_cycle_s != null &&
+      Number(event.idle_since_prev_cycle_s) >= 0,
   );
 
   const byMachine = new Map<string, PartMachineTotal>();
@@ -138,20 +145,20 @@ export function summarizePartCapture(
   for (const event of cycleEnds) {
     const seconds = Number(event.cycle_time_s) || 0;
     cycle_time_s += seconds;
-    const current = byMachine.get(event.machine_id) ?? {
+    const current = byMachine.get(event.shop_machine_id) ?? {
+      shop_machine_id: event.shop_machine_id,
       machine_id: event.machine_id,
-      asset_id: event.asset_id,
       machine_name: event.machine_name,
       cycles: 0,
       cycle_time_s: 0,
     };
     current.cycles += 1;
     current.cycle_time_s += seconds;
-    byMachine.set(event.machine_id, current);
+    byMachine.set(event.shop_machine_id, current);
   }
 
   const attributed_idle_s = gaps.reduce(
-    (sum, event) => sum + Number(event.idle_time_s),
+    (sum, event) => sum + Number(event.idle_since_prev_cycle_s),
     0,
   );
 
@@ -159,7 +166,7 @@ export function summarizePartCapture(
     part_id: partId,
     shop_part: shopPart,
     machines: [...byMachine.values()].sort((a, b) =>
-      a.asset_id.localeCompare(b.asset_id),
+      a.machine_id.localeCompare(b.machine_id),
     ),
     cycles: cycleEnds.length,
     cycle_time_s,
@@ -167,12 +174,12 @@ export function summarizePartCapture(
     hours_to_make_part: hoursToMakePart(cycle_time_s, attributed_idle_s),
     setup_candidate_gaps: gaps.map((event) => ({
       id: event.id,
+      shop_machine_id: event.shop_machine_id,
       machine_id: event.machine_id,
-      asset_id: event.asset_id,
       machine_name: event.machine_name,
-      occurred_at: event.occurred_at,
-      idle_time_s: Number(event.idle_time_s),
-      idle_tag: SETUP_CANDIDATE,
+      ts_utc: event.ts_utc,
+      idle_since_prev_cycle_s: Number(event.idle_since_prev_cycle_s),
+      gap_class: SETUP_CANDIDATE,
     })),
   };
 }

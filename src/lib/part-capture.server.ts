@@ -3,8 +3,8 @@ import type { ShopPart } from "@/lib/shop-floor";
 import { mapShopPart } from "@/lib/shop-floor.server";
 import {
   summarizePartCapture,
-  type MachineEvent,
   type PartCaptureSummary,
+  type ShopMachineEvent,
 } from "@/lib/part-capture";
 
 function asIso(value: unknown): string {
@@ -24,18 +24,18 @@ function asNumberOrNull(value: unknown): number | null {
 }
 
 /**
- * Expected columns on public.machine_events (owned by the ingest PR):
- *   machine_id, part_id, event_type, occurred_at, cycle_time_s,
- *   idle_time_s, idle_tag, organization_id, facility_id
+ * public.shop_machine_events is owned by the ingest PR (iss.machine_event.v1):
+ *   machine_id = shop_machines.asset_id
+ *   ts_utc, event_type (cycle_end|state_change|alarm|heartbeat)
+ *   cycle_time_s, idle_since_prev_cycle_s, gap_class, program_name, part_id
  *
- * Do not create a second events table here. If ingest has not been
- * merged, this returns [].
+ * Do not CREATE that table here. If ingest has not been merged, this returns [].
  */
-export async function machineEventsRelationExists(
+export async function shopMachineEventsRelationExists(
   client: PoolClient,
 ): Promise<boolean> {
   const { rows } = await client.query<{ exists: boolean }>(
-    `SELECT to_regclass('public.machine_events') IS NOT NULL AS exists`,
+    `SELECT to_regclass('public.shop_machine_events') IS NOT NULL AS exists`,
   );
   return Boolean(rows[0]?.exists);
 }
@@ -60,23 +60,21 @@ export async function findShopPartByPartId(
   return rows[0] ? mapShopPart(rows[0] as Record<string, unknown>) : null;
 }
 
-function mapMachineEvent(row: Record<string, unknown>): MachineEvent {
-  const joinedAsset = asTextOrNull(row.joined_asset_id);
-  const eventAsset = asTextOrNull(row.asset_id);
-  const machineId = String(row.joined_machine_id ?? row.machine_id);
+function mapShopMachineEvent(row: Record<string, unknown>): ShopMachineEvent {
   return {
     id: String(row.id),
     organization_id: String(row.organization_id ?? ""),
     facility_id: String(row.facility_id ?? ""),
-    machine_id: machineId,
-    asset_id: joinedAsset || eventAsset || machineId,
+    shop_machine_id: String(row.shop_machine_id),
+    machine_id: String(row.machine_id),
     machine_name: asTextOrNull(row.machine_name),
-    occurred_at: asIso(row.occurred_at ?? row.ts ?? row.created_at),
-    event_type: String(row.event_type ?? row.type ?? ""),
+    ts_utc: asIso(row.ts_utc),
+    event_type: String(row.event_type ?? ""),
+    program_name: asTextOrNull(row.program_name),
     part_id: asTextOrNull(row.part_id),
     cycle_time_s: asNumberOrNull(row.cycle_time_s),
-    idle_time_s: asNumberOrNull(row.idle_time_s ?? row.duration_s),
-    idle_tag: asTextOrNull(row.idle_tag ?? row.tag),
+    idle_since_prev_cycle_s: asNumberOrNull(row.idle_since_prev_cycle_s),
+    gap_class: asTextOrNull(row.gap_class),
   };
 }
 
@@ -87,34 +85,40 @@ export async function listMachineEventsForPart(
     facilityId: string;
     partIds: string[];
   },
-): Promise<MachineEvent[]> {
+): Promise<ShopMachineEvent[]> {
   if (input.partIds.length === 0) return [];
-  if (!(await machineEventsRelationExists(client))) return [];
+  if (!(await shopMachineEventsRelationExists(client))) return [];
 
   try {
     const { rows } = await client.query(
-      `SELECT e.*,
-              m.id AS joined_machine_id,
-              m.asset_id AS joined_asset_id,
-              m.name AS machine_name,
-              m.organization_id,
-              m.facility_id
-         FROM public.machine_events e
-         INNER JOIN public.shop_machines m
-           ON (m.id::text = e.machine_id::text
-               OR m.asset_id = e.machine_id::text)
+      `SELECT e.id,
+              e.organization_id,
+              e.facility_id,
+              e.shop_machine_id,
+              e.machine_id,
+              e.ts_utc,
+              e.event_type,
+              e.program_name,
+              e.part_id,
+              e.cycle_time_s,
+              e.idle_since_prev_cycle_s,
+              e.gap_class,
+              m.name AS machine_name
+         FROM public.shop_machine_events e
+         INNER JOIN public.shop_machines m ON m.id = e.shop_machine_id
         WHERE e.part_id IS NOT NULL
-          AND e.part_id::text = ANY($1::text[])
+          AND e.part_id = ANY($1::text[])
+          AND e.organization_id = $2
+          AND e.facility_id = $3
           AND m.organization_id = $2
           AND m.facility_id = $3`,
       [input.partIds, input.organizationId, input.facilityId],
     );
     return rows
-      .map((row) => mapMachineEvent(row as Record<string, unknown>))
+      .map((row) => mapShopMachineEvent(row as Record<string, unknown>))
       .filter((event) => event.part_id != null)
       .sort(
-        (a, b) =>
-          new Date(a.occurred_at).getTime() - new Date(b.occurred_at).getTime(),
+        (a, b) => new Date(a.ts_utc).getTime() - new Date(b.ts_utc).getTime(),
       );
   } catch (error) {
     const code =

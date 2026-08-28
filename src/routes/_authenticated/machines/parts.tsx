@@ -225,23 +225,17 @@ function PartTotals({
                   <tbody>
                     {capture.machines.map((machine) => (
                       <tr
-                        key={machine.machine_id}
+                        key={machine.shop_machine_id}
                         className="border-b border-border/60"
                       >
                         <td className="py-2.5 pr-4">
-                          {isUuid(machine.machine_id) ? (
-                            <Link
-                              to="/machines/$machineId"
-                              params={{ machineId: machine.machine_id }}
-                              className="font-medium text-primary hover:underline"
-                            >
-                              {machine.asset_id}
-                            </Link>
-                          ) : (
-                            <span className="font-medium">
-                              {machine.asset_id}
-                            </span>
-                          )}
+                          <Link
+                            to="/machines/$machineId"
+                            params={{ machineId: machine.shop_machine_id }}
+                            className="font-medium text-primary hover:underline"
+                          >
+                            {machine.machine_id}
+                          </Link>
                         </td>
                         <td className="py-2.5 pr-4">
                           {machine.machine_name || "—"}
@@ -282,14 +276,14 @@ function PartTotals({
                     {capture.setup_candidate_gaps.map((gap) => (
                       <tr key={gap.id} className="border-b border-border/60">
                         <td className="py-2.5 pr-4">
-                          {formatWhen(gap.occurred_at)}
+                          {formatWhen(gap.ts_utc)}
                         </td>
-                        <td className="py-2.5 pr-4">{gap.asset_id}</td>
+                        <td className="py-2.5 pr-4">{gap.machine_id}</td>
                         <td className="py-2.5 pr-4">
-                          {formatSeconds(gap.idle_time_s)}
+                          {formatSeconds(gap.idle_since_prev_cycle_s)}
                         </td>
                         <td className="py-2.5 pr-4">
-                          <Tag token="primary">{gap.idle_tag}</Tag>
+                          <Tag token="primary">{gap.gap_class}</Tag>
                         </td>
                       </tr>
                     ))}
@@ -337,10 +331,4 @@ function formatWhen(value: string): string {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return formatDate(value);
   return date.toLocaleString();
-}
-
-function isUuid(value: string): boolean {
-  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
-    value,
-  );
 }
