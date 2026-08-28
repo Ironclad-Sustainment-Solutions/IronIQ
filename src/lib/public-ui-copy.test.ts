@@ -76,4 +76,21 @@ describe("public UI copy", () => {
       productNavEnd,
     );
   });
+
+  it("does not put Grede-only product copy on Edge or field surfaces", () => {
+    const floor = source("src/routes/_authenticated/floor.tsx");
+    const parts = source("src/routes/_authenticated/machines/parts.tsx");
+    const improvements = source(
+      "src/routes/_authenticated/machines/improvements.tsx",
+    );
+    const programMap = source(
+      "src/routes/_authenticated/machines/program-map.tsx",
+    );
+    const field = source("src/routes/_authenticated/field/$fieldId.tsx");
+    for (const page of [floor, parts, improvements, programMap]) {
+      expect(page).not.toMatch(/\bGrede\b/);
+    }
+    expect(field).not.toMatch(/Grede focus areas/);
+    expect(field).toContain('title="Focus areas"');
+  });
 });

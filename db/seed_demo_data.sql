@@ -548,7 +548,10 @@ BEGIN
   )
   SELECT v_org, v_fac, 'MC-UMC750-01', 'Haas UMC-750', 'Haas', 'UMC-750', 'haas', 'mtconnect'
    WHERE NOT EXISTS (
-     SELECT 1 FROM public.shop_machines WHERE asset_id = 'MC-UMC750-01'
+     SELECT 1 FROM public.shop_machines
+      WHERE organization_id = v_org
+        AND facility_id = v_fac
+        AND asset_id = 'MC-UMC750-01'
    );
 
   RAISE NOTICE 'Demo shop machine MC-UMC750-01 (Haas UMC-750) seeded for facility %.', v_fac;

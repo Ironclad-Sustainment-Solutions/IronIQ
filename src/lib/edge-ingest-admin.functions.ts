@@ -26,14 +26,14 @@ export const generateEdgeIngestKey = createServerFn({ method: "POST" })
     // generate a new key for a specific facility is a browser-session
     // action that must go through the normal authorization path first.
     const owned = await withUser(context.userId, async (client) => {
-      const { rows } = await client.query(
-        "SELECT 1 FROM public.facilities WHERE id = $1",
+      const { rows } = await client.query<{ organization_id: string }>(
+        "SELECT organization_id FROM public.facilities WHERE id = $1",
         [data.facilityId],
       );
-      return rows.length > 0;
+      return rows[0]?.organization_id ?? null;
     });
     if (!owned) throw new Error("Facility not found or not accessible.");
-    const apiKey = await generateFacilityEdgeIngestKey(data.facilityId);
+    const apiKey = await generateFacilityEdgeIngestKey(data.facilityId, owned);
     return { apiKey };
   });
 

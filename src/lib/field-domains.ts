@@ -324,8 +324,8 @@ export const PRIORITY_CLASS_HELP: Record<string, string> = {
     "The capability needs documentation, measurement, knowledge preservation or ongoing control.",
 };
 
-/** Grede-specific template — customer scoped, never applied globally. */
-export const GREDE_FOCUS_AREAS = [
+/** Field assessment focus-area list — customer scoped, never applied globally. */
+export const FIELD_FOCUS_AREAS = [
   "Production Flow",
   "Machine Utilization",
   "Production Bottlenecks",

@@ -167,6 +167,7 @@ const ORDERED_ADDITIONS = [
   "schema_additions_mtconnect_connector.sql",
   "schema_additions_machine_events.sql",
   "schema_additions_edge_ingest_facility_auth.sql",
+  "schema_additions_machine_events_tenant_isolation.sql",
   "schema_additions_machine_improvements.sql",
   "schema_additions_intelligence_layer.sql",
   "schema_additions_product_restrictions.sql",

@@ -264,4 +264,102 @@ describe("POST /api/ironiq/v1/machine-events", () => {
     expect(route).not.toContain("createServerFn");
     expect(start).toContain('ctx.handlerType === "serverFn"');
   });
+
+  it("authenticates before parsing the body — garbage JSON with a bad key is 401, not 400", async () => {
+    const store = createMemoryMachineEventStore([demoMachine]);
+    const missing = await handleMachineEventsRequest(
+      new Request("http://ironiq.test/api/ironiq/v1/machine-events", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: "not-json{{{",
+      }),
+      { store, facilityAuth: facilityAuth() },
+    );
+    const wrong = await handleMachineEventsRequest(
+      new Request("http://ironiq.test/api/ironiq/v1/machine-events", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          authorization: "Bearer wrong-key",
+        },
+        body: "not-json{{{",
+      }),
+      { store, facilityAuth: facilityAuth() },
+    );
+    expect(missing.status).toBe(401);
+    expect(wrong.status).toBe(401);
+    expect(await missing.json()).toEqual({ error: "Unauthorized" });
+    expect(await wrong.json()).toEqual({ error: "Unauthorized" });
+  });
+
+  it("stores an arbitrary plant_id as posted text, not a required grede plant", async () => {
+    const { response, json, store } = await ingest({
+      ...sample,
+      plant_id: "north-shop-3",
+      ts_utc: "2026-08-27T15:00:00Z",
+    });
+    expect(response.status).toBe(202);
+    expect(json).toEqual({ accepted: 1, duplicates: 0 });
+    const rows = await store.listByMachineId("MC-UMC750-01");
+    expect(rows[0].plant_id).toBe("north-shop-3");
+    expect(rows[0].organization_id).toBe(ORG_ID);
+    expect(rows[0].facility_id).toBe(FACILITY_ID);
+  });
+
+  it("lets two organizations ingest the same asset_id independently", async () => {
+    const orgB = "55555555-5555-5555-5555-555555555555";
+    const facilityB = "66666666-6666-6666-6666-666666666666";
+    const keyB = "org-b-facility-edge-key";
+    const machineB = {
+      id: "77777777-7777-7777-7777-777777777777",
+      organization_id: orgB,
+      facility_id: facilityB,
+      asset_id: "MC-UMC750-01",
+    };
+    const store = createMemoryMachineEventStore([demoMachine, machineB]);
+    const auth = createMemoryFacilityAuthStore([
+      { key: EDGE_KEY, facilityId: FACILITY_ID, organizationId: ORG_ID },
+      { key: keyB, facilityId: facilityB, organizationId: orgB },
+    ]);
+    const body = { ...sample, ts_utc: "2026-08-27T16:00:00Z" };
+    const a = await handleMachineEventsRequest(authorizedPost(body), {
+      store,
+      facilityAuth: auth,
+    });
+    const b = await handleMachineEventsRequest(
+      postRequest(body, { authorization: `Bearer ${keyB}` }),
+      { store, facilityAuth: auth },
+    );
+    expect(a.status).toBe(202);
+    expect(b.status).toBe(202);
+    expect(await a.json()).toEqual({ accepted: 1, duplicates: 0 });
+    expect(await b.json()).toEqual({ accepted: 1, duplicates: 0 });
+    const rows = await store.listByMachineId("MC-UMC750-01");
+    expect(rows).toHaveLength(2);
+    expect(new Set(rows.map((row) => row.organization_id))).toEqual(
+      new Set([ORG_ID, orgB]),
+    );
+    expect(new Set(rows.map((row) => row.facility_id)).size).toBe(2);
+  });
+
+  it("returns 400 (doesn't exist) when Org A's key posts Org B's machine", async () => {
+    const orgB = "55555555-5555-5555-5555-555555555555";
+    const facilityB = "66666666-6666-6666-6666-666666666666";
+    const store = createMemoryMachineEventStore([
+      {
+        ...demoMachine,
+        organization_id: orgB,
+        facility_id: facilityB,
+      },
+    ]);
+    const response = await handleMachineEventsRequest(authorizedPost(sample), {
+      store,
+      facilityAuth: facilityAuth(),
+    });
+    const json = await response.json();
+    expect(response.status).toBe(400);
+    expect(json.details[0]).toBe("machine_id: unknown asset_id MC-UMC750-01");
+    expect(json.details[0]).not.toMatch(/org|facility|exist/i);
+    expect(await store.listByMachineId("MC-UMC750-01")).toHaveLength(0);
+  });
 });

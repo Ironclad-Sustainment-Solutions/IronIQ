@@ -53,7 +53,7 @@ import {
   FIELD_DOMAINS,
   GAP_FREQUENCY,
   GAP_SEVERITY,
-  GREDE_FOCUS_AREAS,
+  FIELD_FOCUS_AREAS,
   IMPACT_LEVELS,
   IRONCLAD_ACTIONS,
   IRONCLAD_FIT,
@@ -1266,11 +1266,11 @@ function IntakeTab({
       </Panel>
 
       <Panel
-        title="Grede focus areas"
+        title="Focus areas"
         subtitle="Customer-scoped template — applies to this assessment only"
       >
         <TagPicker
-          options={GREDE_FOCUS_AREAS}
+          options={FIELD_FOCUS_AREAS}
           selected={assessment["workstreams"] ?? []}
           disabled={locked}
           onChange={(workstreams) => set({ workstreams })}

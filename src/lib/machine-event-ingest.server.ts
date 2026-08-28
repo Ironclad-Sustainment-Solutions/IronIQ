@@ -20,8 +20,10 @@
  * per-facility credentials match it directly. The bearer token is
  * hashed (SHA-256) and looked up against facilities.edge_ingest_key_hash
  * (an indexed exact match, not a loop-and-compare); the resolved
- * facility then scopes every machine lookup in the request, so a given
+ * facility then scopes every machine lookup AND every insert in the
+ * request to that facility AND the organization that owns it, so a given
  * edge box can only ever write events for its own plant's machines.
+ * plant_id on the payload is free-text shop label, not a tenant key.
  */
 
 import { createHash } from "node:crypto";
@@ -80,12 +82,16 @@ export interface AuthenticatedFacility {
 }
 
 export interface MachineEventStore {
-  // facilityId scopes the lookup to the authenticated edge box's own
-  // plant -- an asset_id that exists but belongs to a different
-  // facility is indistinguishable from "missing" here, deliberately:
-  // the caller should never learn that a given asset_id exists
-  // somewhere else on the platform.
-  lookupByAssetId(assetId: string, facilityId: string): Promise<MachineLookup>;
+  // facilityId + organizationId scope the lookup to the authenticated
+  // edge box's own plant -- an asset_id that exists but belongs to a
+  // different facility or organization is indistinguishable from
+  // "missing" here, deliberately: the caller should never learn that a
+  // given asset_id exists somewhere else on the platform.
+  lookupByAssetId(
+    assetId: string,
+    facilityId: string,
+    organizationId: string,
+  ): Promise<MachineLookup>;
   insertEvent(row: StoredMachineEvent): Promise<"accepted" | "duplicate">;
   listByMachineId(machineId: string): Promise<StoredMachineEvent[]>;
 }
@@ -122,10 +128,15 @@ function asNum(value: number | null | undefined): number | null {
 function eventKey(
   event: Pick<
     StoredMachineEvent,
-    "machine_id" | "ts_utc" | "event_type" | "cycle_seq"
+    | "organization_id"
+    | "facility_id"
+    | "machine_id"
+    | "ts_utc"
+    | "event_type"
+    | "cycle_seq"
   >,
 ) {
-  return `${event.machine_id}\0${event.ts_utc}\0${event.event_type}\0${event.cycle_seq ?? ""}`;
+  return `${event.organization_id}\0${event.facility_id}\0${event.machine_id}\0${event.ts_utc}\0${event.event_type}\0${event.cycle_seq ?? ""}`;
 }
 
 export function createMemoryMachineEventStore(
@@ -133,9 +144,12 @@ export function createMemoryMachineEventStore(
 ): MachineEventStore {
   const rows: StoredMachineEvent[] = [];
   return {
-    async lookupByAssetId(assetId, facilityId) {
+    async lookupByAssetId(assetId, facilityId, organizationId) {
       const matches = machines.filter(
-        (m) => m.asset_id === assetId && m.facility_id === facilityId,
+        (m) =>
+          m.asset_id === assetId &&
+          m.facility_id === facilityId &&
+          m.organization_id === organizationId,
       );
       if (matches.length === 0) return "missing";
       if (matches.length > 1) return "ambiguous";
@@ -199,19 +213,24 @@ export function createPgFacilityAuthStore(
 /** Generates a new edge ingest key for a facility. Returns the plaintext once -- never stored, never retrievable again. */
 export async function generateFacilityEdgeIngestKey(
   facilityId: string,
+  organizationId: string,
 ): Promise<string> {
   const { randomBytes } = await import("node:crypto");
   const plaintext = randomBytes(32).toString("base64url");
   const hash = hashEdgeKey(plaintext);
   const hint = plaintext.slice(-4);
-  await withAdmin((client) =>
-    client.query(
+  const updated = await withAdmin(async (client) => {
+    const result = await client.query(
       `UPDATE public.facilities
-          SET edge_ingest_key_hash = $2, edge_ingest_key_hint = $3, edge_ingest_key_created_at = now()
-        WHERE id = $1`,
-      [facilityId, hash, hint],
-    ),
-  );
+          SET edge_ingest_key_hash = $3, edge_ingest_key_hint = $4, edge_ingest_key_created_at = now()
+        WHERE id = $1 AND organization_id = $2`,
+      [facilityId, organizationId, hash, hint],
+    );
+    return result.rowCount ?? 0;
+  });
+  if (updated === 0) {
+    throw new Error("Facility not found or not accessible.");
+  }
   return plaintext;
 }
 
@@ -219,7 +238,7 @@ export function createPgMachineEventStore(
   client: PoolClient,
 ): MachineEventStore {
   return {
-    async lookupByAssetId(assetId, facilityId) {
+    async lookupByAssetId(assetId, facilityId, organizationId) {
       const { rows } = await client.query<{
         id: string;
         organization_id: string;
@@ -228,8 +247,8 @@ export function createPgMachineEventStore(
       }>(
         `SELECT id, organization_id, facility_id, asset_id
            FROM public.shop_machines
-          WHERE asset_id = $1 AND facility_id = $2`,
-        [assetId, facilityId],
+          WHERE asset_id = $1 AND facility_id = $2 AND organization_id = $3`,
+        [assetId, facilityId, organizationId],
       );
       if (rows.length === 0) return "missing";
       if (rows.length > 1) return "ambiguous";
@@ -350,6 +369,7 @@ function mapStored(row: Record<string, unknown>): StoredMachineEvent {
 function toStored(
   event: MachineEvent,
   machine: ShopMachineRef,
+  tenant: AuthenticatedFacility,
   idleGapMinutes: number,
 ): StoredMachineEvent {
   return {
@@ -358,8 +378,8 @@ function toStored(
     source_system: event.source_system,
     machine_id: event.machine_id,
     shop_machine_id: machine.id,
-    organization_id: machine.organization_id,
-    facility_id: machine.facility_id,
+    organization_id: tenant.organizationId,
+    facility_id: tenant.facilityId,
     machine_serial: asText(event.machine_serial),
     controller_make: asText(event.controller_make),
     controller_model: asText(event.controller_model),
@@ -384,10 +404,20 @@ function toStored(
   };
 }
 
+function machineMatchesTenant(
+  machine: ShopMachineRef,
+  tenant: AuthenticatedFacility,
+): boolean {
+  return (
+    machine.facility_id === tenant.facilityId &&
+    machine.organization_id === tenant.organizationId
+  );
+}
+
 export async function ingestMachineEvents(
   events: MachineEvent[],
   store: MachineEventStore,
-  facilityId: string,
+  tenant: AuthenticatedFacility,
   idleGapMinutes: number,
 ): Promise<
   | { accepted: number; duplicates: number }
@@ -396,8 +426,15 @@ export async function ingestMachineEvents(
   const uniqueIds = [...new Set(events.map((e) => e.machine_id))];
   const machines = new Map<string, ShopMachineRef>();
   for (const assetId of uniqueIds) {
-    const found = await store.lookupByAssetId(assetId, facilityId);
-    if (found === "missing") {
+    const found = await store.lookupByAssetId(
+      assetId,
+      tenant.facilityId,
+      tenant.organizationId,
+    );
+    if (
+      found === "missing" ||
+      (found !== "ambiguous" && !machineMatchesTenant(found, tenant))
+    ) {
       return {
         error: "invalid payload",
         details: [`machine_id: unknown asset_id ${assetId}`],
@@ -416,14 +453,14 @@ export async function ingestMachineEvents(
   let duplicates = 0;
   for (const event of events) {
     const machine = machines.get(event.machine_id);
-    if (!machine) {
+    if (!machine || !machineMatchesTenant(machine, tenant)) {
       return {
         error: "invalid payload",
         details: [`machine_id: unknown asset_id ${event.machine_id}`],
       };
     }
     const result = await store.insertEvent(
-      toStored(event, machine, idleGapMinutes),
+      toStored(event, machine, tenant, idleGapMinutes),
     );
     if (result === "accepted") accepted += 1;
     else duplicates += 1;
@@ -496,7 +533,7 @@ export async function handleMachineEventsRequest(
       const result = await ingestMachineEvents(
         parsed.events,
         store,
-        facility.facilityId,
+        facility,
         idleGapMinutes,
       );
       if ("error" in result) {
