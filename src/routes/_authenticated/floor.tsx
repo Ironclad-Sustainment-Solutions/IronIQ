@@ -392,6 +392,59 @@ function EdgeSetupPanel({ facilityId }: { facilityId: string }) {
             ? "Generate new key"
             : "Generate edge ingest key"}
       </Button>
+
+      <div className="mt-4 border-t border-border pt-4">
+        <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          Download the Edge app
+        </p>
+        <p className="mt-1 text-xs text-muted-foreground">
+          A single file, no install required — copy it to any PC on the same
+          shop network as your MTConnect-capable machines and run it with the
+          key above.
+        </p>
+        <div className="mt-2 flex flex-wrap gap-2">
+          <a
+            href="/downloads/ironiq-edge-windows-amd64.exe"
+            download
+            className="rounded-md border border-border px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:border-primary/50 hover:bg-muted/20"
+          >
+            Windows (64-bit)
+          </a>
+          <a
+            href="/downloads/ironiq-edge-macos-arm64"
+            download
+            className="rounded-md border border-border px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:border-primary/50 hover:bg-muted/20"
+          >
+            macOS (Apple Silicon)
+          </a>
+          <a
+            href="/downloads/ironiq-edge-macos-amd64"
+            download
+            className="rounded-md border border-border px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:border-primary/50 hover:bg-muted/20"
+          >
+            macOS (Intel)
+          </a>
+          <a
+            href="/downloads/ironiq-edge-linux-amd64"
+            download
+            className="rounded-md border border-border px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:border-primary/50 hover:bg-muted/20"
+          >
+            Linux (64-bit)
+          </a>
+        </div>
+        <p className="mt-2 text-xs text-muted-foreground">
+          See the README bundled in{" "}
+          <a
+            href="https://github.com/Ironclad-Sustainment-Solutions/IronIQ/tree/main/edge"
+            target="_blank"
+            rel="noreferrer"
+            className="underline underline-offset-2 hover:text-foreground"
+          >
+            the edge/ source
+          </a>{" "}
+          for exact setup steps and config options.
+        </p>
+      </div>
     </Panel>
   );
 }
