@@ -42,6 +42,7 @@ function mapImprovement(row: Record<string, unknown>): ShopMachineImprovement {
     machine_asset_id:
       row.machine_asset_id == null ? null : String(row.machine_asset_id),
     machine_label: row.machine_label == null ? null : String(row.machine_label),
+    plant_name: row.plant_name == null ? null : String(row.plant_name),
   };
 }
 
@@ -75,10 +76,12 @@ const IMPROVEMENT_SELECT = `
          CASE
            WHEN m.id IS NULL THEN NULL
            ELSE m.asset_id || ' — ' || m.name
-         END AS machine_label
+         END AS machine_label,
+         f.name AS plant_name
     FROM public.shop_machine_improvements i
     JOIN public.shop_parts p ON p.id = i.part_id
     JOIN public.shop_machines m ON m.id = i.machine_id
+    JOIN public.facilities f ON f.id = i.plant_id
 `;
 
 const ListInput = z.object({
@@ -240,10 +243,9 @@ export const getMachineImprovementComparison = createServerFn({
       const query = eventQueryFromImprovement(improvement);
       if (!query) {
         const comparison: ImprovementComparison = {
-          status: "cannot_compute",
-          reason: "empty_window",
-          detail:
-            "No machine events in the before and/or after window, so before/after cannot be computed yet.",
+          status: "report",
+          before: { status: "empty" },
+          after: { status: "empty" },
         };
         return { improvement, comparison };
       }

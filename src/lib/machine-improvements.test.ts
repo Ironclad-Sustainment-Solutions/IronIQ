@@ -1,9 +1,16 @@
 import { describe, expect, it } from "vitest";
 import {
   CYCLE_END_EVENT_TYPE,
+  EMPTY_WINDOW_MESSAGE,
+  FIRST_PIECE_CANDIDATE_GAP_CLASS,
   SETUP_CANDIDATE_GAP_CLASS,
   computeImprovementBeforeAfter,
   eventsForImprovementWindow,
+  firstPieceLostHours,
+  formatHours,
+  formatHoursDelta,
+  hoursToMakePart,
+  setupLostHours,
   summarizeCaptureEvents,
   type MachineCaptureEvent,
 } from "./machine-improvements";
@@ -75,7 +82,7 @@ const afterCycleC = event({
 });
 
 describe("computeImprovementBeforeAfter", () => {
-  it("computes different before/after totals from ingest-shaped events around changed_at", () => {
+  it("computes different baseline vs after totals from ingest-shaped events", () => {
     const comparison = computeImprovementBeforeAfter(CHANGE, [
       beforeCycleA,
       beforeCycleB,
@@ -84,46 +91,54 @@ describe("computeImprovementBeforeAfter", () => {
       afterCycleB,
       afterCycleC,
     ]);
-    expect(comparison.status).toBe("computed");
-    if (comparison.status !== "computed") return;
-    expect(comparison.before).toEqual({
+    expect(comparison.status).toBe("report");
+    if (comparison.status !== "report") return;
+    expect(comparison.before.status).toBe("ok");
+    expect(comparison.after.status).toBe("ok");
+    if (comparison.before.status !== "ok" || comparison.after.status !== "ok") {
+      return;
+    }
+    expect(comparison.before.summary).toEqual({
       cycles: 2,
       cycle_time_s: 387.4,
       setup_candidate_idle_s: 960,
+      first_piece_candidate_idle_s: 0,
       event_count: 3,
     });
-    expect(comparison.after).toEqual({
+    expect(comparison.after.summary).toEqual({
       cycles: 3,
       cycle_time_s: 420,
       setup_candidate_idle_s: 180,
+      first_piece_candidate_idle_s: 0,
       event_count: 3,
     });
-    expect(comparison.after.cycles).not.toBe(comparison.before.cycles);
-    expect(comparison.after.cycle_time_s).not.toBe(
-      comparison.before.cycle_time_s,
+    expect(comparison.after.summary.cycles).not.toBe(
+      comparison.before.summary.cycles,
     );
-    expect(comparison.after.setup_candidate_idle_s).not.toBe(
-      comparison.before.setup_candidate_idle_s,
-    );
+    expect(hoursToMakePart(comparison.before.summary)).toBe(0.374);
+    expect(hoursToMakePart(comparison.after.summary)).toBe(0.167);
+    expect(formatHoursDelta(0.374, 0.167)).toBe("0.21 hours recovered");
+    expect(formatHoursDelta(0.167, 0.374)).toBe("0.21 hours worse");
   });
 
-  it("does not fake success when the events table is missing", () => {
+  it("does not fake zeros when the events table is missing", () => {
     const comparison = computeImprovementBeforeAfter(CHANGE, null);
     expect(comparison).toMatchObject({
-      status: "cannot_compute",
+      status: "unavailable",
       reason: "events_unavailable",
     });
   });
 
-  it("does not fake success when a window has no events", () => {
+  it("marks an empty window instead of inventing zeros", () => {
     const comparison = computeImprovementBeforeAfter(CHANGE, [
       beforeCycleA,
       beforeCycleB,
     ]);
-    expect(comparison).toMatchObject({
-      status: "cannot_compute",
-      reason: "empty_window",
-    });
+    expect(comparison.status).toBe("report");
+    if (comparison.status !== "report") return;
+    expect(comparison.before.status).toBe("ok");
+    expect(comparison.after).toEqual({ status: "empty" });
+    expect(EMPTY_WINDOW_MESSAGE).toBe("No events in this window yet.");
   });
 
   it("puts an event at changed_at in the after window, not before", () => {
@@ -189,6 +204,27 @@ describe("summarizeCaptureEvents", () => {
     expect(summary.cycles).toBe(2);
     expect(summary.cycle_time_s).toBe(387.4);
     expect(summary.setup_candidate_idle_s).toBe(960);
+    expect(hoursToMakePart(summary)).toBe(0.374);
+    expect(setupLostHours(summary)).toBe(0.267);
+    expect(formatHours(0.267)).toBe("0.27 hours");
+  });
+
+  it("tracks FIRST_PIECE_CANDIDATE idle separately when present", () => {
+    const summary = summarizeCaptureEvents([
+      beforeCycleA,
+      event({
+        ts_utc: "2026-08-15T09:30:00.000Z",
+        event_type: CYCLE_END_EVENT_TYPE,
+        cycle_seq: 42,
+        cycle_time_s: 50,
+        idle_since_prev_cycle_s: 720,
+        gap_class: FIRST_PIECE_CANDIDATE_GAP_CLASS,
+      }),
+    ]);
+    expect(summary.first_piece_candidate_idle_s).toBe(720);
+    expect(firstPieceLostHours(summary)).toBe(0.2);
+    expect(summary.setup_candidate_idle_s).toBe(0);
+    expect(hoursToMakePart(summary)).toBe(0.069);
   });
 
   it("does not treat SETUP_CANDIDATE or CYCLE as event_type", () => {
@@ -209,5 +245,6 @@ describe("summarizeCaptureEvents", () => {
     expect(summary.cycles).toBe(0);
     expect(summary.cycle_time_s).toBe(0);
     expect(summary.setup_candidate_idle_s).toBe(0);
+    expect(summary.first_piece_candidate_idle_s).toBe(0);
   });
 });

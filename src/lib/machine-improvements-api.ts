@@ -62,7 +62,7 @@ export function useCreateMachineImprovement(
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ["machine-improvements"] });
       void qc.invalidateQueries({ queryKey: ["shop-parts"] });
-      toast.success("Change saved");
+      toast.success("Baseline locked");
     },
     onError: (e) =>
       toast.error(e instanceof Error ? e.message : "Could not save change"),
