@@ -24,11 +24,11 @@ import {
 } from "@/components/ironiq/shop-machine-form";
 import {
   useCreateMachineRun,
+  useGenerateMachineBridgeApiKey,
   useImportMachineRunsCsv,
   useMachineLiveState,
   useMachineRuns,
   useShopMachine,
-  useSyncMachineMtconnect,
   useUpdateShopMachine,
 } from "@/lib/shop-floor-api";
 import {
@@ -64,7 +64,8 @@ function MachineDetailPage() {
   const logRun = useCreateMachineRun(machineId);
   const importCsv = useImportMachineRunsCsv(machineId);
   const liveState = useMachineLiveState(machineId).data ?? null;
-  const sync = useSyncMachineMtconnect(machineId);
+  const generateKey = useGenerateMachineBridgeApiKey(machineId);
+  const [revealedKey, setRevealedKey] = useState<string | null>(null);
   const [editing, setEditing] = useState(false);
   const [selectedPart, setSelectedPart] = useState<string>("all");
   const [runForm, setRunForm] = useState({
@@ -139,12 +140,12 @@ function MachineDetailPage() {
       </div>
 
       {machine.protocol === "mtconnect" ? (
-        <Panel title="MTConnect live sync">
+        <Panel title="MTConnect bridge agent">
           {machine.mtconnect_agent_url ? (
-            <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="space-y-4">
               <div className="text-sm text-muted-foreground">
                 <p>
-                  Agent:{" "}
+                  Local agent:{" "}
                   <span className="text-foreground">
                     {machine.mtconnect_agent_url}
                   </span>
@@ -154,27 +155,82 @@ function MachineDetailPage() {
                 </p>
                 {liveState?.last_polled_at ? (
                   <p className="mt-1">
-                    Last synced {formatDate(liveState.last_polled_at)} —{" "}
+                    Last received {formatDate(liveState.last_polled_at)} —{" "}
                     {liveState.last_execution ?? "unknown state"}
                     {liveState.last_part_count != null
                       ? ` · part count ${liveState.last_part_count}`
                       : ""}
                   </p>
                 ) : (
-                  <p className="mt-1">Never synced yet.</p>
+                  <p className="mt-1">No data received yet.</p>
                 )}
                 {liveState?.last_error ? (
                   <p className="mt-1 text-destructive">
-                    Last sync failed: {liveState.last_error}
+                    Last push failed: {liveState.last_error}
                   </p>
                 ) : null}
               </div>
-              <Button onClick={() => sync.mutate()} disabled={sync.isPending}>
-                {sync.isPending ? "Syncing…" : "Sync now"}
-              </Button>
+
+              <div className="rounded-md border border-border p-4">
+                <p className="text-sm font-medium text-foreground">
+                  This app runs in the cloud and can't reach a machine on your
+                  local network directly — a small bridge agent runs on any PC
+                  on the same network as the MTConnect agent and pushes readings
+                  out to IronIQ over HTTPS. It never needs an open inbound port.
+                </p>
+
+                {revealedKey ? (
+                  <div className="mt-3 rounded-md bg-muted p-3">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                      Bridge API key — copy it now, it won't be shown again
+                    </p>
+                    <code className="mt-1 block break-all text-sm text-foreground">
+                      {revealedKey}
+                    </code>
+                  </div>
+                ) : (
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    {machine.bridge_api_key_hint
+                      ? `Active key ends in …${machine.bridge_api_key_hint} (created ${
+                          machine.bridge_api_key_created_at
+                            ? formatDate(machine.bridge_api_key_created_at)
+                            : "recently"
+                        }). Generating a new one replaces it immediately.`
+                      : "No bridge API key yet — generate one to set up the bridge."}
+                  </p>
+                )}
+
+                <div className="mt-3 flex gap-2">
+                  <Button
+                    variant="outline"
+                    disabled={generateKey.isPending}
+                    onClick={() =>
+                      generateKey.mutate(undefined, {
+                        onSuccess: (result) => setRevealedKey(result.apiKey),
+                      })
+                    }
+                  >
+                    {generateKey.isPending
+                      ? "Generating…"
+                      : machine.bridge_api_key_hint
+                        ? "Generate new key"
+                        : "Generate bridge API key"}
+                  </Button>
+                </div>
+
+                {revealedKey ? (
+                  <pre className="mt-3 overflow-x-auto rounded-md bg-muted p-3 text-xs text-foreground">
+                    {`mtconnect-bridge \\
+  --agent-url ${machine.mtconnect_agent_url} \\
+  ${machine.mtconnect_device_name ? `--device "${machine.mtconnect_device_name}" \\\n  ` : ""}--machine-id ${machine.id} \\
+  --api-key ${revealedKey} \\
+  --ingest-url https://<your-ironiq-domain>/api/machines/${machine.id}/ingest`}
+                  </pre>
+                ) : null}
+              </div>
             </div>
           ) : (
-            <EmptyState message="Add an MTConnect agent URL under Edit to enable live sync." />
+            <EmptyState message="Add an MTConnect agent URL under Edit to set up the bridge agent." />
           )}
         </Panel>
       ) : null}

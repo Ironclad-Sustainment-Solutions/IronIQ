@@ -1,20 +1,20 @@
 /**
- * Facility-scoped shop-floor machines and manual/CSV run events, plus a
- * real MTConnect live sync (mtconnect-client.server.ts) -- no OPC-UA or
- * Fanuc FOCAS client, which need a binary protocol stack / vendor SDK
- * respectively rather than plain HTTP+XML.
+ * Facility-scoped shop-floor machines and manual/CSV run events. The
+ * live MTConnect connection is push-based -- see machine-ingest.server.ts
+ * for the actual protocol client + ingestion endpoint; this file only
+ * generates the bridge agent's API key and reads back the resulting
+ * live state, both real browser-session-authenticated actions.
  */
 
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireAuth } from "@/lib/auth/auth-middleware";
 import { withUser } from "@/lib/db.server";
-import { mtconnectCurrent } from "@/lib/mtconnect-client.server";
+import { generateBridgeApiKey } from "@/lib/machine-ingest.server";
 import {
   CONNECTION_STATUSES,
   MACHINE_CONTROLS,
   MACHINE_PROTOCOLS,
-  PROTOCOL_LABELS,
   parseRunCsv,
   type MachineRunEvent,
   type ShopMachine,
@@ -68,6 +68,12 @@ function mapMachine(row: Record<string, unknown>): ShopMachine {
         : String(row.mtconnect_device_name),
     current_part_number:
       row.current_part_number == null ? null : String(row.current_part_number),
+    bridge_api_key_hint:
+      row.bridge_api_key_hint == null ? null : String(row.bridge_api_key_hint),
+    bridge_api_key_created_at:
+      row.bridge_api_key_created_at == null
+        ? null
+        : asIso(row.bridge_api_key_created_at),
     created_at: asIso(row.created_at),
     updated_at: asIso(row.updated_at),
   };
@@ -230,181 +236,50 @@ export const deleteShopMachine = createServerFn({ method: "POST" })
     );
   });
 
-// ---- MTConnect live sync ----
+// ---- MTConnect live sync (push model) ----
 //
-// "Sync now" rather than a continuous background poller: this app has no
-// persistent worker process (TanStack Start on Render is request/response,
-// same reasoning already applied elsewhere in this codebase for why
-// there's no cron-style job scheduler). A user or an external scheduled
-// caller (e.g. a cron hitting this endpoint) triggers one poll at a time.
-//
-// Each sync reads the agent's /current snapshot and attributes the whole
-// elapsed time since the last sync to whatever state was JUST read --
-// a real simplification of point-sampling vs continuous streaming (MTConnect's
-// own /sample endpoint would let a future version attribute state changes
-// within the window instead of just the latest snapshot), but a
-// defensible, honestly-documented one for a periodic "sync now" model.
-const SyncMachineInput = z.object({ machineId: z.string().uuid() });
+// Previously "Sync now" had the cloud server fetch directly from
+// mtconnect_agent_url -- broken for any real deployment, since that's a
+// private LAN address on the customer's network, unreachable from
+// Render (or any cloud host) without exposing shop-floor control
+// equipment directly to the public internet, which no plant should
+// accept. Replaced with the standard pattern: a small on-prem bridge
+// agent polls the local MTConnect agent (same LAN, no firewall issue)
+// and pushes readings outbound to machine-ingest.server.ts's plain HTTP
+// endpoint. This file now only handles generating the bridge's API key
+// (a real, browser-session-authenticated action a logged-in user takes)
+// and reading back the resulting live state (unchanged -- still the
+// same shop_machine_live_state table, now written by pushes instead of
+// pulls).
+const MachineIdInput = z.object({ machineId: z.string().uuid() });
 
-// Never let one long gap between syncs (the pilot went a weekend without
-// clicking sync, a laptop was closed, etc.) get attributed entirely to
-// whatever state happened to be true at the moment of the next sync --
-// caps the single largest correctly-attributable window.
-const MAX_ATTRIBUTABLE_MINUTES = 24 * 60;
-
-export const syncMachineMtconnect = createServerFn({ method: "POST" })
+export const generateMachineBridgeApiKey = createServerFn({ method: "POST" })
   .middleware([requireAuth])
-  .inputValidator((d: unknown) => SyncMachineInput.parse(d))
+  .inputValidator((d: unknown) => MachineIdInput.parse(d))
   .handler(async ({ data, context }) => {
-    const machine = await withUser(context.userId, async (client) => {
+    // Confirm the caller actually has RLS-scoped access to this machine
+    // before generating a key for it -- withUser here, not withAdmin;
+    // generateBridgeApiKey itself runs as withAdmin internally (it has
+    // to, since it's also called from the unauthenticated ingest path
+    // indirectly through applyMtconnectReading's table access), but
+    // *deciding* to generate a new key for a specific machine is a
+    // browser-session action that must go through the normal
+    // authorization path first.
+    const owned = await withUser(context.userId, async (client) => {
       const { rows } = await client.query(
-        `SELECT * FROM public.shop_machines WHERE id = $1`,
+        "SELECT 1 FROM public.shop_machines WHERE id = $1",
         [data.machineId],
       );
-      return rows[0] ? mapMachine(rows[0] as Record<string, unknown>) : null;
+      return rows.length > 0;
     });
-    if (!machine) throw new Error("Machine not found or not accessible.");
-    if (machine.protocol !== "mtconnect") {
-      throw new Error(
-        `This machine is configured for "${PROTOCOL_LABELS[machine.protocol]}", not MTConnect.`,
-      );
-    }
-
-    const config = await withUser(context.userId, async (client) => {
-      const { rows } = await client.query<{
-        mtconnect_agent_url: string | null;
-        mtconnect_device_name: string | null;
-        current_part_number: string | null;
-      }>(
-        `SELECT mtconnect_agent_url, mtconnect_device_name, current_part_number
-           FROM public.shop_machines WHERE id = $1`,
-        [data.machineId],
-      );
-      return rows[0] ?? null;
-    });
-    if (!config?.mtconnect_agent_url) {
-      throw new Error(
-        "Set an MTConnect agent URL for this machine before syncing.",
-      );
-    }
-
-    const lastState = await withUser(context.userId, async (client) => {
-      const { rows } = await client.query<{
-        last_polled_at: string | null;
-        last_part_count: string | null;
-        last_part_number: string | null;
-      }>(
-        `SELECT last_polled_at, last_part_count, last_part_number
-           FROM public.shop_machine_live_state WHERE machine_id = $1`,
-        [data.machineId],
-      );
-      return rows[0] ?? null;
-    });
-
-    let reading;
-    try {
-      reading = await mtconnectCurrent(
-        config.mtconnect_agent_url,
-        config.mtconnect_device_name,
-      );
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      await withUser(context.userId, (client) =>
-        client.query(
-          `INSERT INTO public.shop_machine_live_state (machine_id, last_polled_at, last_error)
-           VALUES ($1, now(), $2)
-           ON CONFLICT (machine_id) DO UPDATE SET last_polled_at = now(), last_error = $2`,
-          [data.machineId, message],
-        ),
-      );
-      throw new Error(`MTConnect sync failed: ${message}`);
-    }
-
-    const now = new Date(reading.timestamp);
-    const lastPolledAt = lastState?.last_polled_at
-      ? new Date(lastState.last_polled_at)
-      : null;
-    const elapsedMinutes = lastPolledAt
-      ? Math.max(0, (now.getTime() - lastPolledAt.getTime()) / 60_000)
-      : 0;
-    const attributedMinutes = Math.min(
-      elapsedMinutes,
-      MAX_ATTRIBUTABLE_MINUTES,
-    );
-
-    const lastPartCount =
-      lastState?.last_part_count != null
-        ? Number(lastState.last_part_count)
-        : null;
-    const cyclesDelta =
-      lastPartCount != null && reading.partCount != null
-        ? Math.max(0, reading.partCount - lastPartCount)
-        : 0;
-
-    const partNumber =
-      reading.partNumber ||
-      config.current_part_number ||
-      lastState?.last_part_number ||
-      "unspecified";
-
-    // Only record a run event once there's a real prior poll to delta
-    // against -- the very first sync just establishes the baseline.
-    if (lastState?.last_polled_at) {
-      await withUser(context.userId, (client) =>
-        client.query(
-          `INSERT INTO public.shop_machine_run_events
-             (machine_id, organization_id, facility_id, occurred_at, part_number,
-              cycles, runtime_minutes, idle_minutes, downtime_minutes, source)
-           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,'live')`,
-          [
-            data.machineId,
-            machine.organization_id,
-            machine.facility_id,
-            reading.timestamp,
-            partNumber,
-            cyclesDelta,
-            reading.state === "active" ? attributedMinutes : 0,
-            reading.state === "idle" ? attributedMinutes : 0,
-            reading.state === "down" ? attributedMinutes : 0,
-          ],
-        ),
-      );
-    }
-
-    await withUser(context.userId, async (client) => {
-      await client.query(
-        `INSERT INTO public.shop_machine_live_state
-           (machine_id, last_polled_at, last_sequence, last_execution, last_part_count, last_part_number, last_error)
-         VALUES ($1, $2, $3, $4, $5, $6, NULL)
-         ON CONFLICT (machine_id) DO UPDATE
-           SET last_polled_at = $2, last_sequence = $3, last_execution = $4,
-               last_part_count = $5, last_part_number = $6, last_error = NULL`,
-        [
-          data.machineId,
-          reading.timestamp,
-          reading.sequence,
-          reading.rawExecution,
-          reading.partCount,
-          partNumber,
-        ],
-      );
-      await client.query(
-        `UPDATE public.shop_machines SET connection_status = 'live' WHERE id = $1`,
-        [data.machineId],
-      );
-    });
-
-    return {
-      reading,
-      recordedRunEvent: Boolean(lastState?.last_polled_at),
-      attributedMinutes: lastState?.last_polled_at ? attributedMinutes : 0,
-      cyclesDelta,
-    };
+    if (!owned) throw new Error("Machine not found or not accessible.");
+    const plaintext = await generateBridgeApiKey(data.machineId);
+    return { apiKey: plaintext };
   });
 
 export const getMachineLiveState = createServerFn({ method: "GET" })
   .middleware([requireAuth])
-  .inputValidator((d: unknown) => SyncMachineInput.parse(d))
+  .inputValidator((d: unknown) => MachineIdInput.parse(d))
   .handler(async ({ data, context }) => {
     return withUser(context.userId, async (client) => {
       const { rows } = await client.query(

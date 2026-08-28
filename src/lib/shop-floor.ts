@@ -73,6 +73,8 @@ export interface ShopMachine {
   mtconnect_agent_url: string | null;
   mtconnect_device_name: string | null;
   current_part_number: string | null;
+  bridge_api_key_hint: string | null;
+  bridge_api_key_created_at: string | null;
   created_at: string;
   updated_at: string;
 }

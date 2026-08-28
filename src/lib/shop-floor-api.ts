@@ -70,24 +70,21 @@ export function useMachineLiveState(machineId?: string | null) {
   });
 }
 
-export function useSyncMachineMtconnect(machineId?: string | null) {
+export function useGenerateMachineBridgeApiKey(machineId?: string | null) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: () =>
-      fn.syncMachineMtconnect({ data: { machineId: machineId as string } }),
-    onSuccess: (result) => {
+      fn.generateMachineBridgeApiKey({
+        data: { machineId: machineId as string },
+      }) as Promise<{ apiKey: string }>,
+    onSuccess: () => {
       void qc.invalidateQueries({ queryKey: ["shop-machine", machineId] });
-      void qc.invalidateQueries({ queryKey: ["shop-machine-runs", machineId] });
-      void qc.invalidateQueries({
-        queryKey: ["shop-machine-live-state", machineId],
-      });
       toast.success(
-        result.recordedRunEvent
-          ? `Synced — ${result.reading.state} (${Math.round(result.attributedMinutes)} min, +${result.cyclesDelta} parts)`
-          : "Synced — baseline established, run data starts from the next sync",
+        "New bridge API key generated — copy it now, it won't be shown again.",
       );
     },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Sync failed"),
+    onError: (e) =>
+      toast.error(e instanceof Error ? e.message : "Could not generate a key"),
   });
 }
 

@@ -2,6 +2,7 @@ import "./lib/error-capture";
 
 import { consumeLastCapturedError } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";
+import { tryHandleMachineIngest } from "./lib/machine-ingest.server";
 
 type ServerEntry = {
   fetch: (
@@ -58,6 +59,13 @@ function isH3SwallowedErrorBody(body: string): boolean {
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
     try {
+      // A real, plain HTTP+JSON endpoint for the MTConnect bridge agent --
+      // deliberately handled here, before TanStack Start's own routing,
+      // since it's not a server function and shouldn't go through
+      // TanStack's RPC machinery at all. See machine-ingest.server.ts for why.
+      const ingestResponse = await tryHandleMachineIngest(request);
+      if (ingestResponse) return ingestResponse;
+
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);
       return await normalizeCatastrophicSsrResponse(response);

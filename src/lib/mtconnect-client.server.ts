@@ -1,25 +1,21 @@
 /**
- * Real MTConnect (https://www.mtconnect.org/) client -- the only one of
- * shop_machine_protocol's three live options (mtconnect, opc_ua,
- * fanuc_focas) that's a plain HTTP+XML REST API with a public, stable
- * spec. OPC-UA needs a binary protocol client library and FOCAS needs
- * Fanuc's own vendor SDK; neither can be meaningfully built or tested
- * from a sandboxed dev environment with no access to real shop-floor
- * hardware. This talks the actual MTConnect protocol correctly: GET
- * .../probe to discover devices, GET .../current to read the latest
- * DataItem values.
+ * The MTConnect reading shape shared between the bridge agent's push
+ * payload (bridge/main.go's JSON body) and machine-ingest.server.ts's
+ * validation of it.
  *
- * Real MTConnect agents vary in exactly how they nest ComponentStreams
- * (by control vs path vs axes, differently per vendor), so rather than
- * hardcode a specific hierarchy, this searches every element under the
- * matched DeviceStream for the DataItem *types* it needs by local tag
- * name -- robust to structural differences between agent
- * implementations, at the cost of not distinguishing "which axis/path"
- * if a device reports more than one of the same type (uncommon for the
- * single-spindle machines this pilot targets).
+ * This file used to contain a real fetch-based MTConnect client
+ * (mtconnectProbe/mtconnectCurrent, calling out to an agent URL
+ * directly) for a cloud-pull design. That design was broken for any
+ * real deployment: the cloud server can't reach a private LAN address
+ * on a customer's network, which is where a real MTConnect agent lives.
+ * Replaced with a push model -- a small on-prem bridge agent
+ * (bridge/main.go, a Go port of the same parsing logic that used to
+ * live here) polls the local agent and pushes readings to
+ * machine-ingest.server.ts's plain HTTP endpoint instead. Only the
+ * shape of a reading is still shared code; the actual HTTP+XML client
+ * now lives in Go, not here, since nothing on the cloud side ever
+ * fetches an MTConnect agent directly anymore.
  */
-
-import { DOMParser } from "@xmldom/xmldom";
 
 export interface MTConnectCurrentReading {
   /** The device name actually matched in the response (for confirming setup). */
@@ -42,177 +38,4 @@ export interface MTConnectCurrentReading {
   partCount: number | null;
   /** Current part number/program identifier, if the agent reports one directly. */
   partNumber: string | null;
-}
-
-export interface MTConnectProbeResult {
-  devices: { name: string; uuid: string | null }[];
-}
-
-const EXECUTION_ACTIVE = new Set(["ACTIVE"]);
-const EXECUTION_IDLE = new Set([
-  "READY",
-  "STOPPED",
-  "PROGRAM_STOPPED",
-  "PROGRAM_COMPLETED",
-  "OPTIONAL_STOP",
-  "INTERRUPTED",
-  "FEED_HOLD",
-]);
-
-function stripTrailingSlash(url: string): string {
-  return url.endsWith("/") ? url.slice(0, -1) : url;
-}
-
-async function fetchXml(url: string, timeoutMs = 10_000): Promise<Document> {
-  const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), timeoutMs);
-  let response: Response;
-  try {
-    response = await fetch(url, { signal: controller.signal });
-  } catch (error) {
-    throw new Error(
-      `Could not reach MTConnect agent at ${url}: ${error instanceof Error ? error.message : String(error)}`,
-    );
-  } finally {
-    clearTimeout(timeout);
-  }
-  if (!response.ok) {
-    throw new Error(
-      `MTConnect agent at ${url} returned HTTP ${response.status}.`,
-    );
-  }
-  const text = await response.text();
-  const doc = new DOMParser({
-    errorHandler: {
-      warning: () => {},
-      error: (msg: string) => {
-        throw new Error(`MTConnect agent response wasn't valid XML: ${msg}`);
-      },
-      fatalError: (msg: string) => {
-        throw new Error(`MTConnect agent response wasn't valid XML: ${msg}`);
-      },
-    },
-  }).parseFromString(text, "text/xml");
-  return doc;
-}
-
-function findDeviceStream(doc: Document, deviceName?: string | null): Element {
-  const streams = doc.getElementsByTagName("DeviceStream");
-  if (streams.length === 0) {
-    throw new Error(
-      "MTConnect agent response had no DeviceStream -- is the device name correct?",
-    );
-  }
-  if (deviceName) {
-    for (let i = 0; i < streams.length; i++) {
-      const el = streams[i];
-      if (el.getAttribute("name") === deviceName) return el;
-    }
-    const available = Array.from({ length: streams.length }, (_, i) =>
-      streams[i].getAttribute("name"),
-    ).join(", ");
-    throw new Error(
-      `MTConnect agent doesn't have a device named "${deviceName}". Devices available: ${available}.`,
-    );
-  }
-  return streams[0];
-}
-
-function firstByTag(el: Element, tag: string): Element | null {
-  const found = el.getElementsByTagName(tag);
-  return found.length > 0 ? found[0] : null;
-}
-
-/** GET {agentUrl}/probe -- lists devices the agent knows about, for setup validation. */
-export async function mtconnectProbe(
-  agentUrl: string,
-): Promise<MTConnectProbeResult> {
-  const doc = await fetchXml(`${stripTrailingSlash(agentUrl)}/probe`);
-  const deviceEls = doc.getElementsByTagName("Device");
-  const devices: MTConnectProbeResult["devices"] = [];
-  for (let i = 0; i < deviceEls.length; i++) {
-    const el = deviceEls[i];
-    devices.push({
-      name: el.getAttribute("name") ?? "",
-      uuid: el.getAttribute("uuid"),
-    });
-  }
-  if (devices.length === 0) {
-    throw new Error("MTConnect agent's /probe response had no Device entries.");
-  }
-  return { devices };
-}
-
-/** GET {agentUrl}/current -- the latest value of every DataItem for the matched device. */
-export async function mtconnectCurrent(
-  agentUrl: string,
-  deviceName?: string | null,
-): Promise<MTConnectCurrentReading> {
-  const doc = await fetchXml(`${stripTrailingSlash(agentUrl)}/current`);
-
-  const header = doc.getElementsByTagName("Header")[0] ?? null;
-  const sequenceAttr =
-    header?.getAttribute("lastSequence") ??
-    header?.getAttribute("nextSequence");
-  const sequence = sequenceAttr ? Number(sequenceAttr) : null;
-
-  const deviceStream = findDeviceStream(doc, deviceName);
-  const resolvedName =
-    deviceStream.getAttribute("name") ?? deviceName ?? "unknown";
-
-  const executionEl = firstByTag(deviceStream, "Execution");
-  const availabilityEl = firstByTag(deviceStream, "Availability");
-  const partCountEl =
-    firstByTag(deviceStream, "PartCount") ??
-    firstByTag(deviceStream, "PartCountAct");
-  const partNumberEl =
-    firstByTag(deviceStream, "PartNumber") ??
-    firstByTag(deviceStream, "PartNumberAct");
-
-  const rawExecution = executionEl?.textContent?.trim() ?? null;
-  const rawAvailability = availabilityEl?.textContent?.trim() ?? null;
-
-  let state: MTConnectCurrentReading["state"];
-  if (rawExecution && EXECUTION_ACTIVE.has(rawExecution)) {
-    state = "active";
-  } else if (rawExecution && EXECUTION_IDLE.has(rawExecution)) {
-    state = "idle";
-  } else if (
-    rawExecution === "UNAVAILABLE" ||
-    rawAvailability === "UNAVAILABLE"
-  ) {
-    state = "down";
-  } else if (!rawExecution) {
-    // Neither Execution nor a recognized Availability value at all --
-    // the agent isn't telling us anything useful about machine state,
-    // treat as down rather than silently assuming idle.
-    state = "down";
-  } else {
-    // An Execution value that exists but isn't in either known set
-    // (agent-specific extension value) -- treat as idle rather than
-    // guessing it's actively cutting.
-    state = "idle";
-  }
-
-  const partCountRaw = partCountEl?.textContent?.trim();
-  const partCount =
-    partCountRaw && !Number.isNaN(Number(partCountRaw))
-      ? Number(partCountRaw)
-      : null;
-
-  const timestamp =
-    executionEl?.getAttribute("timestamp") ??
-    partCountEl?.getAttribute("timestamp") ??
-    header?.getAttribute("creationTime") ??
-    new Date().toISOString();
-
-  return {
-    deviceName: resolvedName,
-    sequence,
-    timestamp,
-    state,
-    rawExecution,
-    partCount,
-    partNumber: partNumberEl?.textContent?.trim() || null,
-  };
 }
