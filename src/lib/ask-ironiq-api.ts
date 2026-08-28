@@ -14,7 +14,8 @@ import {
   rejectIntelligencePattern,
 } from "@/lib/intelligence-review.functions";
 
-export type IntelligenceProductFilter = "assessment" | "cad" | "cnc";
+export type IntelligenceProductFilter =
+  "assessment" | "cad" | "cnc" | "machines";
 
 export interface AskIronIQPattern {
   id: string;
@@ -32,6 +33,7 @@ export interface AskIronIQResult {
   patterns: AskIronIQPattern[];
   usedExternalKnowledge: boolean;
   noMatchingPrecedent?: boolean;
+  usedLiveFloorSnapshot?: boolean;
 }
 
 export function useAskIronIQ() {
@@ -39,11 +41,17 @@ export function useAskIronIQ() {
     mutationFn: ({
       question,
       products,
+      organizationId,
+      facilityId,
     }: {
       question: string;
       products?: IntelligenceProductFilter[];
+      organizationId?: string;
+      facilityId?: string;
     }) =>
-      askIronIQ({ data: { question, products } }) as Promise<AskIronIQResult>,
+      askIronIQ({
+        data: { question, products, organizationId, facilityId },
+      }) as Promise<AskIronIQResult>,
     onError: (e) =>
       toast.error(e instanceof Error ? e.message : "Could not get an answer"),
   });

@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
+import { useApp } from "@/context/app-context";
 import {
   useAskIronIQ,
   type IntelligenceProductFilter,
@@ -41,20 +42,28 @@ const PRODUCT_LABELS: Record<IntelligenceProductFilter, string> = {
   assessment: "Assessments",
   cad: "CAD Conversion",
   cnc: "CNC Coding",
+  machines: "Machines",
 };
 
 const PRODUCT_TAG_TOKEN: Record<
   IntelligenceProductFilter,
-  "primary" | "steel" | "success"
+  "primary" | "steel" | "success" | "medium"
 > = {
   assessment: "primary",
   cad: "steel",
   cnc: "success",
+  machines: "medium",
 };
 
-const ALL_PRODUCTS: IntelligenceProductFilter[] = ["assessment", "cad", "cnc"];
+const ALL_PRODUCTS: IntelligenceProductFilter[] = [
+  "assessment",
+  "cad",
+  "cnc",
+  "machines",
+];
 
 function AskIronIQPage() {
+  const { organization, facility } = useApp();
   const [question, setQuestion] = useState("");
   const [selectedProducts, setSelectedProducts] =
     useState<IntelligenceProductFilter[]>(ALL_PRODUCTS);
@@ -100,7 +109,14 @@ function AskIronIQPage() {
             ))}
           </div>
           <Button
-            onClick={() => ask.mutate({ question, products: selectedProducts })}
+            onClick={() =>
+              ask.mutate({
+                question,
+                products: selectedProducts,
+                organizationId: organization?.id,
+                facilityId: facility?.id,
+              })
+            }
             disabled={
               ask.isPending || !question.trim() || selectedProducts.length === 0
             }
@@ -139,6 +155,19 @@ function AskIronIQPage() {
                   engagement history. This answer comes from Claude's general
                   knowledge instead, not from anything this app's clients have
                   actually done.
+                </p>
+              </div>
+            ) : null}
+            {ask.data.usedLiveFloorSnapshot ? (
+              <div className="flex items-start gap-2 rounded-md border border-medium/40 bg-medium/10 p-3">
+                <p className="text-xs text-foreground">
+                  <span className="font-semibold uppercase tracking-wide text-medium">
+                    Live shop-floor data —{" "}
+                  </span>
+                  no historical precedent matched, so this answer is grounded in
+                  your own organization's current machine states and recent
+                  cycle data instead — not a general pattern, and not another
+                  engagement's history.
                 </p>
               </div>
             ) : null}
