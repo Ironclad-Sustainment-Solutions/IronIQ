@@ -116,6 +116,9 @@ function MachineDetailPage() {
             <Button asChild variant="outline">
               <Link to="/machines">All machines</Link>
             </Button>
+            <Button asChild variant="outline">
+              <Link to="/machines/program-map">Program → part map</Link>
+            </Button>
             <Button variant="outline" onClick={() => setEditing((v) => !v)}>
               {editing ? "Close" : "Edit"}
             </Button>

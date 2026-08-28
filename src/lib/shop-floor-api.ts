@@ -1,6 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import * as fn from "@/lib/shop-floor.functions";
+import * as fnParts from "@/lib/machine-program-parts.functions";
+import type { MachineProgramPart } from "@/lib/machine-program-parts";
 import type {
   ConnectionStatus,
   MachineControl,
@@ -310,5 +312,78 @@ export function useSavePartOutcomeCard(
     },
     onError: (e) =>
       toast.error(e instanceof Error ? e.message : "Could not save part card"),
+  });
+}
+
+export function useMachineProgramParts(
+  organizationId?: string | null,
+  plantId?: string | null,
+) {
+  return useQuery({
+    queryKey: ["machine-program-parts", organizationId, plantId],
+    enabled: Boolean(organizationId && plantId),
+    queryFn: () =>
+      fnParts.listMachineProgramParts({
+        data: {
+          organizationId: organizationId as string,
+          plantId: plantId as string,
+        },
+      }) as Promise<MachineProgramPart[]>,
+  });
+}
+
+export function useSaveMachineProgramPart(
+  organizationId?: string | null,
+  plantId?: string | null,
+) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (input: {
+      id?: string;
+      programName: string;
+      partId: string;
+      validFrom: string;
+      validTo?: string | null;
+    }) => {
+      if (!organizationId || !plantId) {
+        throw new Error("Select an organization and facility first.");
+      }
+      return fnParts.saveMachineProgramPart({
+        data: { organizationId, plantId, ...input },
+      }) as Promise<MachineProgramPart>;
+    },
+    onSuccess: () => {
+      void qc.invalidateQueries({
+        queryKey: ["machine-program-parts", organizationId, plantId],
+      });
+      toast.success("Program map saved");
+    },
+    onError: (e) =>
+      toast.error(e instanceof Error ? e.message : "Could not save mapping"),
+  });
+}
+
+export function useDeleteMachineProgramPart(
+  organizationId?: string | null,
+  plantId?: string | null,
+) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => {
+      if (!organizationId) {
+        throw new Error("Select an organization first.");
+      }
+      return fnParts.deleteMachineProgramPart({
+        data: { id, organizationId },
+      });
+    },
+    onSuccess: () => {
+      void qc.invalidateQueries({
+        queryKey: ["machine-program-parts", organizationId, plantId],
+      });
+      toast.success("Mapping removed");
+    },
+    onError: (e) =>
+      toast.error(e instanceof Error ? e.message : "Could not remove mapping"),
   });
 }

@@ -163,6 +163,7 @@ const ORDERED_ADDITIONS = [
   "schema_additions_cad_conversion.sql",
   "schema_additions_cnc_change_log.sql",
   "schema_additions_shop_floor.sql",
+  "schema_additions_machine_program_parts.sql",
   "schema_additions_mtconnect_connector.sql",
   "schema_additions_machine_events.sql",
   "schema_additions_intelligence_layer.sql",

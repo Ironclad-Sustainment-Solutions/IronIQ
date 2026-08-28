@@ -10,6 +10,13 @@ function source(rel: string): string {
 }
 
 describe("public UI copy", () => {
+  it("does not leak internal filenames on public, sign-in, or home", () => {
+    const leak = /MIGRATION_PHASE2\.md|schema_additions_[a-z0-9_]+\.sql/;
+    expect(source("src/routes/index.tsx")).not.toMatch(leak);
+    expect(source("src/routes/auth.tsx")).not.toMatch(leak);
+    expect(source("src/routes/_authenticated/home.tsx")).not.toMatch(leak);
+  });
+
   it("does not leak internal filenames on the sign-in page", () => {
     const auth = source("src/routes/auth.tsx");
     expect(auth).not.toMatch(/MIGRATION_PHASE2\.md/);
