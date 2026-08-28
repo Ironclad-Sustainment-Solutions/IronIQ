@@ -517,3 +517,39 @@ BEGIN
 
   RAISE NOTICE 'Demo data expansion 2 complete: template assessments (finalized/in_progress/draft), responses, readiness history, cap_findings.';
 END $$;
+
+-- =====================================================================
+-- Haas UMC-750 shop-floor asset for edge ingest demos. Only if a demo
+-- facility already exists — do not invent a real customer org.
+-- capture_path on posted events is mtconnect; protocol here matches that
+-- without enabling poll-from-app (no MTConnect agent URL).
+-- =====================================================================
+
+DO $$
+DECLARE
+  v_org uuid;
+  v_fac uuid;
+BEGIN
+  SELECT f.organization_id, f.id
+    INTO v_org, v_fac
+    FROM public.facilities f
+    JOIN public.organizations o ON o.id = f.organization_id
+   WHERE o.name LIKE '[DEMO]%'
+   ORDER BY f.created_at
+   LIMIT 1;
+
+  IF v_org IS NULL OR v_fac IS NULL THEN
+    RAISE NOTICE 'No demo facility found — skipping Haas UMC-750 shop machine seed.';
+    RETURN;
+  END IF;
+
+  INSERT INTO public.shop_machines (
+    organization_id, facility_id, asset_id, name, make, model, control, protocol
+  )
+  SELECT v_org, v_fac, 'MC-UMC750-01', 'Haas UMC-750', 'Haas', 'UMC-750', 'haas', 'mtconnect'
+   WHERE NOT EXISTS (
+     SELECT 1 FROM public.shop_machines WHERE asset_id = 'MC-UMC750-01'
+   );
+
+  RAISE NOTICE 'Demo shop machine MC-UMC750-01 (Haas UMC-750) seeded for facility %.', v_fac;
+END $$;

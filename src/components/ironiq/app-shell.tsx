@@ -1,6 +1,7 @@
 import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
 import {
   LayoutDashboard,
+  LayoutGrid,
   Building2,
   Factory,
   ClipboardCheck,
@@ -27,6 +28,7 @@ import {
   Compass,
   Home,
   Handshake,
+  Package,
 } from "lucide-react";
 import { useState, type ReactNode } from "react";
 import { IronIQMark } from "@/components/ironiq/ironiq-mark";
@@ -61,13 +63,14 @@ import {
 // section below. This is the actual fix for products reading as "blended
 // in with everything else": size, weight, and position now signal these
 // are THE things this app does, not more entries in one flat list of
-// equal-looking sections. Four pipelines as of Machines' addition
-// (Machines, Assessments, CAD Conversion, CNC Coding) -- was three
-// before that. Intelligence (Ask IronIQ) lives here too, at the same
-// visual tier, but isn't itself one of the pipeline count above: it's
-// the shared layer built ON TOP of the product pipelines, closer in
-// kind to them than to Setup or Administration, not a pipeline of its
-// own with a start/end like the others.
+// equal-looking sections. Five pipelines as of IronIQ Edge's addition
+// (Machines, IronIQ Edge, Assessments, CAD Conversion, CNC Coding) --
+// was four with just Machines, three before that. Intelligence (Ask
+// IronIQ) lives here too, at the same visual tier, but isn't itself one
+// of the pipeline count above: it's the shared layer built ON TOP of the
+// product pipelines, closer in kind to them than to Setup or
+// Administration, not a pipeline of its own with a start/end like the
+// others.
 const HOME_ITEM = { to: "/home", label: "Home", icon: Home };
 
 const PRODUCT_NAV: {
@@ -82,7 +85,29 @@ const PRODUCT_NAV: {
 }[] = [
   {
     section: "Machines",
+    groupIcon: Factory,
     items: [{ to: "/machines", label: "Machines", icon: Factory }],
+  },
+  {
+    // IronIQ Edge: real-time, event-driven shop-floor monitoring fed by
+    // edge-pushed machine events (/api/ironiq/v1/machine-events) --
+    // genuinely distinct from Machines (a static asset/machine master
+    // with manual/CSV/MTConnect-pull data entry). Floor view, part
+    // lookup, and improvement tracking all read from the same
+    // shop_machine_events stream, which is enough of its own coherent
+    // product surface to be a fifth co-equal pipeline here rather than
+    // three extra tabs bolted onto Machines.
+    section: "IronIQ Edge",
+    groupIcon: LayoutGrid,
+    items: [
+      { to: "/floor", label: "Floor View", icon: LayoutGrid },
+      { to: "/machines/parts", label: "Parts", icon: Package },
+      {
+        to: "/machines/improvements",
+        label: "Improvements",
+        icon: TrendingUp,
+      },
+    ],
   },
   {
     // Assessment stays in the sidebar for shops that still use it, but
@@ -236,7 +261,13 @@ const SECTION_TO_PRODUCT: Record<string, RestrictableProduct> = {
 };
 
 function isItemActive(pathname: string, to: string): boolean {
-  return pathname === to || pathname.startsWith(`${to}/`);
+  if (pathname === to) return true;
+  if (!pathname.startsWith(`${to}/`)) return false;
+  // `/machines` would otherwise also match `/machines/parts`.
+  if (to === "/machines" && pathname.startsWith("/machines/parts")) {
+    return false;
+  }
+  return true;
 }
 
 export function AppShell({ children }: { children: ReactNode }) {

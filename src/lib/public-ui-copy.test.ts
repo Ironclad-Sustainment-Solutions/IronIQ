@@ -10,6 +10,13 @@ function source(rel: string): string {
 }
 
 describe("public UI copy", () => {
+  it("does not leak internal filenames on public, sign-in, or home", () => {
+    const leak = /MIGRATION_PHASE2\.md|schema_additions_[a-z0-9_]+\.sql/;
+    expect(source("src/routes/index.tsx")).not.toMatch(leak);
+    expect(source("src/routes/auth.tsx")).not.toMatch(leak);
+    expect(source("src/routes/_authenticated/home.tsx")).not.toMatch(leak);
+  });
+
   it("does not leak internal filenames on the sign-in page", () => {
     const auth = source("src/routes/auth.tsx");
     expect(auth).not.toMatch(/MIGRATION_PHASE2\.md/);
@@ -26,5 +33,38 @@ describe("public UI copy", () => {
     expect(firstLabel?.[1]).toBe("Machines");
     expect(home).toContain('to: "/machines"');
     expect(home).not.toContain('to: "/assessment"');
+  });
+
+  it("does not put the edge ingest secret or schema filenames on public/auth/home", () => {
+    const auth = source("src/routes/auth.tsx");
+    const home = source("src/routes/_authenticated/home.tsx");
+    const index = source("src/routes/index.tsx");
+    for (const page of [auth, home, index]) {
+      expect(page).not.toMatch(/IRONIQ_EDGE_INGEST_SECRET/);
+      expect(page).not.toMatch(/schema_additions_machine_events/);
+    }
+  });
+
+  it("does not leak internal filenames on home, auth, or Floor View", () => {
+    for (const rel of [
+      "src/routes/auth.tsx",
+      "src/routes/_authenticated/home.tsx",
+      "src/routes/_authenticated/floor.tsx",
+    ]) {
+      const text = source(rel);
+      expect(text).not.toMatch(/MIGRATION_PHASE2\.md/);
+      expect(text).not.toMatch(/schema_additions_[a-z0-9_]+\.sql/);
+    }
+  });
+
+  it("gives IronIQ Edge (Floor View, Parts, Improvements) its own nav section, separate from Machines", () => {
+    const shell = source("src/components/ironiq/app-shell.tsx");
+    expect(shell).toContain('to: "/machines"');
+    expect(shell).toContain('section: "IronIQ Edge"');
+    expect(shell).toContain('label: "Floor View"');
+    expect(shell).toContain('to: "/floor"');
+    expect(source("src/routes/_authenticated/machines/index.tsx")).toContain(
+      "Machine master",
+    );
   });
 });
