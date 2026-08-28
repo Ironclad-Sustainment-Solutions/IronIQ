@@ -9,8 +9,8 @@ import {
 } from "./machine-event";
 import {
   bearerTokenFromRequest,
+  createMemoryFacilityAuthStore,
   createMemoryMachineEventStore,
-  edgeSecretMatches,
   handleMachineEventsRequest,
 } from "./machine-event-ingest.server";
 
@@ -20,14 +20,23 @@ const sample = JSON.parse(
   readFileSync(join(root, "samples/iss-machine-event-v1.json"), "utf8"),
 ) as Record<string, unknown>;
 
-const EDGE_SECRET = "test-edge-secret-not-for-production";
+const EDGE_KEY = "test-facility-edge-key-not-for-production";
+const FACILITY_ID = "33333333-3333-3333-3333-333333333333";
+const ORG_ID = "22222222-2222-2222-2222-222222222222";
+const OTHER_FACILITY_ID = "44444444-4444-4444-4444-444444444444";
 
 const demoMachine = {
   id: "11111111-1111-1111-1111-111111111111",
-  organization_id: "22222222-2222-2222-2222-222222222222",
-  facility_id: "33333333-3333-3333-3333-333333333333",
+  organization_id: ORG_ID,
+  facility_id: FACILITY_ID,
   asset_id: "MC-UMC750-01",
 };
+
+function facilityAuth() {
+  return createMemoryFacilityAuthStore([
+    { key: EDGE_KEY, facilityId: FACILITY_ID, organizationId: ORG_ID },
+  ]);
+}
 
 function postRequest(
   body: unknown,
@@ -41,7 +50,7 @@ function postRequest(
 }
 
 function authorizedPost(body: unknown): Request {
-  return postRequest(body, { authorization: `Bearer ${EDGE_SECRET}` });
+  return postRequest(body, { authorization: `Bearer ${EDGE_KEY}` });
 }
 
 async function ingest(body: unknown, extra?: RequestInit) {
@@ -52,7 +61,7 @@ async function ingest(body: unknown, extra?: RequestInit) {
       : new Request("http://ironiq.test/api/ironiq/v1/machine-events", extra);
   const response = await handleMachineEventsRequest(request, {
     store,
-    edgeSecret: EDGE_SECRET,
+    facilityAuth: facilityAuth(),
     idleGapMinutes: DEFAULT_IDLE_GAP_MINUTES,
   });
   return { response, store, json: await response.json() };
@@ -110,13 +119,18 @@ describe("resolveGapClass", () => {
 });
 
 describe("edge ingest auth", () => {
-  it("compares secrets timing-safe and ignores query params", () => {
-    expect(edgeSecretMatches(EDGE_SECRET, EDGE_SECRET)).toBe(true);
-    expect(edgeSecretMatches("nope", EDGE_SECRET)).toBe(false);
-    expect(edgeSecretMatches(null, EDGE_SECRET)).toBe(false);
-    expect(edgeSecretMatches(EDGE_SECRET, "")).toBe(false);
+  it("resolves a facility from its own key, and only its own key", async () => {
+    const auth = facilityAuth();
+    expect(await auth.resolveFacilityByEdgeKey(EDGE_KEY)).toEqual({
+      facilityId: FACILITY_ID,
+      organizationId: ORG_ID,
+    });
+    expect(await auth.resolveFacilityByEdgeKey("wrong-key")).toBeNull();
+  });
+
+  it("never reads a credential from query params, only the Authorization header", () => {
     const request = new Request(
-      `http://ironiq.test/api/ironiq/v1/machine-events?secret=${EDGE_SECRET}`,
+      `http://ironiq.test/api/ironiq/v1/machine-events?secret=${EDGE_KEY}`,
       { method: "POST" },
     );
     expect(bearerTokenFromRequest(request)).toBeNull();
@@ -144,11 +158,11 @@ describe("POST /api/ironiq/v1/machine-events", () => {
     const store = createMemoryMachineEventStore([demoMachine]);
     const first = await handleMachineEventsRequest(authorizedPost(sample), {
       store,
-      edgeSecret: EDGE_SECRET,
+      facilityAuth: facilityAuth(),
     });
     const second = await handleMachineEventsRequest(authorizedPost(sample), {
       store,
-      edgeSecret: EDGE_SECRET,
+      facilityAuth: facilityAuth(),
     });
     expect(first.status).toBe(202);
     expect(await first.json()).toEqual({ accepted: 1, duplicates: 0 });
@@ -176,26 +190,46 @@ describe("POST /api/ironiq/v1/machine-events", () => {
     expect(await store.listByMachineId("NO-SUCH-ASSET")).toHaveLength(0);
   });
 
+  it("returns 400 (not 202, not a data leak) when the asset_id belongs to a DIFFERENT facility than the authenticated key", async () => {
+    // The core security property this whole redesign exists for: a
+    // facility's edge key must never be able to touch another
+    // facility's machine, even one that genuinely exists on the
+    // platform. Confirmed indistinguishable from "doesn't exist" --
+    // the error message doesn't reveal that MC-UMC750-01 exists
+    // somewhere else.
+    const store = createMemoryMachineEventStore([
+      { ...demoMachine, facility_id: OTHER_FACILITY_ID },
+    ]);
+    const response = await handleMachineEventsRequest(authorizedPost(sample), {
+      store,
+      facilityAuth: facilityAuth(),
+    });
+    const json = await response.json();
+    expect(response.status).toBe(400);
+    expect(json.details[0]).toBe("machine_id: unknown asset_id MC-UMC750-01");
+    expect(await store.listByMachineId("MC-UMC750-01")).toHaveLength(0);
+  });
+
   it("does not return 202 when unauthorized", async () => {
     const store = createMemoryMachineEventStore([demoMachine]);
     const missing = await handleMachineEventsRequest(postRequest(sample), {
       store,
-      edgeSecret: EDGE_SECRET,
+      facilityAuth: facilityAuth(),
     });
     const wrong = await handleMachineEventsRequest(
-      postRequest(sample, { authorization: "Bearer wrong-secret" }),
-      { store, edgeSecret: EDGE_SECRET },
+      postRequest(sample, { authorization: "Bearer wrong-key" }),
+      { store, facilityAuth: facilityAuth() },
     );
     const queryOnly = await handleMachineEventsRequest(
       new Request(
-        `http://ironiq.test/api/ironiq/v1/machine-events?token=${EDGE_SECRET}`,
+        `http://ironiq.test/api/ironiq/v1/machine-events?token=${EDGE_KEY}`,
         {
           method: "POST",
           headers: { "content-type": "application/json" },
           body: JSON.stringify(sample),
         },
       ),
-      { store, edgeSecret: EDGE_SECRET },
+      { store, facilityAuth: facilityAuth() },
     );
     expect(missing.status).not.toBe(202);
     expect(wrong.status).not.toBe(202);

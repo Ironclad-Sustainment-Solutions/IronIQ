@@ -1,13 +1,30 @@
 /**
  * Trusted-writer ingest for iss.machine_event.v1 from an IronIQ Edge box.
  *
- * Real HTTP handler (not a cookie-session serverFn). Auth is a dedicated
- * edge ingest secret compared timing-safe; not a query param and not a
- * CSRF hole in session auth. CSRF middleware still applies only to
- * serverFns (src/start.ts).
+ * Real HTTP handler (not a cookie-session serverFn). CSRF middleware
+ * still applies only to serverFns (src/start.ts).
+ *
+ * Auth is per-facility, not a single global secret. The original design
+ * authenticated every edge device with one shared IRONIQ_EDGE_INGEST_SECRET
+ * and looked machines up platform-wide (`WHERE asset_id = $1`, no
+ * organization/facility scoping at all) -- with one secret and an
+ * unscoped lookup, anyone holding that secret could push fabricated
+ * events for ANY customer's machine, not just their own, just by
+ * knowing (or guessing) an asset_id. Fine for a single-customer pilot,
+ * not safe once a second machine shop starts using this endpoint.
+ *
+ * Fixed at the facility level: a real edge deployment is one box at one
+ * customer plant, reporting on potentially many machines there in a
+ * single batched request (this endpoint already accepts up to 100
+ * events per POST) -- per-machine credentials would fight that design,
+ * per-facility credentials match it directly. The bearer token is
+ * hashed (SHA-256) and looked up against facilities.edge_ingest_key_hash
+ * (an indexed exact match, not a loop-and-compare); the resolved
+ * facility then scopes every machine lookup in the request, so a given
+ * edge box can only ever write events for its own plant's machines.
  */
 
-import { timingSafeEqual } from "node:crypto";
+import { createHash } from "node:crypto";
 import type { PoolClient } from "pg";
 import { withAdmin } from "@/lib/db.server";
 import {
@@ -57,15 +74,29 @@ export interface StoredMachineEvent {
 
 export type MachineLookup = "missing" | "ambiguous" | ShopMachineRef;
 
+export interface AuthenticatedFacility {
+  facilityId: string;
+  organizationId: string;
+}
+
 export interface MachineEventStore {
-  lookupByAssetId(assetId: string): Promise<MachineLookup>;
+  // facilityId scopes the lookup to the authenticated edge box's own
+  // plant -- an asset_id that exists but belongs to a different
+  // facility is indistinguishable from "missing" here, deliberately:
+  // the caller should never learn that a given asset_id exists
+  // somewhere else on the platform.
+  lookupByAssetId(assetId: string, facilityId: string): Promise<MachineLookup>;
   insertEvent(row: StoredMachineEvent): Promise<"accepted" | "duplicate">;
   listByMachineId(machineId: string): Promise<StoredMachineEvent[]>;
 }
 
+export interface FacilityAuthStore {
+  resolveFacilityByEdgeKey(providedKey: string): Promise<AuthenticatedFacility | null>;
+}
+
 export interface HandleMachineEventsOptions {
   store?: MachineEventStore;
-  edgeSecret?: string | undefined;
+  facilityAuth?: FacilityAuthStore;
   idleGapMinutes?: number;
 }
 
@@ -100,8 +131,10 @@ export function createMemoryMachineEventStore(
 ): MachineEventStore {
   const rows: StoredMachineEvent[] = [];
   return {
-    async lookupByAssetId(assetId) {
-      const matches = machines.filter((m) => m.asset_id === assetId);
+    async lookupByAssetId(assetId, facilityId) {
+      const matches = machines.filter(
+        (m) => m.asset_id === assetId && m.facility_id === facilityId,
+      );
       if (matches.length === 0) return "missing";
       if (matches.length > 1) return "ambiguous";
       return matches[0];
@@ -120,11 +153,58 @@ export function createMemoryMachineEventStore(
   };
 }
 
+/** Test/dev helper mirroring createMemoryMachineEventStore's shape for facility auth. */
+export function createMemoryFacilityAuthStore(
+  facilities: { key: string; facilityId: string; organizationId: string }[],
+): FacilityAuthStore {
+  return {
+    async resolveFacilityByEdgeKey(providedKey) {
+      const match = facilities.find((f) => f.key === providedKey);
+      if (!match) return null;
+      return { facilityId: match.facilityId, organizationId: match.organizationId };
+    },
+  };
+}
+
+function hashEdgeKey(key: string): string {
+  return createHash("sha256").update(key).digest("hex");
+}
+
+export function createPgFacilityAuthStore(client: PoolClient): FacilityAuthStore {
+  return {
+    async resolveFacilityByEdgeKey(providedKey) {
+      const { rows } = await client.query<{ id: string; organization_id: string }>(
+        `SELECT id, organization_id FROM public.facilities WHERE edge_ingest_key_hash = $1`,
+        [hashEdgeKey(providedKey)],
+      );
+      if (rows.length !== 1) return null;
+      return { facilityId: String(rows[0].id), organizationId: String(rows[0].organization_id) };
+    },
+  };
+}
+
+/** Generates a new edge ingest key for a facility. Returns the plaintext once -- never stored, never retrievable again. */
+export async function generateFacilityEdgeIngestKey(facilityId: string): Promise<string> {
+  const { randomBytes } = await import("node:crypto");
+  const plaintext = randomBytes(32).toString("base64url");
+  const hash = hashEdgeKey(plaintext);
+  const hint = plaintext.slice(-4);
+  await withAdmin((client) =>
+    client.query(
+      `UPDATE public.facilities
+          SET edge_ingest_key_hash = $2, edge_ingest_key_hint = $3, edge_ingest_key_created_at = now()
+        WHERE id = $1`,
+      [facilityId, hash, hint],
+    ),
+  );
+  return plaintext;
+}
+
 export function createPgMachineEventStore(
   client: PoolClient,
 ): MachineEventStore {
   return {
-    async lookupByAssetId(assetId) {
+    async lookupByAssetId(assetId, facilityId) {
       const { rows } = await client.query<{
         id: string;
         organization_id: string;
@@ -133,8 +213,8 @@ export function createPgMachineEventStore(
       }>(
         `SELECT id, organization_id, facility_id, asset_id
            FROM public.shop_machines
-          WHERE asset_id = $1`,
-        [assetId],
+          WHERE asset_id = $1 AND facility_id = $2`,
+        [assetId, facilityId],
       );
       if (rows.length === 0) return "missing";
       if (rows.length > 1) return "ambiguous";
@@ -289,39 +369,10 @@ function toStored(
   };
 }
 
-/**
- * Timing-safe compare of the configured edge secret against the Bearer
- * token. Length mismatch is padded so crypto.timingSafeEqual always runs.
- * Query parameters are never read.
- */
-export function bearerTokenFromRequest(request: Request): string | null {
-  const header = request.headers.get("authorization");
-  if (!header) return null;
-  const match = /^Bearer\s+(\S+)/i.exec(header.trim());
-  return match?.[1] ?? null;
-}
-
-export function edgeSecretMatches(
-  provided: string | null,
-  expected: string | undefined,
-): boolean {
-  if (!expected || expected.length === 0 || provided == null) {
-    return false;
-  }
-  const a = Buffer.from(provided);
-  const b = Buffer.from(expected);
-  const len = Math.max(a.length, b.length);
-  const paddedA = Buffer.alloc(len);
-  const paddedB = Buffer.alloc(len);
-  a.copy(paddedA);
-  b.copy(paddedB);
-  const sameLength = a.length === b.length;
-  return timingSafeEqual(paddedA, paddedB) && sameLength;
-}
-
 export async function ingestMachineEvents(
   events: MachineEvent[],
   store: MachineEventStore,
+  facilityId: string,
   idleGapMinutes: number,
 ): Promise<
   | { accepted: number; duplicates: number }
@@ -330,7 +381,7 @@ export async function ingestMachineEvents(
   const uniqueIds = [...new Set(events.map((e) => e.machine_id))];
   const machines = new Map<string, ShopMachineRef>();
   for (const assetId of uniqueIds) {
-    const found = await store.lookupByAssetId(assetId);
+    const found = await store.lookupByAssetId(assetId, facilityId);
     if (found === "missing") {
       return {
         error: "invalid payload",
@@ -365,6 +416,14 @@ export async function ingestMachineEvents(
   return { accepted, duplicates };
 }
 
+/** Extracts the bearer token from an Authorization header. Never reads query params -- a credential in a URL ends up in logs/history/referrers. */
+export function bearerTokenFromRequest(request: Request): string | null {
+  const header = request.headers.get("authorization");
+  if (!header) return null;
+  const match = /^Bearer\s+(\S+)/i.exec(header.trim());
+  return match?.[1] ?? null;
+}
+
 export async function handleMachineEventsRequest(
   request: Request,
   options: HandleMachineEventsOptions = {},
@@ -373,9 +432,8 @@ export async function handleMachineEventsRequest(
     return jsonResponse(405, { error: "method not allowed" });
   }
 
-  const expected = options.edgeSecret ?? process.env.IRONIQ_EDGE_INGEST_SECRET;
   const provided = bearerTokenFromRequest(request);
-  if (!edgeSecretMatches(provided, expected)) {
+  if (!provided) {
     return jsonResponse(401, { error: "Unauthorized" });
   }
 
@@ -402,10 +460,18 @@ export async function handleMachineEventsRequest(
     idleGapMinutesFromEnv(process.env.IRONIQ_IDLE_GAP_MINUTES);
 
   try {
-    const run = async (store: MachineEventStore) => {
+    const run = async (
+      store: MachineEventStore,
+      facilityAuth: FacilityAuthStore,
+    ) => {
+      const facility = await facilityAuth.resolveFacilityByEdgeKey(provided);
+      if (!facility) {
+        return jsonResponse(401, { error: "Unauthorized" });
+      }
       const result = await ingestMachineEvents(
         parsed.events,
         store,
+        facility.facilityId,
         idleGapMinutes,
       );
       if ("error" in result) {
@@ -414,10 +480,12 @@ export async function handleMachineEventsRequest(
       return jsonResponse(202, result);
     };
 
-    if (options.store) {
-      return await run(options.store);
+    if (options.store && options.facilityAuth) {
+      return await run(options.store, options.facilityAuth);
     }
-    return await withAdmin((client) => run(createPgMachineEventStore(client)));
+    return await withAdmin((client) =>
+      run(createPgMachineEventStore(client), createPgFacilityAuthStore(client)),
+    );
   } catch (error) {
     console.error(error);
     return jsonResponse(500, { error: "internal error" });

@@ -4,6 +4,7 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { DEFAULT_IDLE_GAP_MINUTES } from "./machine-event";
 import {
+  createMemoryFacilityAuthStore,
   createMemoryMachineEventStore,
   handleMachineEventsRequest,
   type StoredMachineEvent,
@@ -11,14 +12,14 @@ import {
 
 /**
  * Grede V1 capture-coverage: POST iss.machine_event.v1 through the same
- * handler and edge-secret auth as POST /api/ironiq/v1/machine-events,
- * then read stored rows back. Asserts Matt's six plus alarm/heartbeat/
- * capture_path/plant_id/quality/control_mode are persisted with the
- * posted values.
+ * handler and per-facility edge-key auth as POST
+ * /api/ironiq/v1/machine-events, then read stored rows back. Asserts
+ * Matt's six plus alarm/heartbeat/capture_path/plant_id/quality/
+ * control_mode are persisted with the posted values.
  */
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "../..");
-const EDGE_SECRET = "test-edge-secret-not-for-production";
+const EDGE_KEY = "test-facility-edge-key-not-for-production";
 
 const demoMachine = {
   id: "11111111-1111-1111-1111-111111111111",
@@ -26,6 +27,16 @@ const demoMachine = {
   facility_id: "33333333-3333-3333-3333-333333333333",
   asset_id: "MC-UMC750-01",
 };
+
+function facilityAuth() {
+  return createMemoryFacilityAuthStore([
+    {
+      key: EDGE_KEY,
+      facilityId: demoMachine.facility_id,
+      organizationId: demoMachine.organization_id,
+    },
+  ]);
+}
 
 const shared = {
   schema: "iss.machine_event.v1",
@@ -131,10 +142,10 @@ async function postAuthorized(
   body: unknown,
 ) {
   const response = await handleMachineEventsRequest(
-    post(body, `Bearer ${EDGE_SECRET}`),
+    post(body, `Bearer ${EDGE_KEY}`),
     {
       store,
-      edgeSecret: EDGE_SECRET,
+      facilityAuth: facilityAuth(),
       idleGapMinutes: DEFAULT_IDLE_GAP_MINUTES,
     },
   );
@@ -195,7 +206,7 @@ describe("Grede V1 capture coverage", () => {
 
     const unauthorized = await handleMachineEventsRequest(post(cycleEnd), {
       store,
-      edgeSecret: EDGE_SECRET,
+      facilityAuth: facilityAuth(),
     });
     expect(unauthorized.status).not.toBe(202);
     expect(unauthorized.status).toBe(401);
