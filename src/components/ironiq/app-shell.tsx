@@ -132,10 +132,9 @@ const PRODUCT_NAV: {
   },
 ];
 
-// Its own labeled section, separate from PRODUCT_NAV and positioned
-// toward the bottom of the nav (after Setup/Administration/Reporting,
-// still before the genuinely-not-built-yet Coming Soon section) --
-// per direct feedback, IronIQ Edge doesn't belong as a peer of
+// Its own labeled section, separate from PRODUCT_NAV, positioned
+// directly after Products and before Business Development -- per direct
+// feedback, IronIQ Edge doesn't belong as a peer of
 // Machines/Assessments/CAD/CNC. It belongs with Ask IronIQ instead: both
 // are cross-cutting capabilities that sit on top of / alongside the core
 // product pipelines rather than being one themselves -- Edge feeds
@@ -144,7 +143,10 @@ const PRODUCT_NAV: {
 // way Machines/Assessments/CAD/CNC are. Still rendered at the same
 // visual tier as Products (tier="product"), not demoted to
 // Setup/Administration's quieter styling -- this is live, working
-// capability, not app configuration.
+// capability, not app configuration. (Position within the nav has moved
+// twice on direct feedback: first alongside Products as a sixth peer,
+// then to the very bottom near Coming Soon, now here -- second from the
+// top, ahead of Business Development.)
 const INTELLIGENCE_NAV: {
   section: string;
   groupIcon?: typeof LayoutDashboard;
@@ -372,8 +374,8 @@ function NavLinks({
   );
   const visibleAllGroups = [
     ...visibleProductNav,
-    ...(isPlatformStaff ? BUSINESS_DEV_NAV : []),
     ...INTELLIGENCE_NAV,
+    ...(isPlatformStaff ? BUSINESS_DEV_NAV : []),
     ...SETUP_NAV,
     ...OTHER_NAV,
     ...LATER_NAV,
@@ -460,6 +462,22 @@ function NavLinks({
         />
       ))}
 
+      <div className="my-3 border-t border-sidebar-border" />
+      <p className="mb-1.5 px-3 text-[10px] font-semibold uppercase tracking-widest text-primary/80">
+        Intelligence
+      </p>
+      {INTELLIGENCE_NAV.map((group) => (
+        <NavSection
+          key={group.section}
+          group={group}
+          pathname={pathname}
+          isExpanded={expanded === group.section}
+          onToggle={() => toggle(group.section)}
+          onNavigate={onNavigate}
+          tier="product"
+        />
+      ))}
+
       {isPlatformStaff ? (
         <>
           <div className="my-3 border-t border-sidebar-border" />
@@ -503,22 +521,6 @@ function NavLinks({
           onToggle={() => toggle(group.section)}
           onNavigate={onNavigate}
           tier="support"
-        />
-      ))}
-
-      <div className="my-3 border-t border-sidebar-border" />
-      <p className="mb-1.5 px-3 text-[10px] font-semibold uppercase tracking-widest text-primary/80">
-        Intelligence
-      </p>
-      {INTELLIGENCE_NAV.map((group) => (
-        <NavSection
-          key={group.section}
-          group={group}
-          pathname={pathname}
-          isExpanded={expanded === group.section}
-          onToggle={() => toggle(group.section)}
-          onNavigate={onNavigate}
-          tier="product"
         />
       ))}
 
