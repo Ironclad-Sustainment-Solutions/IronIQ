@@ -8,11 +8,22 @@
   "machines": [
     {
       "asset_id": "MC-UMC750-01",
+      "protocol": "mtconnect",
       "mtconnect_url": "http://192.168.1.50:8082",
       "device_name": "",
       "controller_make": "Haas",
       "controller_model": "UMC-750",
       "machine_serial": ""
+    },
+    {
+      "asset_id": "MC-FANUC-01",
+      "protocol": "focas",
+      "focas_host": "192.168.1.60",
+      "focas_port": 8193,
+      "controller_make": "Fanuc",
+      "controller_model": "",
+      "machine_serial": "",
+      "_comment": "FOCAS support is an experimental, uncompiled scaffold as of this writing -- see edge/focas/focas.go's package-level warning before relying on this. Needs Fanuc's real FOCAS2 library, confirmation the control has Ethernet/FOCAS access enabled, and on-site validation before it can be trusted."
     }
   ]
 }

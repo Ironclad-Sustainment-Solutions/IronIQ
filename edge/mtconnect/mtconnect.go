@@ -17,24 +17,17 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"ironiq-edge/reading"
 )
 
-// Reading is one GET /current snapshot, mapped toward iss.machine_event.v1.
-type Reading struct {
-	DeviceName    string
-	Sequence      *int64
-	Timestamp     string
-	State         string // RUNNING | IDLE | DOWN
-	RawExecution  string
-	ProgramName   string
-	PartCount     *int64
-	ControlMode   *string // AUTO | MDI | JOG
-	AlarmCode     string
-	AlarmActive   bool
-	EmergencyStop string
-	CuttingTimeS  *float64
-	SpindleOnS    *float64
-}
+// Reading is kept as a type alias, not a new struct, so every existing
+// caller (mapper.go, agent.go, all mtconnect tests) that referred to
+// mtconnect.Reading before this refactor keeps compiling unchanged --
+// the actual struct definition now lives in the reading package so a
+// second collector (focas) can produce the same shape without importing
+// mtconnect itself.
+type Reading = reading.Reading
 
 var executionRunning = map[string]bool{"ACTIVE": true}
 
