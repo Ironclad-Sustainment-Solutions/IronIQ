@@ -87,9 +87,54 @@ Haas NGC  --LAN only-->  Edge app  --outbound HTTPS-->  IronIQ
 - Cloud “Sync now”: only if you publish the MTConnect agent to the
   public internet. That is the exception, not the default.
 
+## Fanuc machines (FOCAS) — experimental, needs an on-site engineer
+
+A real fleet is often a mix of Haas (MTConnect, described above) and
+genuine Fanuc-controlled machines. Fanuc controls don't speak MTConnect
+natively — the standard way to read one is FOCAS, Fanuc's own
+proprietary SDK (`Fwlib32.dll` on Windows, licensed from Fanuc or a
+system integrator), not an open spec like MTConnect.
+
+**This has never been compiled or tested.** `edge/focas/focas.go`
+(guarded by the `cgo_focas` build tag, so it's never part of the default
+build) is a best-effort scaffold written against FOCAS2 function names
+that are publicly documented in Fanuc's own manual
+(`cnc_allclibhndl3`, `cnc_statinfo`, `cnc_rdprgnum`) — but the C struct
+layouts in that file are a reconstruction, not a copy of Fanuc's real
+`fwlib32.h`, and this project has never had access to Fanuc's actual
+library to link against or test with. See the large warning comment at
+the top of `edge/focas/focas.go` for exactly what needs verification
+before this is trusted near a real machine.
+
+Before anyone runs this against a live Fanuc control, someone with
+physical or remote access needs to:
+
+1. Confirm the control actually has Ethernet/FOCAS2 access enabled —
+   on many Fanuc controls this is a separate paid option (often called
+   an Ethernet board or "Data Server" function), not present by default.
+2. Get Fanuc's real `Fwlib32.dll` (or Linux equivalent, if one exists
+   for that CNC series) and its header, licensed from Fanuc or a system
+   integrator.
+3. Replace the placeholder `ODBST`/`ODBPRO` struct definitions in
+   `edge/focas/focas.go` with the real ones from Fanuc's header —
+   getting this wrong doesn't necessarily fail to compile, it can
+   silently produce garbage data instead, since C links by memory
+   layout, not field name.
+4. Build with `CGO_ENABLED=1 go build -tags cgo_focas .` and validate
+   against the real machine before trusting any of its output.
+
+To use it once validated, set `"protocol": "focas"` on that machine in
+the config (`focas_host`/`focas_port` instead of `mtconnect_url`) — see
+`example.config.json` for a mixed Haas+Fanuc fleet.
+
 ## Tests
 
 ```sh
 cd edge
 go test ./...
 ```
+
+The command above only exercises the default build (no `cgo_focas` tag)
+— `edge/focas`'s stub, which is all that's testable without Fanuc's real
+library. It does not, and cannot, test `focas.go` itself.
+

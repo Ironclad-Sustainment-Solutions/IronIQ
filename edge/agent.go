@@ -7,9 +7,11 @@ import (
 	"time"
 
 	"ironiq-edge/buffer"
+	"ironiq-edge/focas"
 	"ironiq-edge/ingest"
 	"ironiq-edge/mapper"
 	"ironiq-edge/mtconnect"
+	"ironiq-edge/reading"
 )
 
 type agent struct {
@@ -49,12 +51,19 @@ func newAgent(cfg Config, queue *buffer.Queue, ingestClient *ingest.Client, mtc 
 
 func (a *agent) tick(ctx context.Context) {
 	for _, m := range a.cfg.Machines {
-		reading, err := mtconnect.Current(ctx, a.mtc, m.MTConnectURL, m.DeviceName)
+		var snapshot *reading.Reading
+		var err error
+		switch m.protocol() {
+		case "focas":
+			snapshot, err = focas.Current(ctx, m.FocasHost, m.FocasPort)
+		default: // "mtconnect", and the empty-string default from protocol()
+			snapshot, err = mtconnect.Current(ctx, a.mtc, m.MTConnectURL, m.DeviceName)
+		}
 		if err != nil {
-			log.Printf("mtconnect %s: %v", m.AssetID, err)
+			log.Printf("%s %s: %v", m.protocol(), m.AssetID, err)
 			continue
 		}
-		events := a.trackers[m.AssetID].Next(reading, a.now())
+		events := a.trackers[m.AssetID].Next(snapshot, a.now())
 		if len(events) == 0 {
 			continue
 		}

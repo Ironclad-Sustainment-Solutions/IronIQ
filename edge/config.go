@@ -9,9 +9,16 @@ import (
 )
 
 type machineConfig struct {
-	AssetID         string `json:"asset_id"`
+	AssetID string `json:"asset_id"`
+	// Protocol selects which collector reads this machine: "mtconnect"
+	// (default, if omitted) or "focas". Per-machine, not global -- a
+	// real fleet mixes Haas (MTConnect) and Fanuc (FOCAS) controls, and
+	// each machine only ever needs the fields for its own protocol.
+	Protocol        string `json:"protocol"`
 	MTConnectURL    string `json:"mtconnect_url"`
 	DeviceName      string `json:"device_name"`
+	FocasHost       string `json:"focas_host"`
+	FocasPort       int    `json:"focas_port"`
 	ControllerMake  string `json:"controller_make"`
 	ControllerModel string `json:"controller_model"`
 	MachineSerial   string `json:"machine_serial"`
@@ -88,14 +95,35 @@ func (c Config) validate() error {
 		if strings.TrimSpace(m.AssetID) == "" {
 			missing = append(missing, fmt.Sprintf("machines[%d].asset_id", i))
 		}
-		if strings.TrimSpace(m.MTConnectURL) == "" {
-			missing = append(missing, fmt.Sprintf("machines[%d].mtconnect_url", i))
+		protocol := m.protocol()
+		switch protocol {
+		case "mtconnect":
+			if strings.TrimSpace(m.MTConnectURL) == "" {
+				missing = append(missing, fmt.Sprintf("machines[%d].mtconnect_url", i))
+			}
+		case "focas":
+			if strings.TrimSpace(m.FocasHost) == "" {
+				missing = append(missing, fmt.Sprintf("machines[%d].focas_host", i))
+			}
+			if m.FocasPort <= 0 {
+				missing = append(missing, fmt.Sprintf("machines[%d].focas_port", i))
+			}
+		default:
+			missing = append(missing, fmt.Sprintf("machines[%d].protocol: unknown protocol %q (must be \"mtconnect\" or \"focas\")", i, protocol))
 		}
 	}
 	if len(missing) > 0 {
 		return fmt.Errorf("missing required config: %s", strings.Join(missing, ", "))
 	}
 	return nil
+}
+
+func (m machineConfig) protocol() string {
+	p := strings.TrimSpace(m.Protocol)
+	if p == "" {
+		return "mtconnect"
+	}
+	return p
 }
 
 func (c Config) pollInterval() time.Duration {
