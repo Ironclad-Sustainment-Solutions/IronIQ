@@ -31,10 +31,7 @@ import {
   useSyncMachineMtconnect,
   useUpdateShopMachine,
 } from "@/lib/shop-floor-api";
-import {
-  useEdgeIngestKeyInfo,
-  useGenerateEdgeIngestKey,
-} from "@/lib/edge-ingest-admin-api";
+import { EdgeSetupPanel } from "@/components/ironiq/edge-setup-panel";
 import {
   CONNECTION_LABELS,
   CONTROL_LABELS,
@@ -69,9 +66,6 @@ function MachineDetailPage() {
   const importCsv = useImportMachineRunsCsv(machineId);
   const liveState = useMachineLiveState(machineId).data ?? null;
   const sync = useSyncMachineMtconnect(machineId);
-  const edgeKeyInfo = useEdgeIngestKeyInfo(facility?.id);
-  const generateEdgeKey = useGenerateEdgeIngestKey(facility?.id);
-  const [revealedEdgeKey, setRevealedEdgeKey] = useState<string | null>(null);
   const [editing, setEditing] = useState(false);
   const [selectedPart, setSelectedPart] = useState<string>("all");
   const [runForm, setRunForm] = useState({
@@ -148,83 +142,7 @@ function MachineDetailPage() {
         </span>
       </div>
 
-      <Panel title="Connect with IronIQ Edge">
-        <p className="mb-3 text-sm text-muted-foreground">
-          The recommended way to get live data from this machine: a single file,
-          no install required, running on any PC on the same shop network —
-          including Fanuc-controlled machines, not just Haas. Works whether or
-          not this machine's control is reachable from the public internet.
-        </p>
-        {revealedEdgeKey ? (
-          <div className="mb-3 rounded-md bg-muted p-3">
-            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              Edge ingest key — copy it now, it won't be shown again
-            </p>
-            <code className="mt-1 block break-all text-sm text-foreground">
-              {revealedEdgeKey}
-            </code>
-            <p className="mt-2 text-xs text-muted-foreground">
-              One key per facility, not per machine — this same key covers every
-              machine registered at {facility?.name ?? "this facility"}.
-            </p>
-          </div>
-        ) : (
-          <p className="mb-3 text-xs text-muted-foreground">
-            {edgeKeyInfo.data?.hint
-              ? `Active key ends in …${edgeKeyInfo.data.hint} (created ${
-                  edgeKeyInfo.data.createdAt
-                    ? formatDate(edgeKeyInfo.data.createdAt)
-                    : "recently"
-                }). Generating a new one replaces it immediately for every machine at this facility.`
-              : "No edge ingest key yet for this facility — generate one below."}
-          </p>
-        )}
-        <div className="flex flex-wrap items-center gap-2">
-          <Button
-            variant="outline"
-            disabled={generateEdgeKey.isPending || !facility?.id}
-            onClick={() =>
-              generateEdgeKey.mutate(undefined, {
-                onSuccess: (result) => setRevealedEdgeKey(result.apiKey),
-              })
-            }
-          >
-            {generateEdgeKey.isPending
-              ? "Generating…"
-              : edgeKeyInfo.data?.hint
-                ? "Generate new key"
-                : "Generate edge ingest key"}
-          </Button>
-          <a
-            href="/downloads/ironiq-edge-windows-amd64.exe"
-            download
-            className="rounded-md border border-border px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:border-primary/50 hover:bg-muted/20"
-          >
-            Windows
-          </a>
-          <a
-            href="/downloads/ironiq-edge-macos-arm64"
-            download
-            className="rounded-md border border-border px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:border-primary/50 hover:bg-muted/20"
-          >
-            macOS (Apple Silicon)
-          </a>
-          <a
-            href="/downloads/ironiq-edge-macos-amd64"
-            download
-            className="rounded-md border border-border px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:border-primary/50 hover:bg-muted/20"
-          >
-            macOS (Intel)
-          </a>
-          <a
-            href="/downloads/ironiq-edge-linux-amd64"
-            download
-            className="rounded-md border border-border px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:border-primary/50 hover:bg-muted/20"
-          >
-            Linux
-          </a>
-        </div>
-      </Panel>
+      <EdgeSetupPanel facilityId={machine.facility_id} />
 
       {machine.protocol === "mtconnect" ? (
         <Panel title="MTConnect live sync">
