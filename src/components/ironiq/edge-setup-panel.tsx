@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "@tanstack/react-router";
 import { Panel } from "@/components/ironiq/layout-primitives";
 import { Button } from "@/components/ui/button";
 import {
@@ -118,15 +119,13 @@ export function EdgeSetupPanel({ facilityId }: { facilityId: string }) {
           </a>
         </div>
         <p className="mt-2 text-xs text-muted-foreground">
-          See the README bundled in{" "}
-          <a
-            href="https://github.com/Ironclad-Sustainment-Solutions/IronIQ/tree/main/edge"
-            target="_blank"
-            rel="noreferrer"
+          See the{" "}
+          <Link
+            to="/machines/edge-setup-guide"
             className="underline underline-offset-2 hover:text-foreground"
           >
-            the edge/ source
-          </a>{" "}
+            IronIQ Edge setup guide
+          </Link>{" "}
           for exact setup steps and config options.
         </p>
       </div>

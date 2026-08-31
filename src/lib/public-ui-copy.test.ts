@@ -40,6 +40,19 @@ describe("public UI copy", () => {
     expect(home).not.toContain('to: "/assessment"');
   });
 
+  it("links the Edge setup panel's setup instructions in-app, not to GitHub", () => {
+    // Direct feedback: customers shouldn't need to visit a developer-
+    // facing GitHub repo to read setup instructions -- the guide lives
+    // inside the app itself.
+    const panel = source("src/components/ironiq/edge-setup-panel.tsx");
+    expect(panel).not.toContain("github.com");
+    expect(panel).toContain("/machines/edge-setup-guide");
+    const guide = source(
+      "src/routes/_authenticated/machines/edge-setup-guide.tsx",
+    );
+    expect(guide).toContain("IronIQ Edge setup guide");
+  });
+
   it("does not put the edge ingest secret or schema filenames on public/auth/home", () => {
     const auth = source("src/routes/auth.tsx");
     const home = source("src/routes/_authenticated/home.tsx");
