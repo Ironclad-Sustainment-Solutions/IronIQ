@@ -8,6 +8,7 @@ import {
 import { Tag } from "@/components/ironiq/badges";
 import { Button } from "@/components/ui/button";
 import { useApp } from "@/context/app-context";
+import { EdgeSetupPanel } from "@/components/ironiq/edge-setup-panel";
 import {
   ShopMachineForm,
   emptyMachineDraft,
@@ -30,12 +31,13 @@ export const Route = createFileRoute("/_authenticated/machines/")({
       {
         name: "description",
         content:
-          "Facility machine master for a small shop-floor pilot — asset ID, control, and connection status. Manual and CSV runs, no live connector.",
+          "Facility machine master — asset ID, control, and connection status. Manual and CSV runs, or a live feed via IronIQ Edge.",
       },
       { property: "og:title", content: "Machines — IronIQ" },
       {
         property: "og:description",
-        content: "Identify 1–3 machines and log cycles and runtime by part.",
+        content:
+          "Identify machines on this floor, connect a live feed or log runs by hand.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -65,7 +67,7 @@ function MachinesPage() {
       <PageHeader
         eyebrow={facility.name}
         title="Machines"
-        description="Start with 1–3 machines on this floor. Cycle counts and runtime are entered by hand or CSV — nothing here pretends to be a live machine connection."
+        description="Start with 1–3 machines on this floor. Log cycles and runtime by hand or CSV, or connect a live feed with IronIQ Edge below — either way, nothing here silently assumes more than what's actually being reported."
         actions={
           <div className="flex gap-2">
             <Button asChild variant="outline">
@@ -77,6 +79,8 @@ function MachinesPage() {
           </div>
         }
       />
+
+      <EdgeSetupPanel facilityId={facility.id} />
 
       {adding ? (
         <Panel title="Add a machine">

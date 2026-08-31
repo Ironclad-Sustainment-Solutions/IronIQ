@@ -52,11 +52,30 @@ describe("public UI copy", () => {
     }
   });
 
-  it("tells Floor that live LAN feeds use the Edge app, not cloud pull", () => {
-    const floor = source("src/routes/_authenticated/floor.tsx");
-    expect(floor).toMatch(/Live LAN feeds use the Edge app/);
-    expect(floor).toMatch(/not cloud pull/);
-    expect(floor).toContain("Generate a facility key below (shown once)");
+  it("tells the shared Edge setup panel that live LAN feeds use the Edge app, not cloud pull -- and confirms every page that should show it actually does", () => {
+    // Moved into a shared component specifically so Floor, Machines,
+    // and the machine detail page can't quietly drift out of sync with
+    // each other the way the Home page's product cards did with the
+    // sidebar -- this test protects that by checking the one canonical
+    // source, then confirming every intended call site actually uses it.
+    const panel = source("src/components/ironiq/edge-setup-panel.tsx");
+    expect(panel).toMatch(/Live LAN feeds use the Edge app/);
+    expect(panel).toMatch(/not cloud pull/);
+    expect(panel).toContain("Generate a facility key below (shown once)");
+
+    for (const rel of [
+      "src/routes/_authenticated/floor.tsx",
+      "src/routes/_authenticated/machines/index.tsx",
+      "src/routes/_authenticated/machines/$machineId.tsx",
+    ]) {
+      const text = source(rel);
+      expect(text).toContain("EdgeSetupPanel");
+      // The old, page-specific copies of this panel should never come
+      // back -- if this text starts appearing directly in one of these
+      // route files again instead of just an EdgeSetupPanel usage, the
+      // shared component was bypassed.
+      expect(text).not.toContain("Generate a facility key below (shown once)");
+    }
   });
 
   it("does not leak internal filenames on home, auth, or Floor View", () => {
