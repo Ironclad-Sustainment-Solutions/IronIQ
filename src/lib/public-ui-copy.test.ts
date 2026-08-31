@@ -30,7 +30,12 @@ describe("public UI copy", () => {
     const productsStart = home.indexOf("const PRODUCTS = [");
     const firstLabel = home.slice(productsStart).match(/label:\s*"([^"]+)"/);
     expect(firstLabel?.[1]).not.toBe("Assessments");
-    expect(firstLabel?.[1]).toBe("Machines");
+    // Renamed from "Machines" to "Capability" when the sidebar was
+    // restructured into the Capability/Engineering/Operations/
+    // Intelligence taxonomy -- the label changed, but the protective
+    // intent (don't lead with Assessments, do lead somewhere that
+    // actually reaches /machines) still holds.
+    expect(firstLabel?.[1]).toBe("Capability");
     expect(home).toContain('to: "/machines"');
     expect(home).not.toContain('to: "/assessment"');
   });
