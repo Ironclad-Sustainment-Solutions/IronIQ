@@ -1,8 +1,8 @@
 import { Link, createFileRoute } from "@tanstack/react-router";
 import {
-  Factory,
-  Code2,
+  Package,
   FileImage,
+  Cpu,
   Sparkles,
   ArrowUpRight,
   ChevronDown,
@@ -37,24 +37,31 @@ export const Route = createFileRoute("/_authenticated/home")({
 const PRODUCTS = [
   {
     to: "/machines",
-    icon: Factory,
-    label: "Machines",
+    icon: Package,
+    label: "Capability",
     description:
-      "Identify the 1–3 machines on this floor, then log cycles, runtime, idle, and downtime — by part — without a live machine connection.",
-  },
-  {
-    to: "/cnc",
-    icon: Code2,
-    label: "One-part CNC job",
-    description:
-      "Log a change on a named machine, record structured before/after numbers, and print a one-page card for the part you're proving.",
+      "Machines, parts, processes, suppliers — what this shop can actually make and with what, whether or not there's a live machine connection yet.",
   },
   {
     to: "/cad",
     icon: FileImage,
-    label: "CAD Conversion",
+    label: "Engineering",
     description:
-      "Turn a scanned or photographed drawing into structured, searchable data — dimensions, tolerances, and title-block info, always reviewed by a person before it's trusted.",
+      "Technical data, CAD & drawings, CNC programs, tooling & fixtures — the engineering record behind a part, always reviewed by a person before it's trusted.",
+  },
+  {
+    to: "/production",
+    icon: Cpu,
+    label: "Operations",
+    description:
+      "Production, work instructions, quality, actions — log a change on a named machine, record structured before/after numbers, and track what's actually improving.",
+  },
+  {
+    to: "/ask-ironiq",
+    icon: Sparkles,
+    label: "Intelligence",
+    description:
+      "Capability health, sustainment, risks, and insights grounded in this shop's own data and anonymized precedent from other engagements — not generic advice.",
   },
 ];
 
@@ -139,7 +146,7 @@ function HomePage() {
 
       <div className="mx-auto max-w-5xl space-y-8">
         <Reveal>
-          <div className="grid gap-4 sm:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             {PRODUCTS.map((product, i) => (
               <Reveal key={product.to} delayMs={i * 90}>
                 <Link
