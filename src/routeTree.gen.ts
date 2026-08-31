@@ -46,6 +46,7 @@ import { Route as AuthenticatedFieldIndexRouteImport } from './routes/_authentic
 import { Route as AuthenticatedFieldFieldIdRouteImport } from './routes/_authenticated/field/$fieldId'
 import { Route as AuthenticatedMachinesIndexRouteImport } from './routes/_authenticated/machines/index'
 import { Route as AuthenticatedMachinesMachineIdRouteImport } from './routes/_authenticated/machines/$machineId'
+import { Route as AuthenticatedMachinesEdgeSetupGuideRouteImport } from './routes/_authenticated/machines/edge-setup-guide'
 import { Route as AuthenticatedMachinesImprovementsRouteImport } from './routes/_authenticated/machines/improvements'
 import { Route as AuthenticatedMachinesPartsRouteImport } from './routes/_authenticated/machines/parts'
 import { Route as AuthenticatedMachinesProgramMapRouteImport } from './routes/_authenticated/machines/program-map'
@@ -255,6 +256,12 @@ const AuthenticatedMachinesMachineIdRoute =
     path: '/machines/$machineId',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedMachinesEdgeSetupGuideRoute =
+  AuthenticatedMachinesEdgeSetupGuideRouteImport.update({
+    id: '/machines/edge-setup-guide',
+    path: '/machines/edge-setup-guide',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedMachinesImprovementsRoute =
   AuthenticatedMachinesImprovementsRouteImport.update({
     id: '/machines/improvements',
@@ -336,6 +343,7 @@ export interface FileRoutesByFullPath {
   '/capability/$assessmentId': typeof AuthenticatedCapabilityAssessmentIdRoute
   '/field/$fieldId': typeof AuthenticatedFieldFieldIdRoute
   '/machines/$machineId': typeof AuthenticatedMachinesMachineIdRoute
+  '/machines/edge-setup-guide': typeof AuthenticatedMachinesEdgeSetupGuideRoute
   '/machines/improvements': typeof AuthenticatedMachinesImprovementsRoute
   '/machines/parts': typeof AuthenticatedMachinesPartsRoute
   '/machines/program-map': typeof AuthenticatedMachinesProgramMapRoute
@@ -381,6 +389,7 @@ export interface FileRoutesByTo {
   '/capability/$assessmentId': typeof AuthenticatedCapabilityAssessmentIdRoute
   '/field/$fieldId': typeof AuthenticatedFieldFieldIdRoute
   '/machines/$machineId': typeof AuthenticatedMachinesMachineIdRoute
+  '/machines/edge-setup-guide': typeof AuthenticatedMachinesEdgeSetupGuideRoute
   '/machines/improvements': typeof AuthenticatedMachinesImprovementsRoute
   '/machines/parts': typeof AuthenticatedMachinesPartsRoute
   '/machines/program-map': typeof AuthenticatedMachinesProgramMapRoute
@@ -429,6 +438,7 @@ export interface FileRoutesById {
   '/_authenticated/capability/$assessmentId': typeof AuthenticatedCapabilityAssessmentIdRoute
   '/_authenticated/field/$fieldId': typeof AuthenticatedFieldFieldIdRoute
   '/_authenticated/machines/$machineId': typeof AuthenticatedMachinesMachineIdRoute
+  '/_authenticated/machines/edge-setup-guide': typeof AuthenticatedMachinesEdgeSetupGuideRoute
   '/_authenticated/machines/improvements': typeof AuthenticatedMachinesImprovementsRoute
   '/_authenticated/machines/parts': typeof AuthenticatedMachinesPartsRoute
   '/_authenticated/machines/program-map': typeof AuthenticatedMachinesProgramMapRoute
@@ -477,6 +487,7 @@ export interface FileRouteTypes {
     | '/capability/$assessmentId'
     | '/field/$fieldId'
     | '/machines/$machineId'
+    | '/machines/edge-setup-guide'
     | '/machines/improvements'
     | '/machines/parts'
     | '/machines/program-map'
@@ -522,6 +533,7 @@ export interface FileRouteTypes {
     | '/capability/$assessmentId'
     | '/field/$fieldId'
     | '/machines/$machineId'
+    | '/machines/edge-setup-guide'
     | '/machines/improvements'
     | '/machines/parts'
     | '/machines/program-map'
@@ -569,6 +581,7 @@ export interface FileRouteTypes {
     | '/_authenticated/capability/$assessmentId'
     | '/_authenticated/field/$fieldId'
     | '/_authenticated/machines/$machineId'
+    | '/_authenticated/machines/edge-setup-guide'
     | '/_authenticated/machines/improvements'
     | '/_authenticated/machines/parts'
     | '/_authenticated/machines/program-map'
@@ -852,6 +865,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedMachinesMachineIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/machines/edge-setup-guide': {
+      id: '/_authenticated/machines/edge-setup-guide'
+      path: '/machines/edge-setup-guide'
+      fullPath: '/machines/edge-setup-guide'
+      preLoaderRoute: typeof AuthenticatedMachinesEdgeSetupGuideRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/machines/improvements': {
       id: '/_authenticated/machines/improvements'
       path: '/machines/improvements'
@@ -963,6 +983,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedCapabilityAssessmentIdRoute: typeof AuthenticatedCapabilityAssessmentIdRoute
   AuthenticatedFieldFieldIdRoute: typeof AuthenticatedFieldFieldIdRoute
   AuthenticatedMachinesMachineIdRoute: typeof AuthenticatedMachinesMachineIdRoute
+  AuthenticatedMachinesEdgeSetupGuideRoute: typeof AuthenticatedMachinesEdgeSetupGuideRoute
   AuthenticatedMachinesImprovementsRoute: typeof AuthenticatedMachinesImprovementsRoute
   AuthenticatedMachinesPartsRoute: typeof AuthenticatedMachinesPartsRoute
   AuthenticatedMachinesProgramMapRoute: typeof AuthenticatedMachinesProgramMapRoute
@@ -1006,6 +1027,8 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
     AuthenticatedCapabilityAssessmentIdRoute,
   AuthenticatedFieldFieldIdRoute: AuthenticatedFieldFieldIdRoute,
   AuthenticatedMachinesMachineIdRoute: AuthenticatedMachinesMachineIdRoute,
+  AuthenticatedMachinesEdgeSetupGuideRoute:
+    AuthenticatedMachinesEdgeSetupGuideRoute,
   AuthenticatedMachinesImprovementsRoute:
     AuthenticatedMachinesImprovementsRoute,
   AuthenticatedMachinesPartsRoute: AuthenticatedMachinesPartsRoute,
