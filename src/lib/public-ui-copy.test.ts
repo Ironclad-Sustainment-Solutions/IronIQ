@@ -17,11 +17,17 @@ describe("public UI copy", () => {
     expect(source("src/routes/_authenticated/home.tsx")).not.toMatch(leak);
   });
 
-  it("does not leak internal filenames on the sign-in page", () => {
+  it("does not leak internal filenames on the sign-in page, and offers real Google/Microsoft sign-in", () => {
     const auth = source("src/routes/auth.tsx");
     expect(auth).not.toMatch(/MIGRATION_PHASE2\.md/);
     expect(auth).not.toMatch(/schema_additions_[a-z0-9_]+\.sql/);
-    expect(auth).toContain('title="Google sign-in coming soon"');
+    // Real sign-in links now, not the old disabled placeholder -- both
+    // go through the same account-approval gate password signup does
+    // (see oauth.server.ts's findOrCreateOAuthUser), so this text still
+    // needs to be there regardless of which sign-in path someone uses.
+    expect(auth).not.toContain("coming soon");
+    expect(auth).toContain('href="/api/auth/google/start"');
+    expect(auth).toContain('href="/api/auth/microsoft/start"');
     expect(auth).toContain("an admin must approve");
   });
 

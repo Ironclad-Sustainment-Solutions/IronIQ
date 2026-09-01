@@ -684,7 +684,11 @@ function TopBar() {
     await queryClient.cancelQueries();
     queryClient.clear();
     await logout();
-    navigate({ to: "/auth", replace: true });
+    navigate({
+      to: "/auth",
+      replace: true,
+      search: { oauth_error: undefined },
+    });
   }
 
   const initials =

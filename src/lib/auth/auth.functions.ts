@@ -106,7 +106,7 @@ export const login = createServerFn({ method: "POST" })
     const user = await withAdmin(async (client) => {
       const { rows } = await client.query<{
         id: string;
-        password_hash: string;
+        password_hash: string | null;
         approved: boolean;
       }>(
         `SELECT u.id, u.password_hash, p.approved
@@ -118,9 +118,16 @@ export const login = createServerFn({ method: "POST" })
       return rows[0] ?? null;
     });
 
-    // Same generic error whether the email doesn't exist or the password is
-    // wrong — don't leak which one it was.
-    if (!user || !(await verifyPassword(data.password, user.password_hash))) {
+    // Same generic error whether the email doesn't exist, the password is
+    // wrong, or the account was created via Google/Microsoft and has no
+    // password at all -- none of those should be distinguishable to
+    // someone probing this endpoint, and verifyPassword can't be handed
+    // a null hash to check against.
+    if (
+      !user ||
+      user.password_hash == null ||
+      !(await verifyPassword(data.password, user.password_hash))
+    ) {
       await Promise.all([
         recordAttempt(ipKey, LOGIN_IP_LIMIT),
         recordAttempt(emailKey, LOGIN_EMAIL_LIMIT),
