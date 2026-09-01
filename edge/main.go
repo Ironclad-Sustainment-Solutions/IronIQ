@@ -18,9 +18,25 @@ import (
 	"ironiq-edge/ingest"
 )
 
+// Set at build time via -ldflags "-X main.version=... -X main.buildDate=...'
+// (see scripts/build-edge-binaries.sh) so a running agent's exact build is
+// identifiable -- useful for support, and for confirming which build a
+// SHA-256 checksum published alongside the download actually corresponds
+// to. Left as "dev" for a local `go build` with no ldflags.
+var (
+	version   = "dev"
+	buildDate = "unknown"
+)
+
 func main() {
 	configPath := flag.String("config", envOr("IRONIQ_EDGE_CONFIG", "edge.config.json"), "path to JSON config (machines + IronIQ URL)")
+	showVersion := flag.Bool("version", false, "print version and build date, then exit")
 	flag.Parse()
+
+	if *showVersion {
+		fmt.Printf("ironiq-edge %s (built %s)\n", version, buildDate)
+		return
+	}
 
 	cfg, err := loadConfig(*configPath)
 	if err != nil {
@@ -38,7 +54,7 @@ func main() {
 	a := newAgent(cfg, queue, client, nil)
 
 	log.SetFlags(0)
-	log.Println("IronIQ Edge starting (on-prem, read-only to CNC).")
+	log.Printf("IronIQ Edge %s starting (on-prem, read-only to CNC).", version)
 	log.Printf("  IronIQ: %s%s", cfg.IronIQURL, ingest.Path)
 	log.Printf("  Plant: %s  machines: %d  poll: %s", cfg.PlantID, len(cfg.Machines), cfg.pollInterval())
 	log.Println("  CNC stays off the internet. This process only GET /current on the LAN and POSTs outbound to IronIQ.")
