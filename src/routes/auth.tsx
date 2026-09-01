@@ -13,6 +13,10 @@ export const Route = createFileRoute("/auth")({
   validateSearch: (search: Record<string, unknown>) => ({
     oauth_error:
       typeof search.oauth_error === "string" ? search.oauth_error : undefined,
+    oauth_error_detail:
+      typeof search.oauth_error_detail === "string"
+        ? search.oauth_error_detail
+        : undefined,
   }),
   head: () => ({
     meta: [
@@ -38,7 +42,7 @@ export const Route = createFileRoute("/auth")({
 
 function AuthPage() {
   const navigate = useNavigate();
-  const { oauth_error } = Route.useSearch();
+  const { oauth_error, oauth_error_detail } = Route.useSearch();
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -60,14 +64,16 @@ function AuthPage() {
         ? "Your account is pending admin approval. You'll be notified once it's approved."
         : oauth_error === "invalid_state"
           ? "That sign-in link expired or was already used. Please try again."
-          : "Could not complete sign-in. Please try again.";
+          : oauth_error_detail
+            ? `Could not complete sign-in: ${oauth_error_detail}`
+            : "Could not complete sign-in. Please try again.";
     toast.error(message);
     void navigate({
       to: "/auth",
-      search: { oauth_error: undefined },
+      search: { oauth_error: undefined, oauth_error_detail: undefined },
       replace: true,
     });
-  }, [oauth_error, navigate]);
+  }, [oauth_error, oauth_error_detail, navigate]);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();

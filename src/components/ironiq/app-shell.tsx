@@ -695,7 +695,7 @@ function TopBar() {
     navigate({
       to: "/auth",
       replace: true,
-      search: { oauth_error: undefined },
+      search: { oauth_error: undefined, oauth_error_detail: undefined },
     });
   }
 
