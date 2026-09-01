@@ -10,6 +10,10 @@ import { toast } from "sonner";
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
+  validateSearch: (search: Record<string, unknown>) => ({
+    oauth_error:
+      typeof search.oauth_error === "string" ? search.oauth_error : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "Sign in — IronIQ Manufacturing Intelligence" },
@@ -34,6 +38,7 @@ export const Route = createFileRoute("/auth")({
 
 function AuthPage() {
   const navigate = useNavigate();
+  const { oauth_error } = Route.useSearch();
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -47,6 +52,22 @@ function AuthPage() {
       if (user) navigate({ to: "/home", replace: true });
     });
   }, [navigate]);
+
+  useEffect(() => {
+    if (!oauth_error) return;
+    const message =
+      oauth_error === "pending_approval"
+        ? "Your account is pending admin approval. You'll be notified once it's approved."
+        : oauth_error === "invalid_state"
+          ? "That sign-in link expired or was already used. Please try again."
+          : "Could not complete sign-in. Please try again.";
+    toast.error(message);
+    void navigate({
+      to: "/auth",
+      search: { oauth_error: undefined },
+      replace: true,
+    });
+  }, [oauth_error, navigate]);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -221,13 +242,12 @@ function AuthPage() {
             <span className="h-px flex-1 bg-border" />
           </div>
 
-          <Button
-            variant="outline"
-            className="w-full"
-            disabled
-            title="Google sign-in coming soon"
-          >
-            Continue with Google (coming soon)
+          <Button asChild variant="outline" className="w-full">
+            <a href="/api/auth/google/start">Continue with Google</a>
+          </Button>
+
+          <Button asChild variant="outline" className="mt-2 w-full">
+            <a href="/api/auth/microsoft/start">Continue with Microsoft</a>
           </Button>
 
           <p className="mt-8 text-center text-sm text-muted-foreground">

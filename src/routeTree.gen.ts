@@ -54,6 +54,10 @@ import { Route as AuthenticatedProductionIndexRouteImport } from './routes/_auth
 import { Route as AuthenticatedProductionLibrariesRouteImport } from './routes/_authenticated/production.libraries'
 import { Route as AuthenticatedProductionNewRouteImport } from './routes/_authenticated/production.new'
 import { Route as AuthenticatedProductionJobsJobIdRouteImport } from './routes/_authenticated/production.jobs.$jobId'
+import { Route as ApiAuthGoogleCallbackRouteImport } from './routes/api/auth/google/callback'
+import { Route as ApiAuthGoogleStartRouteImport } from './routes/api/auth/google/start'
+import { Route as ApiAuthMicrosoftCallbackRouteImport } from './routes/api/auth/microsoft/callback'
+import { Route as ApiAuthMicrosoftStartRouteImport } from './routes/api/auth/microsoft/start'
 import { Route as ApiIroniqV1MachineEventsRouteImport } from './routes/api/ironiq/v1/machine-events'
 
 const IndexRoute = IndexRouteImport.update({
@@ -304,6 +308,27 @@ const AuthenticatedProductionJobsJobIdRoute =
     path: '/jobs/$jobId',
     getParentRoute: () => AuthenticatedProductionRoute,
   } as any)
+const ApiAuthGoogleCallbackRoute = ApiAuthGoogleCallbackRouteImport.update({
+  id: '/api/auth/google/callback',
+  path: '/api/auth/google/callback',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAuthGoogleStartRoute = ApiAuthGoogleStartRouteImport.update({
+  id: '/api/auth/google/start',
+  path: '/api/auth/google/start',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAuthMicrosoftCallbackRoute =
+  ApiAuthMicrosoftCallbackRouteImport.update({
+    id: '/api/auth/microsoft/callback',
+    path: '/api/auth/microsoft/callback',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiAuthMicrosoftStartRoute = ApiAuthMicrosoftStartRouteImport.update({
+  id: '/api/auth/microsoft/start',
+  path: '/api/auth/microsoft/start',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiIroniqV1MachineEventsRoute =
   ApiIroniqV1MachineEventsRouteImport.update({
     id: '/api/ironiq/v1/machine-events',
@@ -356,6 +381,10 @@ export interface FileRoutesByFullPath {
   '/machines/': typeof AuthenticatedMachinesIndexRoute
   '/production/': typeof AuthenticatedProductionIndexRoute
   '/production/jobs/$jobId': typeof AuthenticatedProductionJobsJobIdRoute
+  '/api/auth/google/callback': typeof ApiAuthGoogleCallbackRoute
+  '/api/auth/google/start': typeof ApiAuthGoogleStartRoute
+  '/api/auth/microsoft/callback': typeof ApiAuthMicrosoftCallbackRoute
+  '/api/auth/microsoft/start': typeof ApiAuthMicrosoftStartRoute
   '/api/ironiq/v1/machine-events': typeof ApiIroniqV1MachineEventsRoute
 }
 export interface FileRoutesByTo {
@@ -402,6 +431,10 @@ export interface FileRoutesByTo {
   '/machines': typeof AuthenticatedMachinesIndexRoute
   '/production': typeof AuthenticatedProductionIndexRoute
   '/production/jobs/$jobId': typeof AuthenticatedProductionJobsJobIdRoute
+  '/api/auth/google/callback': typeof ApiAuthGoogleCallbackRoute
+  '/api/auth/google/start': typeof ApiAuthGoogleStartRoute
+  '/api/auth/microsoft/callback': typeof ApiAuthMicrosoftCallbackRoute
+  '/api/auth/microsoft/start': typeof ApiAuthMicrosoftStartRoute
   '/api/ironiq/v1/machine-events': typeof ApiIroniqV1MachineEventsRoute
 }
 export interface FileRoutesById {
@@ -451,6 +484,10 @@ export interface FileRoutesById {
   '/_authenticated/machines/': typeof AuthenticatedMachinesIndexRoute
   '/_authenticated/production/': typeof AuthenticatedProductionIndexRoute
   '/_authenticated/production/jobs/$jobId': typeof AuthenticatedProductionJobsJobIdRoute
+  '/api/auth/google/callback': typeof ApiAuthGoogleCallbackRoute
+  '/api/auth/google/start': typeof ApiAuthGoogleStartRoute
+  '/api/auth/microsoft/callback': typeof ApiAuthMicrosoftCallbackRoute
+  '/api/auth/microsoft/start': typeof ApiAuthMicrosoftStartRoute
   '/api/ironiq/v1/machine-events': typeof ApiIroniqV1MachineEventsRoute
 }
 export interface FileRouteTypes {
@@ -500,6 +537,10 @@ export interface FileRouteTypes {
     | '/machines/'
     | '/production/'
     | '/production/jobs/$jobId'
+    | '/api/auth/google/callback'
+    | '/api/auth/google/start'
+    | '/api/auth/microsoft/callback'
+    | '/api/auth/microsoft/start'
     | '/api/ironiq/v1/machine-events'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -546,6 +587,10 @@ export interface FileRouteTypes {
     | '/machines'
     | '/production'
     | '/production/jobs/$jobId'
+    | '/api/auth/google/callback'
+    | '/api/auth/google/start'
+    | '/api/auth/microsoft/callback'
+    | '/api/auth/microsoft/start'
     | '/api/ironiq/v1/machine-events'
   id:
     | '__root__'
@@ -594,6 +639,10 @@ export interface FileRouteTypes {
     | '/_authenticated/machines/'
     | '/_authenticated/production/'
     | '/_authenticated/production/jobs/$jobId'
+    | '/api/auth/google/callback'
+    | '/api/auth/google/start'
+    | '/api/auth/microsoft/callback'
+    | '/api/auth/microsoft/start'
     | '/api/ironiq/v1/machine-events'
   fileRoutesById: FileRoutesById
 }
@@ -601,6 +650,10 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
+  ApiAuthGoogleCallbackRoute: typeof ApiAuthGoogleCallbackRoute
+  ApiAuthGoogleStartRoute: typeof ApiAuthGoogleStartRoute
+  ApiAuthMicrosoftCallbackRoute: typeof ApiAuthMicrosoftCallbackRoute
+  ApiAuthMicrosoftStartRoute: typeof ApiAuthMicrosoftStartRoute
   ApiIroniqV1MachineEventsRoute: typeof ApiIroniqV1MachineEventsRoute
 }
 
@@ -921,6 +974,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedProductionJobsJobIdRouteImport
       parentRoute: typeof AuthenticatedProductionRoute
     }
+    '/api/auth/google/callback': {
+      id: '/api/auth/google/callback'
+      path: '/api/auth/google/callback'
+      fullPath: '/api/auth/google/callback'
+      preLoaderRoute: typeof ApiAuthGoogleCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/auth/google/start': {
+      id: '/api/auth/google/start'
+      path: '/api/auth/google/start'
+      fullPath: '/api/auth/google/start'
+      preLoaderRoute: typeof ApiAuthGoogleStartRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/auth/microsoft/callback': {
+      id: '/api/auth/microsoft/callback'
+      path: '/api/auth/microsoft/callback'
+      fullPath: '/api/auth/microsoft/callback'
+      preLoaderRoute: typeof ApiAuthMicrosoftCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/auth/microsoft/start': {
+      id: '/api/auth/microsoft/start'
+      path: '/api/auth/microsoft/start'
+      fullPath: '/api/auth/microsoft/start'
+      preLoaderRoute: typeof ApiAuthMicrosoftStartRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/ironiq/v1/machine-events': {
       id: '/api/ironiq/v1/machine-events'
       path: '/api/ironiq/v1/machine-events'
@@ -1048,6 +1129,10 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
+  ApiAuthGoogleCallbackRoute: ApiAuthGoogleCallbackRoute,
+  ApiAuthGoogleStartRoute: ApiAuthGoogleStartRoute,
+  ApiAuthMicrosoftCallbackRoute: ApiAuthMicrosoftCallbackRoute,
+  ApiAuthMicrosoftStartRoute: ApiAuthMicrosoftStartRoute,
   ApiIroniqV1MachineEventsRoute: ApiIroniqV1MachineEventsRoute,
 }
 export const routeTree = rootRouteImport
