@@ -86,7 +86,14 @@ export function EdgeSetupPanel({ facilityId }: { facilityId: string }) {
         <p className="mt-1 text-xs text-muted-foreground">
           A single file, no install required — copy it to any PC on the same
           shop network as your MTConnect-capable machines and run it with the
-          key above.
+          key above. Not yet code-signed — see{" "}
+          <Link
+            to="/machines/edge-setup-guide"
+            className="underline underline-offset-2 hover:text-foreground"
+          >
+            the setup guide
+          </Link>{" "}
+          for what your OS will show and how to verify the download instead.
         </p>
         <div className="mt-2 flex flex-wrap gap-2">
           <a
@@ -116,6 +123,20 @@ export function EdgeSetupPanel({ facilityId }: { facilityId: string }) {
             className="rounded-md border border-border px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:border-primary/50 hover:bg-muted/20"
           >
             Linux (64-bit)
+          </a>
+        </div>
+        <div className="mt-2 flex flex-wrap gap-3 text-xs">
+          <a
+            href="/downloads/CHECKSUMS.txt"
+            className="underline underline-offset-2 text-muted-foreground hover:text-foreground"
+          >
+            SHA-256 checksums
+          </a>
+          <a
+            href="/downloads/VERSION.txt"
+            className="underline underline-offset-2 text-muted-foreground hover:text-foreground"
+          >
+            Version info
           </a>
         </div>
         <p className="mt-2 text-xs text-muted-foreground">

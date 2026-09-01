@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { ArrowLeft } from "lucide-react";
 import { PageHeader, Panel } from "@/components/ironiq/layout-primitives";
 
 export const Route = createFileRoute(
@@ -28,6 +29,13 @@ function CodeBlock({ children }: { children: string }) {
 function EdgeSetupGuidePage() {
   return (
     <div className="mx-auto max-w-3xl space-y-8">
+      <Link
+        to="/machines"
+        className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground"
+      >
+        <ArrowLeft className="size-3.5" aria-hidden /> Machines
+      </Link>
+
       <PageHeader
         eyebrow="Machines"
         title="IronIQ Edge setup guide"
@@ -96,6 +104,60 @@ function EdgeSetupGuidePage() {
         </p>
       </Panel>
 
+      <Panel title="Security: verify your download, and what to expect from your OS">
+        <p className="text-sm text-muted-foreground">
+          <strong className="text-foreground">
+            This binary is not yet code-signed.
+          </strong>{" "}
+          Code signing (a paid certificate from a certificate authority, plus
+          Apple notarization for macOS) is planned but not done yet. Until then:
+        </p>
+        <ul className="mt-3 list-disc space-y-2 pl-5 text-sm text-muted-foreground">
+          <li>
+            <strong className="text-foreground">Windows</strong> will likely
+            show a SmartScreen warning ("Windows protected your PC"). Click{" "}
+            <em>More info</em>, then <em>Run anyway</em> — only after verifying
+            the checksum below.
+          </li>
+          <li>
+            <strong className="text-foreground">macOS</strong> will block the
+            file outright the first time ("cannot be opened because the
+            developer cannot be verified"). Right-click the file, choose{" "}
+            <em>Open</em>, then confirm — this only needs to happen once per
+            machine.
+          </li>
+          <li>
+            Some antivirus/EDR software flags new, unsigned executables by
+            default, even when there's nothing actually wrong with them. If
+            yours does, verify the checksum below and inform your IT team rather
+            than disabling protection entirely.
+          </li>
+        </ul>
+        <p className="mt-3 text-sm text-muted-foreground">
+          <strong className="text-foreground">
+            Verify the file you downloaded matches what IronIQ actually built,
+          </strong>{" "}
+          using the{" "}
+          <a
+            href="/downloads/CHECKSUMS.txt"
+            className="underline underline-offset-2 hover:text-foreground"
+          >
+            published SHA-256 checksums
+          </a>
+          :
+        </p>
+        <CodeBlock>{`# Windows (PowerShell)
+Get-FileHash .\\ironiq-edge-windows-amd64.exe -Algorithm SHA256
+
+# macOS / Linux
+shasum -a 256 ironiq-edge-linux-amd64`}</CodeBlock>
+        <p className="mt-3 text-sm text-muted-foreground">
+          Compare the result against the matching line in CHECKSUMS.txt. If they
+          don't match exactly, don't run the file — re-download it, and if it
+          still doesn't match, contact IronIQ before proceeding.
+        </p>
+      </Panel>
+
       <Panel title="3. Configure it">
         <p className="mb-3 text-sm text-muted-foreground">
           Create a config file (JSON) next to the downloaded binary:
@@ -121,6 +183,17 @@ function EdgeSetupGuidePage() {
           an <code className="text-foreground">asset_id</code> that matches a
           real machine already in IronIQ's Machine master.
         </p>
+        <p className="mt-3 text-sm text-muted-foreground">
+          <strong className="text-foreground">Two habits worth keeping:</strong>{" "}
+          run this as a standard user account, not an administrator/root — it
+          never needs elevated privileges for anything it does. And prefer the{" "}
+          <code className="text-foreground">IRONIQ_FACILITY_KEY</code>{" "}
+          environment variable over the config file where you can; if you do
+          keep the key in the file, restrict who can read that file on the PC
+          it's running on. The key only grants write access for this one
+          facility's events, but there's no reason to leave it more exposed than
+          it needs to be.
+        </p>
       </Panel>
 
       <Panel title="4. Run it">
@@ -130,6 +203,18 @@ function EdgeSetupGuidePage() {
           you want it to keep running across reboots — that's your choice, not a
           requirement. The agent never opens a listening port, so there's
           nothing else to configure on the network side.
+        </p>
+        <p className="mt-3 text-sm text-muted-foreground">
+          Run <code className="text-foreground">./ironiq-edge --version</code>{" "}
+          at any time to confirm exactly which build you have — useful for
+          support, and for confirming it matches the{" "}
+          <a
+            href="/downloads/VERSION.txt"
+            className="underline underline-offset-2 hover:text-foreground"
+          >
+            latest published version
+          </a>
+          .
         </p>
       </Panel>
 
