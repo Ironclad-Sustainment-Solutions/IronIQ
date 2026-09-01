@@ -5,7 +5,11 @@ import {
   Panel,
   EmptyState,
 } from "@/components/ironiq/layout-primitives";
-import { SeverityBadge, FindingStatusBadge } from "@/components/ironiq/badges";
+import {
+  SeverityBadge,
+  FindingStatusBadge,
+  Tag,
+} from "@/components/ironiq/badges";
 import { useApp } from "@/context/app-context";
 import { useCorrectiveActions, useFindings } from "@/lib/api";
 import { SEVERITY_ORDER } from "@/lib/domain";
@@ -15,6 +19,10 @@ import {
   CorrectiveActionDialog,
 } from "@/components/ironiq/entity-dialogs";
 import { Button } from "@/components/ui/button";
+import {
+  useUnreviewedAlarms,
+  useCreateFindingFromAlarm,
+} from "@/lib/machine-alarm-findings-api";
 
 export const Route = createFileRoute("/_authenticated/findings")({
   head: () => ({
@@ -55,8 +63,10 @@ function FindingsPage() {
       <PageHeader
         eyebrow={facility?.name ?? "Facility"}
         title="Findings"
-        description="Findings are generated automatically when a critical control scores 0–1 or a standard question scores 0–2, then managed through to verified closure."
+        description="Findings are generated automatically when a critical control scores 0–1 or a standard question scores 0–2, or created directly from a real machine alarm reported by IronIQ Edge — either way, managed through to verified closure."
       />
+
+      <UnreviewedAlarmsPanel facilityId={facility?.id} />
 
       {sorted.length === 0 ? (
         <EmptyState message="No findings recorded for this facility." />
@@ -196,5 +206,55 @@ function FindingsPage() {
         </div>
       )}
     </div>
+  );
+}
+
+function UnreviewedAlarmsPanel({ facilityId }: { facilityId?: string }) {
+  const alarms = useUnreviewedAlarms(facilityId).data ?? [];
+  const promote = useCreateFindingFromAlarm(facilityId);
+
+  if (alarms.length === 0) return null;
+
+  return (
+    <Panel title="Machine alarms — not yet reviewed">
+      <p className="mb-3 text-sm text-muted-foreground">
+        Real alarm events reported by IronIQ Edge. Not every alarm is worth
+        tracking as a finding — decide which ones are; nothing here gets created
+        automatically.
+      </p>
+      <div className="space-y-2">
+        {alarms.map((a) => (
+          <div
+            key={a.event_id}
+            className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-border p-3"
+          >
+            <div>
+              <p className="text-sm font-semibold text-foreground">
+                {a.machine_name}{" "}
+                <span className="font-normal text-muted-foreground">
+                  ({a.machine_asset_id})
+                </span>
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {a.alarm_code ? `${a.alarm_code} · ` : ""}
+                {formatDate(a.ts_utc)}
+                {a.program_name ? ` · program ${a.program_name}` : ""}
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <Tag token="medium">Alarm</Tag>
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={promote.isPending}
+                onClick={() => promote.mutate(a.event_id)}
+              >
+                Log as finding
+              </Button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </Panel>
   );
 }
