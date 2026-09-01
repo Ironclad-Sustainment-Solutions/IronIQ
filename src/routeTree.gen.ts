@@ -33,7 +33,6 @@ import { Route as AuthenticatedReportsRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedSuppliersRouteImport } from './routes/_authenticated/suppliers'
 import { Route as AuthenticatedSustainmentRouteImport } from './routes/_authenticated/sustainment'
 import { Route as AuthenticatedTemplatesRouteImport } from './routes/_authenticated/templates'
-import { Route as AuthenticatedToolingFixturesRouteImport } from './routes/_authenticated/tooling-fixtures'
 import { Route as AuthenticatedWorkInstructionsRouteImport } from './routes/_authenticated/work-instructions'
 import { Route as AuthenticatedAssessmentsIndexRouteImport } from './routes/_authenticated/assessments/index'
 import { Route as AuthenticatedAssessmentsAssessmentIdRouteImport } from './routes/_authenticated/assessments/$assessmentId'
@@ -183,12 +182,6 @@ const AuthenticatedTemplatesRoute = AuthenticatedTemplatesRouteImport.update({
   path: '/templates',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
-const AuthenticatedToolingFixturesRoute =
-  AuthenticatedToolingFixturesRouteImport.update({
-    id: '/tooling-fixtures',
-    path: '/tooling-fixtures',
-    getParentRoute: () => AuthenticatedRouteRoute,
-  } as any)
 const AuthenticatedWorkInstructionsRoute =
   AuthenticatedWorkInstructionsRouteImport.update({
     id: '/work-instructions',
@@ -360,7 +353,6 @@ export interface FileRoutesByFullPath {
   '/suppliers': typeof AuthenticatedSuppliersRoute
   '/sustainment': typeof AuthenticatedSustainmentRoute
   '/templates': typeof AuthenticatedTemplatesRoute
-  '/tooling-fixtures': typeof AuthenticatedToolingFixturesRoute
   '/work-instructions': typeof AuthenticatedWorkInstructionsRoute
   '/assessments/$assessmentId': typeof AuthenticatedAssessmentsAssessmentIdRoute
   '/assessments/new': typeof AuthenticatedAssessmentsNewRoute
@@ -410,7 +402,6 @@ export interface FileRoutesByTo {
   '/suppliers': typeof AuthenticatedSuppliersRoute
   '/sustainment': typeof AuthenticatedSustainmentRoute
   '/templates': typeof AuthenticatedTemplatesRoute
-  '/tooling-fixtures': typeof AuthenticatedToolingFixturesRoute
   '/work-instructions': typeof AuthenticatedWorkInstructionsRoute
   '/assessments/$assessmentId': typeof AuthenticatedAssessmentsAssessmentIdRoute
   '/assessments/new': typeof AuthenticatedAssessmentsNewRoute
@@ -463,7 +454,6 @@ export interface FileRoutesById {
   '/_authenticated/suppliers': typeof AuthenticatedSuppliersRoute
   '/_authenticated/sustainment': typeof AuthenticatedSustainmentRoute
   '/_authenticated/templates': typeof AuthenticatedTemplatesRoute
-  '/_authenticated/tooling-fixtures': typeof AuthenticatedToolingFixturesRoute
   '/_authenticated/work-instructions': typeof AuthenticatedWorkInstructionsRoute
   '/_authenticated/assessments/$assessmentId': typeof AuthenticatedAssessmentsAssessmentIdRoute
   '/_authenticated/assessments/new': typeof AuthenticatedAssessmentsNewRoute
@@ -516,7 +506,6 @@ export interface FileRouteTypes {
     | '/suppliers'
     | '/sustainment'
     | '/templates'
-    | '/tooling-fixtures'
     | '/work-instructions'
     | '/assessments/$assessmentId'
     | '/assessments/new'
@@ -566,7 +555,6 @@ export interface FileRouteTypes {
     | '/suppliers'
     | '/sustainment'
     | '/templates'
-    | '/tooling-fixtures'
     | '/work-instructions'
     | '/assessments/$assessmentId'
     | '/assessments/new'
@@ -618,7 +606,6 @@ export interface FileRouteTypes {
     | '/_authenticated/suppliers'
     | '/_authenticated/sustainment'
     | '/_authenticated/templates'
-    | '/_authenticated/tooling-fixtures'
     | '/_authenticated/work-instructions'
     | '/_authenticated/assessments/$assessmentId'
     | '/_authenticated/assessments/new'
@@ -825,13 +812,6 @@ declare module '@tanstack/react-router' {
       path: '/templates'
       fullPath: '/templates'
       preLoaderRoute: typeof AuthenticatedTemplatesRouteImport
-      parentRoute: typeof AuthenticatedRouteRoute
-    }
-    '/_authenticated/tooling-fixtures': {
-      id: '/_authenticated/tooling-fixtures'
-      path: '/tooling-fixtures'
-      fullPath: '/tooling-fixtures'
-      preLoaderRoute: typeof AuthenticatedToolingFixturesRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/work-instructions': {
@@ -1056,7 +1036,6 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedSuppliersRoute: typeof AuthenticatedSuppliersRoute
   AuthenticatedSustainmentRoute: typeof AuthenticatedSustainmentRoute
   AuthenticatedTemplatesRoute: typeof AuthenticatedTemplatesRoute
-  AuthenticatedToolingFixturesRoute: typeof AuthenticatedToolingFixturesRoute
   AuthenticatedWorkInstructionsRoute: typeof AuthenticatedWorkInstructionsRoute
   AuthenticatedAssessmentsAssessmentIdRoute: typeof AuthenticatedAssessmentsAssessmentIdRoute
   AuthenticatedAssessmentsNewRoute: typeof AuthenticatedAssessmentsNewRoute
@@ -1097,7 +1076,6 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedSuppliersRoute: AuthenticatedSuppliersRoute,
   AuthenticatedSustainmentRoute: AuthenticatedSustainmentRoute,
   AuthenticatedTemplatesRoute: AuthenticatedTemplatesRoute,
-  AuthenticatedToolingFixturesRoute: AuthenticatedToolingFixturesRoute,
   AuthenticatedWorkInstructionsRoute: AuthenticatedWorkInstructionsRoute,
   AuthenticatedAssessmentsAssessmentIdRoute:
     AuthenticatedAssessmentsAssessmentIdRoute,
