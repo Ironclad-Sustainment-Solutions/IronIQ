@@ -305,13 +305,37 @@ export async function handleOAuthCallback(
   const returnedState = url.searchParams.get("state");
   const handshake = await consumeHandshake();
 
+  // Check for the provider's OWN error first, before any of the
+  // state/CSRF checks below. Real gap found via a live test: if
+  // Microsoft (or Google) redirects back with an error instead of a
+  // code -- consent declined, admin approval required, the app
+  // registration misconfigured in some way -- there's no `code` at all,
+  // and the generic "missing code" branch below would have swallowed
+  // that into the same undifferentiated "expired or already used"
+  // message a genuine replayed/stale request gets. That conflates two
+  // completely different problems into one unhelpful message. Surfacing
+  // the provider's actual error text turns the next real attempt into a
+  // definitive answer instead of another guess.
+  const providerError = url.searchParams.get("error");
+  if (providerError) {
+    const description =
+      url.searchParams.get("error_description") ?? providerError;
+    console.error(
+      `${provider} OAuth error: ${providerError} -- ${description}`,
+    );
+    return redirect(
+      `/auth?oauth_error=oauth_failed&oauth_error_detail=${encodeURIComponent(description)}`,
+    );
+  }
+
   // Every one of these is a real, meaningful check, not defensive
   // boilerplate: a missing code/state means the provider redirected here
   // without actually completing consent (or someone hit this URL
-  // directly); a state mismatch is exactly the CSRF this dance exists to
-  // prevent; a provider mismatch means someone's Google callback
-  // somehow carried a Microsoft handshake (shouldn't be reachable
-  // through the UI, but not assumed impossible either).
+  // directly, or the request is stale/replayed); a state mismatch is
+  // exactly the CSRF this dance exists to prevent; a provider mismatch
+  // means someone's Google callback somehow carried a Microsoft
+  // handshake (shouldn't be reachable through the UI, but not assumed
+  // impossible either).
   if (
     !code ||
     !returnedState ||
@@ -339,7 +363,10 @@ export async function handleOAuthCallback(
     await createUserSession(outcome.userId, request.headers.get("user-agent"));
     return redirect("/home");
   } catch (error) {
-    console.error(error);
-    return redirect("/auth?oauth_error=oauth_failed");
+    const detail = error instanceof Error ? error.message : String(error);
+    console.error(`${provider} OAuth callback failed:`, error);
+    return redirect(
+      `/auth?oauth_error=oauth_failed&oauth_error_detail=${encodeURIComponent(detail)}`,
+    );
   }
 }
