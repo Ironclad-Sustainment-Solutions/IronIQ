@@ -101,14 +101,18 @@ interface NavGroup {
 // Programs, Production, Capability Health = Dashboard, Risks = Findings,
 // Insights = Ask IronIQ, Actions = Improvement Projects -- the last two
 // confirmed directly). Processes maps to the existing Capability
-// Assessment feature (process/criteria domains).
+// Assessment feature (process/criteria domains). Tooling & Fixtures maps
+// to Production Libraries' existing tooling/materials/consumables data,
+// not a new page -- moved off NotYetBuiltPage once that became clear.
+// Sustainment is a real, purpose-built page combining human-reported
+// Capability Assessment check-ins with real IronIQ Edge telemetry drift
+// detection -- also not a NotYetBuiltPage stub.
 //
-// Four labels have no existing page behind them at all (Suppliers,
-// Tooling & Fixtures, Work Instructions, Quality) and one is a
-// low-confidence guess with nothing solid to point to (Sustainment) --
-// all five route to NotYetBuiltPage rather than a dead link or silently
-// disappearing from the layout, so the nav visually matches the target
-// taxonomy now without pretending something exists that doesn't.
+// Three labels still have no existing page behind them at all
+// (Suppliers, Work Instructions, Quality) -- route to NotYetBuiltPage
+// rather than a dead link or silently disappearing from the layout, so
+// the nav visually matches the target taxonomy without pretending
+// something exists that doesn't.
 //
 // Two existing IronIQ Edge routes (Floor View, Improvements) don't have
 // an obvious slot in this taxonomy at all -- rather than lose
@@ -150,7 +154,11 @@ const ENGINEERING_NAV: NavGroup[] = [
         icon: Code2,
         restrictedProduct: "cnc",
       },
-      { to: "/tooling-fixtures", label: "Tooling & Fixtures", icon: Wrench },
+      {
+        to: "/production/libraries",
+        label: "Tooling & Fixtures",
+        icon: Wrench,
+      },
     ],
   },
 ];
