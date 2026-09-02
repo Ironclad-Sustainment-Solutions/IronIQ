@@ -36,12 +36,13 @@ describe("public UI copy", () => {
     const productsStart = home.indexOf("const PRODUCTS = [");
     const firstLabel = home.slice(productsStart).match(/label:\s*"([^"]+)"/);
     expect(firstLabel?.[1]).not.toBe("Assessments");
-    // Renamed from "Machines" to "Capability" when the sidebar was
-    // restructured into the Capability/Engineering/Operations/
-    // Intelligence taxonomy -- the label changed, but the protective
-    // intent (don't lead with Assessments, do lead somewhere that
-    // actually reaches /machines) still holds.
-    expect(firstLabel?.[1]).toBe("Capability");
+    // Renamed from "Machines" to "Capability" to "Shop" as the sidebar
+    // taxonomy evolved (most recently: Capability/Engineering/
+    // Operations/Intelligence renamed to Shop/Engineering/Production/
+    // Reports for a shop-floor audience) -- the label keeps changing,
+    // but the protective intent (don't lead with Assessments, do lead
+    // somewhere that actually reaches /machines) still holds.
+    expect(firstLabel?.[1]).toBe("Shop");
     expect(home).toContain('to: "/machines"');
     expect(home).not.toContain('to: "/assessment"');
   });
@@ -109,7 +110,7 @@ describe("public UI copy", () => {
     }
   });
 
-  it("distributes former IronIQ Edge features (Floor View, Parts, Improvements) into the Capability/Operations taxonomy rather than keeping them as their own section", () => {
+  it("distributes former IronIQ Edge features (Floor View, Parts, Improvements) into the Shop/Production taxonomy rather than keeping them as their own section", () => {
     const shell = source("src/components/ironiq/app-shell.tsx");
     expect(shell).toContain('to: "/machines"');
     expect(shell).not.toContain('section: "IronIQ Edge"');
@@ -118,12 +119,13 @@ describe("public UI copy", () => {
     expect(source("src/routes/_authenticated/machines/index.tsx")).toContain(
       "Machine master",
     );
-    // Parts lives under Capability, Floor View/Improvements under
-    // Operations -- confirm both taxonomy sections exist and neither
-    // resurrects a standalone "IronIQ Edge" heading.
-    expect(shell).toContain('section: "Capability"');
-    expect(shell).toContain('section: "Operations"');
-    expect(shell).toContain('section: "Intelligence"');
+    // Parts lives under Shop, Floor View/Improvements under Production
+    // -- confirm both taxonomy sections exist (renamed from Capability/
+    // Operations for a shop-floor audience) and neither resurrects a
+    // standalone "IronIQ Edge" heading.
+    expect(shell).toContain('section: "Shop"');
+    expect(shell).toContain('section: "Production"');
+    expect(shell).toContain('section: "Reports"');
   });
 
   it("does not put Grede-only product copy on Edge or field surfaces", () => {

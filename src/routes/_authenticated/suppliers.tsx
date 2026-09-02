@@ -105,7 +105,7 @@ function SuppliersPage() {
   return (
     <div className="mx-auto max-w-4xl space-y-6">
       <PageHeader
-        eyebrow="Capability"
+        eyebrow="Shop"
         title="Suppliers"
         description="Contacts, lead time, and quality notes for the materials, tooling, and services this shop relies on. Not yet linked to the supplier fields already recorded on individual materials/tooling/consumables in Production Libraries — this is a standalone directory for now."
         actions={
