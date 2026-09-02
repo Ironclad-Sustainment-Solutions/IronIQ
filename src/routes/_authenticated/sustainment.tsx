@@ -64,7 +64,7 @@ function SustainmentPage() {
   return (
     <div className="mx-auto max-w-4xl space-y-8">
       <PageHeader
-        eyebrow="Intelligence"
+        eyebrow="Reports"
         title="Sustainment"
         description="Is a fix still holding? Combines human-reported check-ins from the Capability Assessment with real IronIQ Edge telemetry comparing current machine performance against the original improvement."
       />

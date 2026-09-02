@@ -38,30 +38,30 @@ const PRODUCTS = [
   {
     to: "/machines",
     icon: Package,
-    label: "Capability",
+    label: "Shop",
     description:
-      "Machines, parts, processes, suppliers — what this shop can actually make and with what, whether or not there's a live machine connection yet.",
+      "Machines, parts, assessments, suppliers — what this shop can actually make and with what, whether or not there's a live machine connection yet.",
   },
   {
     to: "/cad",
     icon: FileImage,
     label: "Engineering",
     description:
-      "Technical data, CAD & drawings, CNC programs, tooling & fixtures — the engineering record behind a part, always reviewed by a person before it's trusted.",
+      "Drawings & data, CAD & drawings, CNC programs, tooling & fixtures — the engineering record behind a part, always reviewed by a person before it's trusted.",
   },
   {
     to: "/production",
     icon: Cpu,
-    label: "Operations",
+    label: "Production",
     description:
-      "Production, work instructions, quality, actions — log a change on a named machine, record structured before/after numbers, and track what's actually improving.",
+      "Jobs, work instructions, quality, improvements — log a change on a named machine, record structured before/after numbers, and track what's actually improving.",
   },
   {
     to: "/ask-ironiq",
     icon: Sparkles,
-    label: "Intelligence",
+    label: "Reports",
     description:
-      "Capability health, sustainment, risks, and insights grounded in this shop's own data and anonymized precedent from other engagements — not generic advice.",
+      "Readiness, sustainment, findings, and Ask IronIQ grounded in this shop's own data and anonymized precedent from other engagements — not generic advice.",
   },
 ];
 

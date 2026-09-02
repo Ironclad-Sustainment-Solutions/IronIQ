@@ -3,6 +3,7 @@ import { useNavigate } from "@tanstack/react-router";
 import {
   Building2,
   Code2,
+  Compass,
   Factory,
   FileImage,
   FileStack,
@@ -35,6 +36,7 @@ const TYPE_ICON: Record<SearchResultType, LucideIcon> = {
   cnc_entry: Code2,
   organization: Building2,
   facility: Factory,
+  page: Compass,
 };
 
 const TYPE_GROUP_LABEL: Record<SearchResultType, string> = {
@@ -46,6 +48,7 @@ const TYPE_GROUP_LABEL: Record<SearchResultType, string> = {
   cnc_entry: "CNC Entries",
   organization: "Organizations",
   facility: "Facilities",
+  page: "Pages",
 };
 
 function groupResults(

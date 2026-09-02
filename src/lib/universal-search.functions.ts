@@ -19,6 +19,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireAuth } from "@/lib/auth/auth-middleware";
 import { withUser } from "@/lib/db.server";
+import { NAV_REGISTRY } from "@/lib/nav-registry";
 
 export type SearchResultType =
   | "machine"
@@ -28,7 +29,8 @@ export type SearchResultType =
   | "cad_job"
   | "cnc_entry"
   | "organization"
-  | "facility";
+  | "facility"
+  | "page";
 
 export interface SearchResult {
   type: SearchResultType;
@@ -58,6 +60,35 @@ export function looksLikeNaturalLanguageQuestion(query: string): boolean {
   return /^(what|why|how|when|which|who|is|are|does|do|can|should|will)\b/i.test(
     trimmed,
   );
+}
+
+/**
+ * Matches the query against every navigable page's label AND section
+ * (e.g. "reports" should surface every page under the Reports section,
+ * not just a page literally named "Reports") -- pure, in-memory,
+ * case-insensitive substring matching against NAV_REGISTRY. No database
+ * round trip needed since page existence isn't sensitive data, unlike
+ * the actual records universalSearch's DB queries cover -- this runs
+ * even if a user has no organization/facility access yet, since "how do
+ * I get to Findings" is a reasonable thing to search before there's any
+ * data in Findings at all.
+ */
+export function matchPages(query: string): SearchResult[] {
+  const needle = query.trim().toLowerCase();
+  if (!needle) return [];
+  return NAV_REGISTRY.filter(
+    (entry) =>
+      entry.label.toLowerCase().includes(needle) ||
+      entry.section.toLowerCase().includes(needle),
+  )
+    .slice(0, RESULTS_PER_TYPE)
+    .map((entry) => ({
+      type: "page" as const,
+      id: entry.href,
+      label: entry.label,
+      sublabel: entry.section,
+      href: entry.href,
+    }));
 }
 
 export const universalSearch = createServerFn({ method: "GET" })
@@ -206,7 +237,7 @@ export const universalSearch = createServerFn({ method: "GET" })
     });
 
     return {
-      results,
+      results: [...matchPages(data.query), ...results],
       looksLikeQuestion: looksLikeNaturalLanguageQuestion(data.query),
     };
   });

@@ -74,7 +74,7 @@ interface NavItem {
   icon: typeof LayoutDashboard;
   heading?: string;
   // Item-level now, not section-level: CAD & Drawings and CNC Programs
-  // both live inside the same "Engineering" group as Technical Data and
+  // both live inside the same "Engineering" group as Drawings & Data and
   // Tooling & Fixtures, which aren't restrictable products themselves --
   // restricting "cad" must hide only the CAD & Drawings item, not the
   // whole Engineering section.
@@ -87,25 +87,30 @@ interface NavGroup {
   items: NavItem[];
 }
 
-// Sidebar taxonomy: Capability / Engineering / Operations / Intelligence,
-// replacing the earlier Machines/Assessments/CAD Conversion/CNC Coding
-// product-pipeline structure. Every section renders at the same visual
-// weight now -- no more "prominent product tier" vs "quieter support
-// tier" distinction; that only made sense when there were 3-4 flagship
+// Sidebar taxonomy: Shop / Engineering / Production / Reports, replacing
+// the earlier Machines/Assessments/CAD Conversion/CNC Coding
+// product-pipeline structure (itself originally named Capability/
+// Engineering/Operations/Intelligence, renamed for a shop-floor
+// audience -- consulting-deck words like "Capability" and
+// "Intelligence" don't match how machine shop staff actually talk about
+// their own work). Every section renders at the same visual weight now
+// -- no more "prominent product tier" vs "quieter support tier"
+// distinction; that only made sense when there were 3-4 flagship
 // products competing for attention against admin/setup sections. This
 // taxonomy groups by function (what kind of work) instead, so a uniform
 // treatment across all of them is the right call.
 //
 // Mapped existing routes onto the new labels where a real page already
 // existed for the concept (Parts, Machines, CAD & Drawings, CNC
-// Programs, Production, Capability Health = Dashboard, Risks = Findings,
-// Insights = Ask IronIQ, Actions = Improvement Projects -- the last two
-// confirmed directly). Processes maps to the existing Capability
-// Assessment feature (process/criteria domains). Tooling & Fixtures maps
-// to Production Libraries' existing tooling/materials/consumables data,
-// not a new page -- moved off NotYetBuiltPage once that became clear.
-// Sustainment is a real, purpose-built page combining human-reported
-// Capability Assessment check-ins with real IronIQ Edge telemetry drift
+// Programs, Jobs, Readiness = Dashboard, Findings = the Findings page,
+// Ask IronIQ = the Ask IronIQ page, Improvements/Projects = Improvement
+// Projects -- confirmed directly). Assessments maps to the existing
+// Capability Assessment feature (process/criteria domains). Tooling &
+// Fixtures maps to Production Libraries' existing tooling/materials/
+// consumables data, not a new page -- moved off NotYetBuiltPage once
+// that became clear. Sustainment is a real, purpose-built page
+// combining human-reported Capability Assessment check-ins with real
+// IronIQ Edge telemetry drift
 // detection -- also not a NotYetBuiltPage stub.
 //
 // Three labels still have no existing page behind them at all
@@ -117,20 +122,21 @@ interface NavGroup {
 // Two existing IronIQ Edge routes (Floor View, Improvements) don't have
 // an obvious slot in this taxonomy at all -- rather than lose
 // reachability of working features, they're kept as extra items under
-// Operations alongside Production, which is the closest fit.
+// Production (formerly "Operations") alongside Jobs, which is the
+// closest fit.
 const CAPABILITY_NAV: NavGroup[] = [
   {
-    section: "Capability",
+    section: "Shop",
     groupIcon: Package,
     items: [
       { to: "/machines/parts", label: "Parts", icon: Package },
       { to: "/machines", label: "Machines", icon: Factory },
       // The Assessment Hub, not /capability directly -- it's the actual
       // entry point linking onward to Assessments, Capability
-      // Assessment, and Field Assessment. Mapping "Processes" to just
+      // Assessment, and Field Assessment. Mapping "Assessments" to just
       // one of those three would strand the other two with no way back
       // in from this taxonomy at all.
-      { to: "/assessment", label: "Processes", icon: Users },
+      { to: "/assessment", label: "Assessments", icon: Users },
       { to: "/suppliers", label: "Suppliers", icon: Building2 },
     ],
   },
@@ -141,7 +147,7 @@ const ENGINEERING_NAV: NavGroup[] = [
     section: "Engineering",
     groupIcon: FileImage,
     items: [
-      { to: "/intake", label: "Technical Data", icon: UploadCloud },
+      { to: "/intake", label: "Drawings & Data", icon: UploadCloud },
       {
         to: "/cad",
         label: "CAD & Drawings",
@@ -165,10 +171,10 @@ const ENGINEERING_NAV: NavGroup[] = [
 
 const OPERATIONS_NAV: NavGroup[] = [
   {
-    section: "Operations",
+    section: "Production",
     groupIcon: Cpu,
     items: [
-      { to: "/production", label: "Production", icon: Cpu },
+      { to: "/production", label: "Jobs", icon: Cpu },
       { to: "/floor", label: "Floor View", icon: LayoutGrid },
       { to: "/machines/improvements", label: "Improvements", icon: TrendingUp },
       {
@@ -177,25 +183,25 @@ const OPERATIONS_NAV: NavGroup[] = [
         icon: ClipboardList,
       },
       { to: "/quality", label: "Quality", icon: ClipboardCheck },
-      { to: "/projects", label: "Actions", icon: Compass },
+      { to: "/projects", label: "Projects", icon: Compass },
     ],
   },
 ];
 
 const INTELLIGENCE_TAXONOMY_NAV: NavGroup[] = [
   {
-    section: "Intelligence",
+    section: "Reports",
     groupIcon: Sparkles,
     items: [
-      { to: "/dashboard", label: "Capability Health", icon: LayoutDashboard },
+      { to: "/dashboard", label: "Readiness", icon: LayoutDashboard },
       { to: "/sustainment", label: "Sustainment", icon: Shield },
       {
         to: "/findings",
-        label: "Risks",
+        label: "Findings",
         icon: AlertTriangle,
         restrictedProduct: "assessment",
       },
-      { to: "/ask-ironiq", label: "Insights", icon: Sparkles },
+      { to: "/ask-ironiq", label: "Ask IronIQ", icon: Sparkles },
     ],
   },
 ];
@@ -354,7 +360,7 @@ function NavLinks({
     roles.includes("ironiq_admin") || roles.includes("consultant");
 
   // Item-level filtering now, not section-level: CAD & Drawings and CNC
-  // Programs live inside the same "Engineering" group as Technical Data
+  // Programs live inside the same "Engineering" group as Drawings & Data
   // and Tooling & Fixtures (which aren't restrictable products
   // themselves), so restricting "cad" must hide only that one item, not
   // the whole group.
@@ -435,14 +441,16 @@ function NavLinks({
 
   // Every section renders at the same uniform tier now (see the taxonomy
   // comment above CAPABILITY_NAV) -- no more bold "product" styling vs
-  // quieter "support" styling; Capability/Engineering/Operations/
-  // Intelligence/Business/Setup all read as equal-weight functional
-  // groupings, matching the target sidebar design.
+  // quieter "support" styling; Shop/Engineering/Production/Reports/
+  // Business/Setup all read as equal-weight functional groupings,
+  // matching the target sidebar design. (These labels below are used
+  // only as React keys for each section's wrapper -- the actual visible
+  // header text comes from each NavGroup's own `section` field.)
   const sectionGroups: { label: string; groups: NavGroup[] }[] = [
-    { label: "Capability", groups: visibleCapabilityNav },
+    { label: "Shop", groups: visibleCapabilityNav },
     { label: "Engineering", groups: visibleEngineeringNav },
-    { label: "Operations", groups: visibleOperationsNav },
-    { label: "Intelligence", groups: visibleIntelligenceNav },
+    { label: "Production", groups: visibleOperationsNav },
+    { label: "Reports", groups: visibleIntelligenceNav },
     ...(isPlatformStaff
       ? [{ label: "Business", groups: BUSINESS_DEV_NAV }]
       : []),
