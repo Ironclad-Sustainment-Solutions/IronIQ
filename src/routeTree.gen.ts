@@ -57,6 +57,7 @@ import { Route as ApiAuthGoogleCallbackRouteImport } from './routes/api/auth/goo
 import { Route as ApiAuthGoogleStartRouteImport } from './routes/api/auth/google/start'
 import { Route as ApiAuthMicrosoftCallbackRouteImport } from './routes/api/auth/microsoft/callback'
 import { Route as ApiAuthMicrosoftStartRouteImport } from './routes/api/auth/microsoft/start'
+import { Route as ApiIroniqV1EdgeConfigRouteImport } from './routes/api/ironiq/v1/edge-config'
 import { Route as ApiIroniqV1MachineEventsRouteImport } from './routes/api/ironiq/v1/machine-events'
 
 const IndexRoute = IndexRouteImport.update({
@@ -322,6 +323,11 @@ const ApiAuthMicrosoftStartRoute = ApiAuthMicrosoftStartRouteImport.update({
   path: '/api/auth/microsoft/start',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiIroniqV1EdgeConfigRoute = ApiIroniqV1EdgeConfigRouteImport.update({
+  id: '/api/ironiq/v1/edge-config',
+  path: '/api/ironiq/v1/edge-config',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiIroniqV1MachineEventsRoute =
   ApiIroniqV1MachineEventsRouteImport.update({
     id: '/api/ironiq/v1/machine-events',
@@ -377,6 +383,7 @@ export interface FileRoutesByFullPath {
   '/api/auth/google/start': typeof ApiAuthGoogleStartRoute
   '/api/auth/microsoft/callback': typeof ApiAuthMicrosoftCallbackRoute
   '/api/auth/microsoft/start': typeof ApiAuthMicrosoftStartRoute
+  '/api/ironiq/v1/edge-config': typeof ApiIroniqV1EdgeConfigRoute
   '/api/ironiq/v1/machine-events': typeof ApiIroniqV1MachineEventsRoute
 }
 export interface FileRoutesByTo {
@@ -426,6 +433,7 @@ export interface FileRoutesByTo {
   '/api/auth/google/start': typeof ApiAuthGoogleStartRoute
   '/api/auth/microsoft/callback': typeof ApiAuthMicrosoftCallbackRoute
   '/api/auth/microsoft/start': typeof ApiAuthMicrosoftStartRoute
+  '/api/ironiq/v1/edge-config': typeof ApiIroniqV1EdgeConfigRoute
   '/api/ironiq/v1/machine-events': typeof ApiIroniqV1MachineEventsRoute
 }
 export interface FileRoutesById {
@@ -478,6 +486,7 @@ export interface FileRoutesById {
   '/api/auth/google/start': typeof ApiAuthGoogleStartRoute
   '/api/auth/microsoft/callback': typeof ApiAuthMicrosoftCallbackRoute
   '/api/auth/microsoft/start': typeof ApiAuthMicrosoftStartRoute
+  '/api/ironiq/v1/edge-config': typeof ApiIroniqV1EdgeConfigRoute
   '/api/ironiq/v1/machine-events': typeof ApiIroniqV1MachineEventsRoute
 }
 export interface FileRouteTypes {
@@ -530,6 +539,7 @@ export interface FileRouteTypes {
     | '/api/auth/google/start'
     | '/api/auth/microsoft/callback'
     | '/api/auth/microsoft/start'
+    | '/api/ironiq/v1/edge-config'
     | '/api/ironiq/v1/machine-events'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -579,6 +589,7 @@ export interface FileRouteTypes {
     | '/api/auth/google/start'
     | '/api/auth/microsoft/callback'
     | '/api/auth/microsoft/start'
+    | '/api/ironiq/v1/edge-config'
     | '/api/ironiq/v1/machine-events'
   id:
     | '__root__'
@@ -630,6 +641,7 @@ export interface FileRouteTypes {
     | '/api/auth/google/start'
     | '/api/auth/microsoft/callback'
     | '/api/auth/microsoft/start'
+    | '/api/ironiq/v1/edge-config'
     | '/api/ironiq/v1/machine-events'
   fileRoutesById: FileRoutesById
 }
@@ -641,6 +653,7 @@ export interface RootRouteChildren {
   ApiAuthGoogleStartRoute: typeof ApiAuthGoogleStartRoute
   ApiAuthMicrosoftCallbackRoute: typeof ApiAuthMicrosoftCallbackRoute
   ApiAuthMicrosoftStartRoute: typeof ApiAuthMicrosoftStartRoute
+  ApiIroniqV1EdgeConfigRoute: typeof ApiIroniqV1EdgeConfigRoute
   ApiIroniqV1MachineEventsRoute: typeof ApiIroniqV1MachineEventsRoute
 }
 
@@ -982,6 +995,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiAuthMicrosoftStartRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/ironiq/v1/edge-config': {
+      id: '/api/ironiq/v1/edge-config'
+      path: '/api/ironiq/v1/edge-config'
+      fullPath: '/api/ironiq/v1/edge-config'
+      preLoaderRoute: typeof ApiIroniqV1EdgeConfigRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/ironiq/v1/machine-events': {
       id: '/api/ironiq/v1/machine-events'
       path: '/api/ironiq/v1/machine-events'
@@ -1111,6 +1131,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAuthGoogleStartRoute: ApiAuthGoogleStartRoute,
   ApiAuthMicrosoftCallbackRoute: ApiAuthMicrosoftCallbackRoute,
   ApiAuthMicrosoftStartRoute: ApiAuthMicrosoftStartRoute,
+  ApiIroniqV1EdgeConfigRoute: ApiIroniqV1EdgeConfigRoute,
   ApiIroniqV1MachineEventsRoute: ApiIroniqV1MachineEventsRoute,
 }
 export const routeTree = rootRouteImport

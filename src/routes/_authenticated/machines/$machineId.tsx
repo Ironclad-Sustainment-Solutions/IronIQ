@@ -145,14 +145,6 @@ function MachineDetailPage() {
       <EdgeSetupPanel
         facilityId={machine.facility_id}
         plantId={facility?.name}
-        machines={[
-          {
-            asset_id: machine.asset_id,
-            control: machine.control,
-            protocol: machine.protocol,
-            mtconnect_agent_url: machine.mtconnect_agent_url,
-          },
-        ]}
       />
 
       {machine.protocol === "mtconnect" ? (

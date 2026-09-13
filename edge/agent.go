@@ -21,12 +21,32 @@ type agent struct {
 	queue    *buffer.Queue
 	trackers map[string]*mapper.Tracker
 	now      func() time.Time
+	// True when the config file's own machines[] was empty at startup --
+	// means "fetch the current list from IronIQ" rather than "this
+	// facility genuinely has zero machines." Tracked so refreshMachines
+	// knows whether it should be doing anything at all; a config that
+	// explicitly lists machines locally is left alone, never silently
+	// overwritten by whatever IronIQ happens to return.
+	dynamic bool
 }
 
 func newAgent(cfg Config, queue *buffer.Queue, ingestClient *ingest.Client, mtc *http.Client) *agent {
 	if mtc == nil {
 		mtc = &http.Client{Timeout: 10 * time.Second}
 	}
+	a := &agent{
+		cfg:     cfg,
+		mtc:     mtc,
+		ingest:  ingestClient,
+		queue:   queue,
+		now:     func() time.Time { return time.Now().UTC() },
+		dynamic: len(cfg.Machines) == 0,
+	}
+	a.trackers = buildTrackers(cfg)
+	return a
+}
+
+func buildTrackers(cfg Config) map[string]*mapper.Tracker {
 	trackers := make(map[string]*mapper.Tracker, len(cfg.Machines))
 	for _, m := range cfg.Machines {
 		trackers[m.AssetID] = &mapper.Tracker{
@@ -39,14 +59,37 @@ func newAgent(cfg Config, queue *buffer.Queue, ingestClient *ingest.Client, mtc 
 			},
 		}
 	}
-	return &agent{
-		cfg:      cfg,
-		mtc:      mtc,
-		ingest:   ingestClient,
-		queue:    queue,
-		trackers: trackers,
-		now:      func() time.Time { return time.Now().UTC() },
+	return trackers
+}
+
+// refreshMachines re-fetches the machine list from IronIQ when running
+// in dynamic mode (see the dynamic field above) and merges it in --
+// existing trackers for machines that are still present are kept
+// exactly as they are (a tracker holds real state, like "what execution
+// mode did this machine last report," that a routine refresh has no
+// reason to discard), trackers for machines no longer returned are
+// dropped, and new machines get a fresh tracker. A failed fetch (network
+// hiccup, IronIQ briefly unreachable) is logged and otherwise ignored --
+// the agent keeps polling with whatever machine list it already has
+// rather than losing all of them over one bad request.
+func (a *agent) refreshMachines(ctx context.Context) {
+	if !a.dynamic {
+		return
 	}
+	machines, err := fetchMachinesFromIronIQ(ctx, a.mtc, a.cfg.IronIQURL, a.cfg.FacilityKey)
+	if err != nil {
+		log.Printf("refresh machine list: %v (keeping the last known list)", err)
+		return
+	}
+	a.cfg.Machines = machines
+	next := buildTrackers(a.cfg)
+	for assetID, tracker := range a.trackers {
+		if _, stillPresent := next[assetID]; stillPresent {
+			next[assetID] = tracker
+		}
+	}
+	a.trackers = next
+	log.Printf("refreshed machine list from IronIQ: %d machine(s)", len(machines))
 }
 
 func (a *agent) tick(ctx context.Context) {

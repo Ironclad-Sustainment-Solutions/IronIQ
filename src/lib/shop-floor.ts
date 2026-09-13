@@ -73,6 +73,8 @@ export interface ShopMachine {
   mtconnect_agent_url: string | null;
   mtconnect_device_name: string | null;
   current_part_number: string | null;
+  focas_host: string | null;
+  focas_port: number | null;
   created_at: string;
   updated_at: string;
 }

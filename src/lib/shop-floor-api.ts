@@ -126,12 +126,23 @@ export function useCreateShopMachine(
       mtconnectAgentUrl?: string;
       mtconnectDeviceName?: string;
       currentPartNumber?: string;
+      // String here, not number -- this is what an <input type="number">
+      // form field actually produces; converted to a real number right
+      // before it's sent, same as useUpdateShopMachine below.
+      focasHost?: string;
+      focasPort?: string;
     }) => {
       if (!organizationId || !facilityId) {
         throw new Error("Select an organization and facility first.");
       }
+      const { focasPort, ...rest } = input;
       return fn.createShopMachine({
-        data: { organizationId, facilityId, ...input },
+        data: {
+          organizationId,
+          facilityId,
+          ...rest,
+          focasPort: focasPort ? Number(focasPort) : undefined,
+        },
       });
     },
     onSuccess: () => {
@@ -162,7 +173,14 @@ export function useUpdateShopMachine(
       mtconnectDeviceName?: string;
       currentPartNumber?: string;
       connectionStatus?: ConnectionStatus;
-    }) => fn.updateShopMachine({ data: input }),
+      focasHost?: string;
+      focasPort?: string;
+    }) => {
+      const { focasPort, ...rest } = input;
+      return fn.updateShopMachine({
+        data: { ...rest, focasPort: focasPort ? Number(focasPort) : undefined },
+      });
+    },
     onSuccess: (_data, input) => {
       invalidateMachines(qc, organizationId, facilityId, input.id);
       toast.success("Machine updated");

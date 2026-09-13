@@ -71,3 +71,17 @@ func TestValidate_MixedFleetOfHaasAndFanucIsValid(t *testing.T) {
 		t.Fatalf("expected a mixed Haas+Fanuc fleet to validate cleanly, got %v", err)
 	}
 }
+
+func TestValidate_EmptyMachinesIsNowValid(t *testing.T) {
+	// Real behavior change, not an oversight: an empty machines[] used
+	// to be a hard validation error ("machines[] missing"). It's now the
+	// deliberate signal for dynamic mode -- "fetch the current machine
+	// list from IronIQ instead of a static local one" (see
+	// remote_config.go / agent.go's refreshMachines) -- so a config with
+	// no machines[] at all, just ironiq_url/facility_key/plant_id, must
+	// validate cleanly rather than erroring.
+	cfg := baseConfig() // zero machines passed
+	if err := cfg.validate(); err != nil {
+		t.Fatalf("expected an empty machines[] to be valid (dynamic mode), got %v", err)
+	}
+}
