@@ -17,14 +17,36 @@
 # free, verifiable integrity checking in the meantime.
 #
 # Run as part of the production build (see render.yaml's buildCommand,
-# which installs Go via apt first). Safe to run locally too -- if `go`
-# isn't installed, this exits cleanly with a warning rather than failing
-# the whole build, since most local/CI verification (typecheck, lint,
-# test, npm run build) has nothing to do with these binaries existing.
+# which installs Go via apt first). Safe to run locally too.
+#
+# Real incident this comment exists because of: this script's original
+# behavior -- silently skip and exit 0 if `go` isn't found, no matter
+# the context -- combined with render.yaml's own Go-install step also
+# silently swallowing a failure, meant a transient apt/network hiccup on
+# a single Render deploy could produce an app that deployed
+# "successfully" with every download link 404ing, with nothing anywhere
+# surfacing that it happened. A customer hit this directly (browser:
+# "Couldn't download -- No file") before anyone at Ironclad knew.
+#
+# Fix: this is only "safe to skip silently" in a genuine local/CI
+# context where nobody asked for real binaries. Render sets RENDER=true
+# in its build environment (a standard, documented Render convention) --
+# detected here specifically so THAT context, and only that context,
+# treats a missing Go toolchain as a hard failure instead of a quiet
+# no-op, which stops Render from cutting over to a broken deploy at all
+# (it keeps serving the last good one instead).
 
 set -e
 
 if ! command -v go >/dev/null 2>&1; then
+  if [ -n "$RENDER" ]; then
+    echo "ERROR: Go toolchain not found during a Render production build." >&2
+    echo "This means the Edge agent download binaries cannot be built, and every" >&2
+    echo "/downloads/* link on the live site would 404 if this build were allowed" >&2
+    echo "to deploy. Failing this build on purpose rather than silently shipping" >&2
+    echo "broken downloads -- see render.yaml's buildCommand for the Go install step." >&2
+    exit 1
+  fi
   echo "Go toolchain not found -- skipping edge agent binary builds (this is fine for local dev/CI; the app itself doesn't need these to build or run)."
   exit 0
 fi
