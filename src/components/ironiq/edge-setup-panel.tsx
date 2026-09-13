@@ -7,6 +7,10 @@ import {
   useGenerateEdgeIngestKey,
 } from "@/lib/edge-ingest-admin-api";
 import { formatDate } from "@/lib/utils";
+import {
+  buildEdgeConfigJson,
+  type EdgeConfigMachineInput,
+} from "@/lib/edge-config-generator";
 
 /**
  * The one canonical "how do I connect a machine" panel -- facility key
@@ -19,10 +23,44 @@ import { formatDate } from "@/lib/utils";
  * can't quietly drift out of sync with each other the way the Home
  * page's product cards did with the sidebar.
  */
-export function EdgeSetupPanel({ facilityId }: { facilityId: string }) {
+export function EdgeSetupPanel({
+  facilityId,
+  plantId,
+  machines = [],
+}: {
+  facilityId: string;
+  /** Falls back to the facility ID itself if the caller doesn't have a nicer name on hand. */
+  plantId?: string;
+  /**
+   * Real machines already on file for this facility, if the caller has
+   * them loaded -- lets the generated config file be immediately usable
+   * (real asset IDs, real controller makes, real MTConnect URLs where
+   * already on file) instead of a hand-edited template. Optional and
+   * defaults to none, in which case the downloaded config still works,
+   * just with one placeholder machine entry to fill in.
+   */
+  machines?: EdgeConfigMachineInput[];
+}) {
   const keyInfo = useEdgeIngestKeyInfo(facilityId);
   const generateKey = useGenerateEdgeIngestKey(facilityId);
   const [revealedKey, setRevealedKey] = useState<string | null>(null);
+
+  function downloadConfig() {
+    if (!revealedKey) return;
+    const json = buildEdgeConfigJson({
+      baseUrl: window.location.origin,
+      facilityKey: revealedKey,
+      plantId: plantId || facilityId,
+      machines,
+    });
+    const blob = new Blob([json], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "edge.config.json";
+    a.click();
+    URL.revokeObjectURL(url);
+  }
 
   return (
     <Panel title="IronIQ Edge setup">
@@ -48,6 +86,19 @@ export function EdgeSetupPanel({ facilityId }: { facilityId: string }) {
             One key per facility, not per machine — your edge box can post
             events for any machine registered at this facility using this same
             key.
+          </p>
+          <Button
+            variant="outline"
+            size="sm"
+            className="mt-3"
+            onClick={downloadConfig}
+          >
+            Download edge.config.json
+          </Button>
+          <p className="mt-2 text-xs text-muted-foreground">
+            {machines.length > 0
+              ? `Pre-filled with the ${machines.length} machine${machines.length === 1 ? "" : "s"} already on file for this facility — real asset IDs and MTConnect URLs where you've already entered them. Save this next to the downloaded app and you may not need to edit anything.`
+              : "Includes a placeholder machine entry to edit — save this next to the downloaded app."}
           </p>
         </div>
       ) : (
