@@ -9,7 +9,7 @@ services:
     name: ironiq-insight
     runtime: node
     plan: starter
-    buildCommand: command -v go >/dev/null 2>&1 || (curl -fsSL https://go.dev/dl/go1.22.2.linux-amd64.tar.gz -o /tmp/go.tar.gz && tar -C /tmp -xzf /tmp/go.tar.gz); export PATH="/tmp/go/bin:$PATH"; npm ci && ./scripts/build-edge-binaries.sh && npm run build
+    buildCommand: sh scripts/install-go.sh && export PATH="/tmp/go/bin:$PATH" && npm ci && ./scripts/build-edge-binaries.sh && npm run build
     startCommand: npm run start
     envVars:
       - key: NODE_VERSION
