@@ -8,10 +8,12 @@ package main
 
 import (
 	"context"
+	"errors"
 	"flag"
 	"fmt"
 	"log"
 	"os"
+	"runtime"
 	"time"
 
 	"ironiq-edge/buffer"
@@ -28,6 +30,46 @@ var (
 	buildDate = "unknown"
 )
 
+// Real bug this exists to fix: on Windows, double-clicking the .exe (a
+// completely normal first instinct for a downloaded program, even though
+// the setup guide says to run it from a command prompt) opens a brand
+// new console window for the process. If the program hits an error and
+// exits quickly -- most commonly, no config file next to it yet, since
+// someone just downloaded the raw binary -- Windows closes that console
+// window automatically the moment the process exits, before there's any
+// chance to read what the error even was. From the outside this looks
+// like nothing happened at all: a window outline appears and vanishes.
+// Pausing for a keypress on any hard-exit path fixes this specifically
+// on Windows (macOS/Linux terminal usage doesn't have this problem --
+// the shell prompt just returns, with the error already visible above
+// it). Confirmed this doesn't introduce a hang in a non-interactive
+// context (Task Scheduler, no real console attached) by testing the
+// actual compiled-binary behavior with /dev/null and fully closed stdin
+// directly -- fmt.Scanln() returns immediately with no input available,
+// it does not block waiting for a real interactive terminal that isn't there.
+func pauseBeforeExitOnWindows() {
+	if shouldPauseBeforeExit(runtime.GOOS) {
+		fmt.Println("\nPress Enter to close this window...")
+		fmt.Scanln()
+	}
+}
+
+// Pulled out specifically so the decision itself (which platforms pause,
+// which don't) is unit-testable without needing to actually execute a
+// cross-compiled Windows binary to prove it.
+func shouldPauseBeforeExit(goos string) bool {
+	return goos == "windows"
+}
+
+// fatal prints msg, pauses on Windows so the message is actually visible
+// even when double-clicked, then exits 1. Every hard-exit path in main()
+// goes through this -- no bare os.Exit(1) calls that could bypass the pause.
+func fatal(format string, args ...any) {
+	fmt.Fprintf(os.Stderr, format+"\n", args...)
+	pauseBeforeExitOnWindows()
+	os.Exit(1)
+}
+
 func main() {
 	configPath := flag.String("config", envOr("IRONIQ_EDGE_CONFIG", "edge.config.json"), "path to JSON config (machines + IronIQ URL)")
 	showVersion := flag.Bool("version", false, "print version and build date, then exit")
@@ -40,14 +82,18 @@ func main() {
 
 	cfg, err := loadConfig(*configPath)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
+		if errors.Is(err, os.ErrNotExist) {
+			fatal(
+				"No config file found at %q.\n\nThis program needs a config file next to it -- it's not meant to be double-clicked on its own. See the IronIQ Edge setup guide (in the IronIQ app, under Machines) for exactly what to put in it and how to run this.",
+				*configPath,
+			)
+		}
+		fatal("%v", err)
 	}
 
 	queue, err := buffer.Open(cfg.BufferPath)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "open buffer: %v\n", err)
-		os.Exit(1)
+		fatal("open buffer: %v", err)
 	}
 
 	client := ingest.New(cfg.IronIQURL, cfg.FacilityKey, nil)
