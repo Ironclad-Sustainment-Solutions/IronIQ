@@ -30,6 +30,8 @@ export interface MachineDraft {
   mtconnectAgentUrl: string;
   mtconnectDeviceName: string;
   currentPartNumber: string;
+  focasHost: string;
+  focasPort: string;
 }
 
 export function emptyMachineDraft(): MachineDraft {
@@ -44,6 +46,8 @@ export function emptyMachineDraft(): MachineDraft {
     mtconnectAgentUrl: "",
     mtconnectDeviceName: "",
     currentPartNumber: "",
+    focasHost: "",
+    focasPort: "",
   };
 }
 
@@ -59,6 +63,8 @@ export function draftFromMachine(machine: ShopMachine): MachineDraft {
     mtconnectAgentUrl: machine.mtconnect_agent_url ?? "",
     mtconnectDeviceName: machine.mtconnect_device_name ?? "",
     currentPartNumber: machine.current_part_number ?? "",
+    focasHost: machine.focas_host ?? "",
+    focasPort: machine.focas_port != null ? String(machine.focas_port) : "",
   };
 }
 
@@ -160,10 +166,10 @@ export function ShopMachineForm({
             ))}
           </SelectContent>
         </Select>
-        {draft.protocol !== "mtconnect" ? (
+        {draft.protocol !== "mtconnect" && draft.protocol !== "fanuc_focas" ? (
           <p className="mt-1 text-xs text-muted-foreground">
-            Select MTConnect to set up a live data feed from this machine
-            instead of logging runs manually.
+            Select MTConnect or Fanuc FOCAS to set up a live data feed from this
+            machine instead of logging runs manually.
           </p>
         ) : null}
       </Field>
@@ -213,6 +219,52 @@ export function ShopMachineForm({
               Used only when the agent doesn't report a part number itself.
             </p>
           </Field>
+        </>
+      ) : null}
+      {draft.protocol === "fanuc_focas" ? (
+        <>
+          <Field label="FOCAS host (machine LAN IP)">
+            <Input
+              value={draft.focasHost}
+              onChange={(e) => set("focasHost", e.target.value)}
+              placeholder="192.168.1.60"
+            />
+            <p className="mt-1 text-xs text-muted-foreground">
+              The Fanuc control's IP address on the shop LAN. IronIQ Edge
+              connects to this directly over FOCAS2 Ethernet — the control needs
+              that access enabled, which is a separate option on many Fanuc
+              controls.
+            </p>
+          </Field>
+          <Field label="FOCAS port">
+            <Input
+              type="number"
+              min={1}
+              max={65535}
+              value={draft.focasPort}
+              onChange={(e) => set("focasPort", e.target.value)}
+              placeholder="8193"
+            />
+            <p className="mt-1 text-xs text-muted-foreground">
+              8193 is FOCAS2's common default — confirm with whoever set up this
+              control's Ethernet option if it's different.
+            </p>
+          </Field>
+          <div className="sm:col-span-2 rounded-md border border-amber-500/30 bg-amber-500/10 p-3">
+            <p className="text-xs text-amber-600 dark:text-amber-400">
+              FOCAS support in IronIQ Edge is experimental and has never been
+              verified against a real Fanuc control — see the{" "}
+              <a
+                href="https://github.com/Ironclad-Sustainment-Solutions/IronIQ/blob/main/edge/README.md"
+                target="_blank"
+                rel="noreferrer"
+                className="underline underline-offset-2"
+              >
+                Edge agent's own documentation
+              </a>{" "}
+              before relying on this for a real machine.
+            </p>
+          </div>
         </>
       ) : null}
       <div className="flex gap-2 sm:col-span-2">

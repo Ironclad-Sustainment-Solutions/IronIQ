@@ -80,16 +80,7 @@ function MachinesPage() {
         }
       />
 
-      <EdgeSetupPanel
-        facilityId={facility.id}
-        plantId={facility.name}
-        machines={machines.map((m) => ({
-          asset_id: m.asset_id,
-          control: m.control,
-          protocol: m.protocol,
-          mtconnect_agent_url: m.mtconnect_agent_url,
-        }))}
-      />
+      <EdgeSetupPanel facilityId={facility.id} plantId={facility.name} />
 
       {adding ? (
         <Panel title="Add a machine">

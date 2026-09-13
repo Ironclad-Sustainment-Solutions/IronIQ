@@ -39,6 +39,8 @@ const MachineWrite = z.object({
   mtconnectAgentUrl: z.string().optional(),
   mtconnectDeviceName: z.string().optional(),
   currentPartNumber: z.string().optional(),
+  focasHost: z.string().optional(),
+  focasPort: z.number().int().min(1).max(65535).optional(),
 });
 
 function asIso(value: unknown): string {
@@ -68,6 +70,8 @@ function mapMachine(row: Record<string, unknown>): ShopMachine {
         : String(row.mtconnect_device_name),
     current_part_number:
       row.current_part_number == null ? null : String(row.current_part_number),
+    focas_host: row.focas_host == null ? null : String(row.focas_host),
+    focas_port: row.focas_port == null ? null : Number(row.focas_port),
     created_at: asIso(row.created_at),
     updated_at: asIso(row.updated_at),
   };
@@ -134,8 +138,8 @@ export const createShopMachine = createServerFn({ method: "POST" })
         const { rows } = await client.query(
           `INSERT INTO public.shop_machines
              (organization_id, facility_id, asset_id, name, make, model, control, protocol, location,
-              mtconnect_agent_url, mtconnect_device_name, current_part_number)
-           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)
+              mtconnect_agent_url, mtconnect_device_name, current_part_number, focas_host, focas_port)
+           VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
            RETURNING *`,
           [
             data.organizationId,
@@ -150,6 +154,8 @@ export const createShopMachine = createServerFn({ method: "POST" })
             data.mtconnectAgentUrl?.trim() || null,
             data.mtconnectDeviceName?.trim() || null,
             data.currentPartNumber?.trim() || null,
+            data.focasHost?.trim() || null,
+            data.focasPort ?? null,
           ],
         );
         return mapMachine(rows[0] as Record<string, unknown>);
@@ -196,7 +202,8 @@ export const updateShopMachine = createServerFn({ method: "POST" })
             SET asset_id = $2, name = $3, make = $4, model = $5,
                 control = $6, protocol = $7, location = $8,
                 mtconnect_agent_url = $9, mtconnect_device_name = $10, current_part_number = $11,
-                connection_status = COALESCE($12::public.shop_machine_connection, connection_status)
+                connection_status = COALESCE($12::public.shop_machine_connection, connection_status),
+                focas_host = $13, focas_port = $14
           WHERE id = $1
           RETURNING *`,
         [
@@ -212,6 +219,8 @@ export const updateShopMachine = createServerFn({ method: "POST" })
           data.mtconnectDeviceName?.trim() || null,
           data.currentPartNumber?.trim() || null,
           data.connectionStatus ?? null,
+          data.focasHost?.trim() || null,
+          data.focasPort ?? null,
         ],
       );
       if (!rows[0]) throw new Error("Machine not found or not accessible.");

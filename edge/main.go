@@ -30,6 +30,14 @@ var (
 	buildDate = "unknown"
 )
 
+// How often the agent re-fetches its machine list from IronIQ when
+// running in dynamic mode (see agent.go's refreshMachines). Not
+// configurable yet -- five minutes is a reasonable default balance
+// between "a protocol/URL change in the app takes effect reasonably
+// promptly" and "don't poll an endpoint that changes rarely on every
+// tick."
+const machineListRefreshInterval = 5 * time.Minute
+
 // Real bug this exists to fix: on Windows, double-clicking the .exe (a
 // completely normal first instinct for a downloaded program, even though
 // the setup guide says to run it from a command prompt) opens a brand
@@ -107,10 +115,27 @@ func main() {
 	log.Println("")
 
 	ctx := context.Background()
+	// Populates the dynamic machine list before the very first tick, if
+	// this config has no machines[] of its own -- otherwise a no-op.
+	a.refreshMachines(ctx)
 	a.tick(ctx)
 	ticker := time.NewTicker(cfg.pollInterval())
 	defer ticker.Stop()
-	for range ticker.C {
-		a.tick(ctx)
+	// A separate, much slower ticker specifically for re-fetching the
+	// machine list in dynamic mode -- refreshing on every single poll
+	// tick (every few seconds) would mean far more requests to IronIQ
+	// than editing a machine's protocol in the app could ever need to
+	// take effect. machineListRefreshInterval is a real, if imperfect,
+	// balance between "changes show up reasonably promptly" and "don't
+	// hammer IronIQ for something that changes rarely."
+	refreshTicker := time.NewTicker(machineListRefreshInterval)
+	defer refreshTicker.Stop()
+	for {
+		select {
+		case <-ticker.C:
+			a.tick(ctx)
+		case <-refreshTicker.C:
+			a.refreshMachines(ctx)
+		}
 	}
 }

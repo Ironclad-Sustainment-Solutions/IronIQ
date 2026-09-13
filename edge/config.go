@@ -88,9 +88,11 @@ func (c Config) validate() error {
 	if strings.TrimSpace(c.PlantID) == "" {
 		missing = append(missing, "plant_id (or IRONIQ_PLANT_ID)")
 	}
-	if len(c.Machines) == 0 {
-		missing = append(missing, "machines[]")
-	}
+	// An empty machines[] is deliberately valid now, not an error -- it
+	// means "fetch the current machine list from IronIQ instead of a
+	// static local list" (see remote_config.go). A config that DOES
+	// list machines locally is still fully supported and validated
+	// exactly as before; this only changes what an empty list means.
 	for i, m := range c.Machines {
 		if strings.TrimSpace(m.AssetID) == "" {
 			missing = append(missing, fmt.Sprintf("machines[%d].asset_id", i))

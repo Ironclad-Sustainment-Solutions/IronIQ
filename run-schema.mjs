@@ -95,6 +95,7 @@ const ORDERED_ADDITIONS = [
   "schema_additions_intelligence_pattern_hnsw_index.sql",
   "schema_additions_intelligence_machines_product.sql",
   "schema_additions_oauth_identities.sql",
+  "schema_additions_focas_connection_fields.sql",
 ];
 
 const dbDir = new URL("./db/", import.meta.url);

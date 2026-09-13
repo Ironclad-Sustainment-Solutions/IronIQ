@@ -7,10 +7,7 @@ import {
   useGenerateEdgeIngestKey,
 } from "@/lib/edge-ingest-admin-api";
 import { formatDate } from "@/lib/utils";
-import {
-  buildEdgeConfigJson,
-  type EdgeConfigMachineInput,
-} from "@/lib/edge-config-generator";
+import { buildEdgeConfigJson } from "@/lib/edge-config-generator";
 
 /**
  * The one canonical "how do I connect a machine" panel -- facility key
@@ -26,20 +23,10 @@ import {
 export function EdgeSetupPanel({
   facilityId,
   plantId,
-  machines = [],
 }: {
   facilityId: string;
   /** Falls back to the facility ID itself if the caller doesn't have a nicer name on hand. */
   plantId?: string;
-  /**
-   * Real machines already on file for this facility, if the caller has
-   * them loaded -- lets the generated config file be immediately usable
-   * (real asset IDs, real controller makes, real MTConnect URLs where
-   * already on file) instead of a hand-edited template. Optional and
-   * defaults to none, in which case the downloaded config still works,
-   * just with one placeholder machine entry to fill in.
-   */
-  machines?: EdgeConfigMachineInput[];
 }) {
   const keyInfo = useEdgeIngestKeyInfo(facilityId);
   const generateKey = useGenerateEdgeIngestKey(facilityId);
@@ -51,7 +38,6 @@ export function EdgeSetupPanel({
       baseUrl: window.location.origin,
       facilityKey: revealedKey,
       plantId: plantId || facilityId,
-      machines,
     });
     const blob = new Blob([json], { type: "application/json" });
     const url = URL.createObjectURL(blob);
@@ -96,9 +82,11 @@ export function EdgeSetupPanel({
             Download edge.config.json
           </Button>
           <p className="mt-2 text-xs text-muted-foreground">
-            {machines.length > 0
-              ? `Pre-filled with the ${machines.length} machine${machines.length === 1 ? "" : "s"} already on file for this facility — real asset IDs and MTConnect URLs where you've already entered them. Save this next to the downloaded app and you may not need to edit anything.`
-              : "Includes a placeholder machine entry to edit — save this next to the downloaded app."}
+            This is the only file the Edge app needs, and the only time you'll
+            need to touch it — it fetches its machine list from IronIQ directly
+            every time it starts. Add or edit machines, change a protocol, or
+            update a connection URL in the app, and the Edge app picks it up
+            automatically within a few minutes, with nothing to redownload.
           </p>
         </div>
       ) : (
