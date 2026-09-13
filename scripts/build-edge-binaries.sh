@@ -17,24 +17,38 @@
 # free, verifiable integrity checking in the meantime.
 #
 # Run as part of the production build (see render.yaml's buildCommand,
-# which installs Go via apt first). Safe to run locally too.
+# which downloads Go's own official release directly -- see below for
+# why, not apt). Safe to run locally too.
 #
-# Real incident this comment exists because of: this script's original
-# behavior -- silently skip and exit 0 if `go` isn't found, no matter
-# the context -- combined with render.yaml's own Go-install step also
-# silently swallowing a failure, meant a transient apt/network hiccup on
-# a single Render deploy could produce an app that deployed
-# "successfully" with every download link 404ing, with nothing anywhere
-# surfacing that it happened. A customer hit this directly (browser:
-# "Couldn't download -- No file") before anyone at Ironclad knew.
-#
-# Fix: this is only "safe to skip silently" in a genuine local/CI
-# context where nobody asked for real binaries. Render sets RENDER=true
-# in its build environment (a standard, documented Render convention) --
-# detected here specifically so THAT context, and only that context,
-# treats a missing Go toolchain as a hard failure instead of a quiet
-# no-op, which stops Render from cutting over to a broken deploy at all
-# (it keeps serving the last good one instead).
+# Real incident history this comment exists because of:
+# 1. This script's original behavior -- silently skip and exit 0 if `go`
+#    isn't found, no matter the context -- combined with the build
+#    command's own Go-install step also silently swallowing a failure,
+#    meant a hiccup on a single deploy could produce an app that
+#    deployed "successfully" with every download link 404ing, with
+#    nothing anywhere surfacing that it happened. A customer hit this
+#    directly (browser: "Couldn't download -- No file") before anyone at
+#    Ironclad knew.
+# 2. The fix for that (detect Render's RENDER=true build-time env var,
+#    treat a missing `go` as a hard failure in that specific context
+#    rather than a quiet no-op) was correct, but initially didn't fully
+#    land -- Render's actual configured Build Command in the dashboard
+#    had drifted from what render.yaml documented (a separate, real gap:
+#    this service wasn't set up to auto-sync its build command from the
+#    blueprint file in the repo). Once the dashboard was updated to
+#    match, the hard-failure branch above correctly triggered -- which
+#    then surfaced a THIRD real problem:
+# 3. Installing golang-go via apt was itself unreliable in Render's
+#    actual build container -- both the sudo and non-sudo apt install
+#    attempts failed there. Rather than keep chasing why a system package
+#    manager install isn't working in a container whose exact apt/sudo
+#    configuration isn't something this project controls or can fully
+#    inspect, render.yaml now downloads Go's own official, self-contained
+#    release tarball directly from go.dev and extracts it to /tmp --
+#    Go's own documented, standard "no package manager" install method,
+#    needing no system privileges at all, just a writable temp
+#    directory. This is also exactly what GitHub Actions' own
+#    actions/setup-go does under the hood.
 
 set -e
 
