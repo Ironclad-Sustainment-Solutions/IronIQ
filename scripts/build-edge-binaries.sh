@@ -104,14 +104,20 @@ build windows amd64 ironiq-edge-windows-amd64.exe
 build darwin amd64 ironiq-edge-macos-amd64
 build darwin arm64 ironiq-edge-macos-arm64
 
+# Static, not compiled -- just copied alongside the Windows binary so
+# someone installing the service never needs to open a command prompt
+# or type anything themselves; it self-elevates and runs the same
+# -install-service flag documented in the setup guide.
+cp "$ROOT_DIR/edge/install-service.bat" "$OUT_DIR/install-service.bat"
+
 echo "$VERSION (built $BUILD_DATE)" > "$OUT_DIR/VERSION.txt"
 
 (
   cd "$OUT_DIR"
   if command -v sha256sum >/dev/null 2>&1; then
-    sha256sum ironiq-edge-linux-amd64 ironiq-edge-windows-amd64.exe ironiq-edge-macos-amd64 ironiq-edge-macos-arm64 > CHECKSUMS.txt
+    sha256sum ironiq-edge-linux-amd64 ironiq-edge-windows-amd64.exe ironiq-edge-macos-amd64 ironiq-edge-macos-arm64 install-service.bat > CHECKSUMS.txt
   elif command -v shasum >/dev/null 2>&1; then
-    shasum -a 256 ironiq-edge-linux-amd64 ironiq-edge-windows-amd64.exe ironiq-edge-macos-amd64 ironiq-edge-macos-arm64 > CHECKSUMS.txt
+    shasum -a 256 ironiq-edge-linux-amd64 ironiq-edge-windows-amd64.exe ironiq-edge-macos-amd64 ironiq-edge-macos-arm64 install-service.bat > CHECKSUMS.txt
   else
     echo "Neither sha256sum nor shasum found -- CHECKSUMS.txt not generated." >&2
   fi

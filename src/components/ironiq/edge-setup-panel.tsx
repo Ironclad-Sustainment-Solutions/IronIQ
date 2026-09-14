@@ -143,6 +143,13 @@ export function EdgeSetupPanel({
             Windows (64-bit)
           </a>
           <a
+            href="/downloads/install-service.bat"
+            download
+            className="rounded-md border border-border px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:border-primary/50 hover:bg-muted/20"
+          >
+            Windows service installer
+          </a>
+          <a
             href="/downloads/ironiq-edge-macos-arm64"
             download
             className="rounded-md border border-border px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:border-primary/50 hover:bg-muted/20"
@@ -164,6 +171,14 @@ export function EdgeSetupPanel({
             Linux (64-bit)
           </a>
         </div>
+        <p className="mt-2 text-xs text-muted-foreground">
+          Prefer not to use a command prompt? Download both the Windows .exe and
+          the service installer above into the same folder along with your
+          edge.config.json, then double-click{" "}
+          <code className="text-foreground">install-service.bat</code> — it
+          handles the admin prompt and installs it as an auto-starting service
+          for you.
+        </p>
         <div className="mt-2 flex flex-wrap gap-3 text-xs">
           <a
             href="/downloads/CHECKSUMS.txt"
