@@ -149,12 +149,24 @@ func installWindowsService(configPath string) error {
 	}
 	defer m.Disconnect()
 
+	// Idempotent by design: if the service is already installed, this
+	// is treated as success, not an error -- confirmed and left alone,
+	// not reinstalled or reconfigured. Running the install command
+	// again (retrying after an earlier attempt, or just running setup
+	// defensively/repeatably) should never fail just because it already
+	// worked once. Reinstalling with different settings is still an
+	// explicit, deliberate two-step action (-uninstall-service, then
+	// -install-service again), not something this silently does on its
+	// own -- a install command shouldn't have the side effect of
+	// quietly changing an already-configured service's settings.
 	if existing, err := m.OpenService(windowsServiceName); err == nil {
 		existing.Close()
-		return fmt.Errorf(
-			"a service named %q already exists -- run with -uninstall-service first if you want to reinstall it",
+		fmt.Printf(
+			"%q is already installed as a Windows Service -- nothing to do.\n"+
+				"To reinstall or point it at a different config file, run -uninstall-service first, then -install-service again.\n",
 			windowsServiceName,
 		)
+		return nil
 	}
 
 	s, err := m.CreateService(windowsServiceName, exePath, mgr.Config{
