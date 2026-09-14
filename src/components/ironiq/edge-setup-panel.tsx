@@ -123,16 +123,16 @@ export function EdgeSetupPanel({
           Download the Edge app
         </p>
         <p className="mt-1 text-xs text-muted-foreground">
-          A single file, no install required — copy it to any PC on the same
-          shop network as your MTConnect-capable machines and run it with the
-          key above. Not yet code-signed — see{" "}
+          A single file, no install required — copy it to any Windows PC on the
+          same shop network as your MTConnect-capable machines and run it with
+          the key above. Windows only for now — not yet code-signed — see{" "}
           <Link
             to="/machines/edge-setup-guide"
             className="underline underline-offset-2 hover:text-foreground"
           >
             the setup guide
           </Link>{" "}
-          for what your OS will show and how to verify the download instead.
+          for what Windows will show and how to verify the download instead.
         </p>
         <div className="mt-2 flex flex-wrap gap-2">
           <a
@@ -148,27 +148,6 @@ export function EdgeSetupPanel({
             className="rounded-md border border-border px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:border-primary/50 hover:bg-muted/20"
           >
             Windows service installer
-          </a>
-          <a
-            href="/downloads/ironiq-edge-macos-arm64"
-            download
-            className="rounded-md border border-border px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:border-primary/50 hover:bg-muted/20"
-          >
-            macOS (Apple Silicon)
-          </a>
-          <a
-            href="/downloads/ironiq-edge-macos-amd64"
-            download
-            className="rounded-md border border-border px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:border-primary/50 hover:bg-muted/20"
-          >
-            macOS (Intel)
-          </a>
-          <a
-            href="/downloads/ironiq-edge-linux-amd64"
-            download
-            className="rounded-md border border-border px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:border-primary/50 hover:bg-muted/20"
-          >
-            Linux (64-bit)
           </a>
         </div>
         <p className="mt-2 text-xs text-muted-foreground">
