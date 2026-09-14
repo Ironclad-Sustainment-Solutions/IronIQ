@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/sheet";
 import { useApp } from "@/context/app-context";
 import { useFloorView } from "@/lib/machine-events-api";
-import { EdgeSetupPanel } from "@/components/ironiq/edge-setup-panel";
+import { EdgeSetupManagedByIronclad } from "@/components/ironiq/edge-setup-managed-by-ironclad";
 import {
   formatFloorHours,
   type FloorMachineRow,
@@ -120,7 +120,7 @@ function FloorPage() {
         />
       ) : null}
 
-      <EdgeSetupPanel facilityId={facility.id} />
+      <EdgeSetupManagedByIronclad />
 
       <Panel
         title="Machines"

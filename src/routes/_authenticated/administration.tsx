@@ -16,6 +16,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useApp } from "@/context/app-context";
+import { EdgeSetupPanel } from "@/components/ironiq/edge-setup-panel";
 import { useAuditLog, useOrganizations } from "@/lib/api";
 import { ROLE_LABELS, type AppRole } from "@/lib/domain";
 import {
@@ -60,8 +61,10 @@ export const Route = createFileRoute("/_authenticated/administration")({
 });
 
 function AdministrationPage() {
-  const { profile, roles, primaryRole } = useApp();
+  const { profile, roles, primaryRole, facility } = useApp();
   const log = useAuditLog().data ?? [];
+  const isPlatformStaff =
+    roles.includes("ironiq_admin") || roles.includes("consultant");
 
   return (
     <div className="mx-auto max-w-4xl space-y-8">
@@ -88,6 +91,10 @@ function AdministrationPage() {
           ))}
         </div>
       </Panel>
+
+      {isPlatformStaff && facility ? (
+        <EdgeSetupPanel facilityId={facility.id} plantId={facility.name} />
+      ) : null}
 
       <Panel
         title="Audit trail"
