@@ -70,7 +70,26 @@ OUT_DIR="$ROOT_DIR/public/downloads"
 mkdir -p "$OUT_DIR"
 
 GIT_SHA="$(cd "$ROOT_DIR" && git rev-parse --short HEAD 2>/dev/null || echo "unknown")"
-BUILD_DATE="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+# The commit's own timestamp, not the current wall-clock time this
+# script happens to run at -- deliberately, not an oversight. Using
+# `date -u` here meant every single deploy embedded a different string
+# into the binary, even a redeploy of the exact same commit with zero
+# code changes, which meant every deploy produced a genuinely different
+# file (confirmed directly: identical source, only the embedded
+# timestamp differing by one second, produced two completely different
+# SHA-256 hashes). That mattered for a real reason beyond tidiness: a
+# customer's antivirus flagged the unsigned binary, they allow-listed
+# it, then the very next unrelated deploy silently produced a "new"
+# file their AV had never seen and flagged again -- forcing them to
+# redo the allow-list dance after every deploy, not just after a real
+# Edge agent code change. Deriving this from the commit's own timestamp
+# instead means rebuilding the identical commit (a Render redeploy with
+# no new commits, a retry, etc.) now produces a byte-identical binary --
+# confirmed directly by building the same commit twice and diffing the
+# output. This doesn't fix AV flagging an unsigned binary in general --
+# only code signing does that -- it just stops making the problem worse
+# on every deploy that isn't actually a new Edge agent build.
+BUILD_DATE="$(cd "$ROOT_DIR" && git show -s --format=%cI HEAD 2>/dev/null || echo "unknown")"
 VERSION="$GIT_SHA"
 LDFLAGS="-s -w -X main.version=$VERSION -X main.buildDate=$BUILD_DATE"
 
