@@ -8,7 +8,7 @@ import {
 import { Tag } from "@/components/ironiq/badges";
 import { Button } from "@/components/ui/button";
 import { useApp } from "@/context/app-context";
-import { EdgeSetupPanel } from "@/components/ironiq/edge-setup-panel";
+import { EdgeSetupManagedByIronclad } from "@/components/ironiq/edge-setup-managed-by-ironclad";
 import {
   ShopMachineForm,
   emptyMachineDraft,
@@ -80,7 +80,7 @@ function MachinesPage() {
         }
       />
 
-      <EdgeSetupPanel facilityId={facility.id} plantId={facility.name} />
+      <EdgeSetupManagedByIronclad />
 
       {adding ? (
         <Panel title="Add a machine">

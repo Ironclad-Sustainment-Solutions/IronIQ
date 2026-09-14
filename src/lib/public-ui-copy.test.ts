@@ -72,16 +72,23 @@ describe("public UI copy", () => {
     }
   });
 
-  it("tells the shared Edge setup panel that live LAN feeds use the Edge app, not cloud pull -- and confirms every page that should show it actually does", () => {
-    // Moved into a shared component specifically so Floor, Machines,
-    // and the machine detail page can't quietly drift out of sync with
-    // each other the way the Home page's product cards did with the
-    // sidebar -- this test protects that by checking the one canonical
-    // source, then confirming every intended call site actually uses it.
+  it("tells the shared Edge setup panel that live LAN feeds use the Edge app, not cloud pull -- and confirms it's admin-only, not shown directly to customer-facing pages", () => {
+    // Real architecture change, not a regression: Edge setup (the
+    // facility key + binary download) moved to Administration,
+    // gated to Ironclad staff roles (see requirePlatformStaff in
+    // edge-ingest-admin.functions.ts for the actual server-side
+    // enforcement -- this is real access control, not just hiding a
+    // component). Customer-facing pages now show
+    // EdgeSetupManagedByIronclad instead -- a short explanatory note,
+    // not the setup panel itself.
     const panel = source("src/components/ironiq/edge-setup-panel.tsx");
     expect(panel).toMatch(/Live LAN feeds use the Edge app/);
     expect(panel).toMatch(/not cloud pull/);
     expect(panel).toContain("Generate a facility key below (shown once)");
+
+    const admin = source("src/routes/_authenticated/administration.tsx");
+    expect(admin).toContain("EdgeSetupPanel");
+    expect(admin).toContain("isPlatformStaff");
 
     for (const rel of [
       "src/routes/_authenticated/floor.tsx",
@@ -89,12 +96,12 @@ describe("public UI copy", () => {
       "src/routes/_authenticated/machines/$machineId.tsx",
     ]) {
       const text = source(rel);
-      expect(text).toContain("EdgeSetupPanel");
-      // The old, page-specific copies of this panel should never come
-      // back -- if this text starts appearing directly in one of these
-      // route files again instead of just an EdgeSetupPanel usage, the
-      // shared component was bypassed.
+      // The real setup panel (and its actions) should never be directly
+      // reachable from a customer-facing page again -- if this text
+      // starts appearing here, the admin-only gating was bypassed.
+      expect(text).not.toContain("EdgeSetupPanel");
       expect(text).not.toContain("Generate a facility key below (shown once)");
+      expect(text).toContain("EdgeSetupManagedByIronclad");
     }
   });
 

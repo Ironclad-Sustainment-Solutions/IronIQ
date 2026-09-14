@@ -81,6 +81,8 @@ func fatal(format string, args ...any) {
 func main() {
 	configPath := flag.String("config", envOr("IRONIQ_EDGE_CONFIG", "edge.config.json"), "path to JSON config (machines + IronIQ URL)")
 	showVersion := flag.Bool("version", false, "print version and build date, then exit")
+	installService := flag.Bool("install-service", false, "(Windows only) install this program as a Windows Service that starts automatically on boot, then exit")
+	uninstallService := flag.Bool("uninstall-service", false, "(Windows only) remove the previously installed Windows Service, then exit")
 	flag.Parse()
 
 	if *showVersion {
@@ -107,6 +109,26 @@ func main() {
 	client := ingest.New(cfg.IronIQURL, cfg.FacilityKey, nil)
 	a := newAgent(cfg, queue, client, nil)
 
+	if handled, err := maybeHandleServiceFlags(*installService, *uninstallService, *configPath); handled {
+		if err != nil {
+			fatal("%v", err)
+		}
+		return
+	}
+
+	if isRunningAsWindowsService() {
+		// Launched by Windows' Service Control Manager, not from a
+		// terminal or double-click -- must speak the actual Windows
+		// service protocol (respond to Stop/Shutdown, report status
+		// back to SCM) instead of just running the plain loop, or SCM
+		// reports the service as failed to start even though the
+		// process is really running. See service_windows.go.
+		if err := runAsWindowsService(cfg, a); err != nil {
+			fatal("windows service: %v", err)
+		}
+		return
+	}
+
 	log.SetFlags(0)
 	log.Printf("IronIQ Edge %s starting (on-prem, read-only to CNC).", version)
 	log.Printf("  IronIQ: %s%s", cfg.IronIQURL, ingest.Path)
@@ -114,20 +136,21 @@ func main() {
 	log.Println("  CNC stays off the internet. This process only GET /current on the LAN and POSTs outbound to IronIQ.")
 	log.Println("")
 
-	ctx := context.Background()
-	// Populates the dynamic machine list before the very first tick, if
-	// this config has no machines[] of its own -- otherwise a no-op.
+	runAgentLoop(context.Background(), a, cfg, nil)
+}
+
+// runAgentLoop is the actual polling loop -- shared between running
+// directly (console/terminal) and running under Windows' Service
+// Control Manager (service_windows.go), so there's exactly one
+// implementation of "what this program actually does while running,"
+// not two that could quietly drift apart. stop, if non-nil, is checked
+// so a service's Stop/Shutdown request can end the loop cleanly instead
+// of only ctx cancellation being able to.
+func runAgentLoop(ctx context.Context, a *agent, cfg Config, stop <-chan struct{}) {
 	a.refreshMachines(ctx)
 	a.tick(ctx)
 	ticker := time.NewTicker(cfg.pollInterval())
 	defer ticker.Stop()
-	// A separate, much slower ticker specifically for re-fetching the
-	// machine list in dynamic mode -- refreshing on every single poll
-	// tick (every few seconds) would mean far more requests to IronIQ
-	// than editing a machine's protocol in the app could ever need to
-	// take effect. machineListRefreshInterval is a real, if imperfect,
-	// balance between "changes show up reasonably promptly" and "don't
-	// hammer IronIQ for something that changes rarely."
 	refreshTicker := time.NewTicker(machineListRefreshInterval)
 	defer refreshTicker.Stop()
 	for {
@@ -136,6 +159,10 @@ func main() {
 			a.tick(ctx)
 		case <-refreshTicker.C:
 			a.refreshMachines(ctx)
+		case <-ctx.Done():
+			return
+		case <-stop:
+			return
 		}
 	}
 }

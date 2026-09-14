@@ -31,7 +31,7 @@ import {
   useSyncMachineMtconnect,
   useUpdateShopMachine,
 } from "@/lib/shop-floor-api";
-import { EdgeSetupPanel } from "@/components/ironiq/edge-setup-panel";
+import { EdgeSetupManagedByIronclad } from "@/components/ironiq/edge-setup-managed-by-ironclad";
 import {
   CONNECTION_LABELS,
   CONTROL_LABELS,
@@ -142,10 +142,7 @@ function MachineDetailPage() {
         </span>
       </div>
 
-      <EdgeSetupPanel
-        facilityId={machine.facility_id}
-        plantId={facility?.name}
-      />
+      <EdgeSetupManagedByIronclad />
 
       {machine.protocol === "mtconnect" ? (
         <Panel title="MTConnect live sync">
