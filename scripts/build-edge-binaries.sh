@@ -1,12 +1,21 @@
 #!/bin/sh
-# Cross-compiles the IronIQ Edge on-prem agent (edge/) for every platform
-# a customer might run it on, into public/downloads/ -- Vite/Nitro serve
-# everything under public/ as static files, so once this runs, the built
-# app serves these directly at /downloads/<filename> with no separate
-# hosting, GitHub Release, or CDN needed. Requires only the Go toolchain
-# (no third-party packages -- edge/go.mod has zero dependencies), so this
-# never needs network access to anywhere other than wherever `go` itself
-# was installed from.
+# Cross-compiles the IronIQ Edge on-prem agent (edge/) into
+# public/downloads/ -- Vite/Nitro serve everything under public/ as
+# static files, so once this runs, the built app serves these directly
+# at /downloads/<filename> with no separate hosting, GitHub Release, or
+# CDN needed. Requires only the Go toolchain (no third-party packages
+# for the agent itself -- edge/go.mod's only dependency,
+# golang.org/x/sys for the Windows Service integration, is vendored
+# into edge/vendor/), so this never needs network access to anywhere
+# other than wherever `go` itself was installed from.
+#
+# Windows-only for now, by direct request -- every real machine being
+# connected right now (the current Grede engagement) is Windows, and
+# macOS/Linux builds were adding downloads/surface area with no current
+# use. This is a deliberate, temporary scope narrowing, not a dropped
+# platform -- go back to building linux/darwin too (see the build()
+# calls that used to be here, in git history) once there's an actual
+# non-Windows machine to connect.
 #
 # Also writes CHECKSUMS.txt (SHA-256 of every binary) and VERSION.txt
 # (the git commit this build came from) into the same directory -- lets
@@ -99,10 +108,7 @@ build() {
   (cd "$ROOT_DIR/edge" && GOOS="$1" GOARCH="$2" go build -trimpath -ldflags="$LDFLAGS" -o "$OUT" .)
 }
 
-build linux amd64 ironiq-edge-linux-amd64
 build windows amd64 ironiq-edge-windows-amd64.exe
-build darwin amd64 ironiq-edge-macos-amd64
-build darwin arm64 ironiq-edge-macos-arm64
 
 # Static, not compiled -- just copied alongside the Windows binary so
 # someone installing the service never needs to open a command prompt
@@ -115,9 +121,9 @@ echo "$VERSION (built $BUILD_DATE)" > "$OUT_DIR/VERSION.txt"
 (
   cd "$OUT_DIR"
   if command -v sha256sum >/dev/null 2>&1; then
-    sha256sum ironiq-edge-linux-amd64 ironiq-edge-windows-amd64.exe ironiq-edge-macos-amd64 ironiq-edge-macos-arm64 install-service.bat > CHECKSUMS.txt
+    sha256sum ironiq-edge-windows-amd64.exe install-service.bat > CHECKSUMS.txt
   elif command -v shasum >/dev/null 2>&1; then
-    shasum -a 256 ironiq-edge-linux-amd64 ironiq-edge-windows-amd64.exe ironiq-edge-macos-amd64 ironiq-edge-macos-arm64 install-service.bat > CHECKSUMS.txt
+    shasum -a 256 ironiq-edge-windows-amd64.exe install-service.bat > CHECKSUMS.txt
   else
     echo "Neither sha256sum nor shasum found -- CHECKSUMS.txt not generated." >&2
   fi

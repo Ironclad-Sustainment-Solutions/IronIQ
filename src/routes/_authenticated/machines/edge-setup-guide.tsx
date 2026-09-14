@@ -94,23 +94,23 @@ function EdgeSetupGuidePage() {
 
       <Panel title="2. Download and place the agent">
         <p className="text-sm text-muted-foreground">
-          Download the right file for the PC you'll run it on from the same
-          "IronIQ Edge setup" panel (Windows, macOS Intel/Apple Silicon, or
-          Linux). It's a single file — nothing to install. Copy it to any PC on
-          the <strong className="text-foreground">same local network</strong> as
+          Download the agent from the same "IronIQ Edge setup" panel. Windows
+          only for now — it's a single file, nothing to install. Copy it to any
+          Windows PC on the{" "}
+          <strong className="text-foreground">same local network</strong> as
           your machines. That PC needs normal outbound internet access (the same
           kind a web browser uses); your CNC controls never need internet access
           at all.
         </p>
       </Panel>
 
-      <Panel title="Security: verify your download, and what to expect from your OS">
+      <Panel title="Security: verify your download, and what to expect from Windows">
         <p className="text-sm text-muted-foreground">
           <strong className="text-foreground">
             This binary is not yet code-signed.
           </strong>{" "}
-          Code signing (a paid certificate from a certificate authority, plus
-          Apple notarization for macOS) is planned but not done yet. Until then:
+          Code signing (a paid certificate from a certificate authority) is
+          planned but not done yet. Until then:
         </p>
         <ul className="mt-3 list-disc space-y-2 pl-5 text-sm text-muted-foreground">
           <li>
@@ -118,13 +118,6 @@ function EdgeSetupGuidePage() {
             show a SmartScreen warning ("Windows protected your PC"). Click{" "}
             <em>More info</em>, then <em>Run anyway</em> — only after verifying
             the checksum below.
-          </li>
-          <li>
-            <strong className="text-foreground">macOS</strong> will block the
-            file outright the first time ("cannot be opened because the
-            developer cannot be verified"). Right-click the file, choose{" "}
-            <em>Open</em>, then confirm — this only needs to happen once per
-            machine.
           </li>
           <li>
             Some antivirus/EDR software flags new, unsigned executables by
@@ -147,10 +140,7 @@ function EdgeSetupGuidePage() {
           :
         </p>
         <CodeBlock>{`# Windows (PowerShell)
-Get-FileHash .\\ironiq-edge-windows-amd64.exe -Algorithm SHA256
-
-# macOS / Linux
-shasum -a 256 ironiq-edge-linux-amd64`}</CodeBlock>
+Get-FileHash .\\ironiq-edge-windows-amd64.exe -Algorithm SHA256`}</CodeBlock>
         <p className="mt-3 text-sm text-muted-foreground">
           Compare the result against the matching line in CHECKSUMS.txt. If they
           don't match exactly, don't run the file — re-download it, and if it
@@ -194,18 +184,33 @@ shasum -a 256 ironiq-edge-linux-amd64`}</CodeBlock>
           facility's events, but there's no reason to leave it more exposed than
           it needs to be.
         </p>
+        <p className="mt-3 text-sm text-muted-foreground">
+          <strong className="text-foreground">One exception:</strong> installing
+          it as a Windows Service (below) does need Administrator privileges for
+          that one-time step — the agent itself never needs elevated privileges
+          to actually run, before or after that.
+        </p>
       </Panel>
 
       <Panel title="4. Run it">
-        <CodeBlock>{`./ironiq-edge --config edge.config.json`}</CodeBlock>
-        <p className="mt-3 text-sm text-muted-foreground">
-          Optional: wire it into Task Scheduler (Windows), systemd, or cron if
-          you want it to keep running across reboots — that's your choice, not a
-          requirement. The agent never opens a listening port, so there's
-          nothing else to configure on the network side.
+        <p className="text-sm text-muted-foreground">
+          <strong className="text-foreground">Recommended:</strong> download the
+          Windows service installer alongside the agent (same panel), put both
+          files plus edge.config.json in the same folder, and double-click{" "}
+          <code className="text-foreground">install-service.bat</code>. It
+          handles the one Administrator prompt, installs the agent as an
+          auto-starting Windows Service, and starts it — no command prompt
+          needed.
         </p>
         <p className="mt-3 text-sm text-muted-foreground">
-          Run <code className="text-foreground">./ironiq-edge --version</code>{" "}
+          To run it directly instead (from PowerShell or Command Prompt):
+        </p>
+        <CodeBlock>{`.\\ironiq-edge-windows-amd64.exe --config edge.config.json`}</CodeBlock>
+        <p className="mt-3 text-sm text-muted-foreground">
+          Run{" "}
+          <code className="text-foreground">
+            .\ironiq-edge-windows-amd64.exe --version
+          </code>{" "}
           at any time to confirm exactly which build you have — useful for
           support, and for confirming it matches the{" "}
           <a
