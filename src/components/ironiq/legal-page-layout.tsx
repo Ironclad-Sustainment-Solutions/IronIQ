@@ -59,7 +59,7 @@ export function LegalPageLayout({
             Cookie Policy
           </Link>
           <a
-            href="mailto:noah.osman@ironcladsustainment.com"
+            href="mailto:HR@ironcladsustainment.com"
             className="hover:text-foreground"
           >
             Contact

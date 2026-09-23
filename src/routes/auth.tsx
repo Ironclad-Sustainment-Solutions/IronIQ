@@ -147,6 +147,22 @@ function AuthPage() {
         </div>
 
         <p className="text-xs text-muted-foreground">
+          Contact us:{" "}
+          <a
+            href="mailto:support@ironcladsustainment.com"
+            className="underline underline-offset-2 hover:text-foreground"
+          >
+            support@ironcladsustainment.com
+          </a>{" "}
+          <span className="text-border">·</span>{" "}
+          <a
+            href="mailto:Sales@ironcladsustainment.com"
+            className="underline underline-offset-2 hover:text-foreground"
+          >
+            Sales@ironcladsustainment.com
+          </a>
+        </p>
+        <p className="mt-3 text-xs text-muted-foreground">
           Authorized use only. All access and score changes are recorded in the
           audit log.
         </p>
