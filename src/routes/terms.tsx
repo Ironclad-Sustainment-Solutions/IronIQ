@@ -211,8 +211,8 @@ function TermsPage() {
       <p>
         Questions about these Terms can be directed to Ironclad Sustainment
         Solutions, LLC at{" "}
-        <a href="mailto:noah.osman@ironcladsustainment.com">
-          noah.osman@ironcladsustainment.com
+        <a href="mailto:HR@ironcladsustainment.com">
+          HR@ironcladsustainment.com
         </a>
         .
       </p>
