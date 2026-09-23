@@ -266,6 +266,30 @@ function AuthPage() {
               {mode === "signin" ? "Create one" : "Sign in"}
             </button>
           </p>
+          <p className="mt-4 text-center text-xs text-muted-foreground">
+            By continuing, you agree to our{" "}
+            <a
+              href="/terms"
+              className="underline underline-offset-2 hover:text-foreground"
+            >
+              Terms of Service
+            </a>
+            ,{" "}
+            <a
+              href="/privacy"
+              className="underline underline-offset-2 hover:text-foreground"
+            >
+              Privacy Policy
+            </a>
+            , and{" "}
+            <a
+              href="/cookies"
+              className="underline underline-offset-2 hover:text-foreground"
+            >
+              Cookie Policy
+            </a>
+            .
+          </p>
         </div>
       </div>
     </div>
