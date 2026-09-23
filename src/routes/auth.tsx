@@ -152,8 +152,9 @@ function AuthPage() {
         </p>
       </div>
 
-      <div className="flex items-center justify-center p-6 md:p-12">
-        <div className="w-full max-w-sm">
+      <div className="flex flex-col justify-between p-6 md:p-12">
+        <div />
+        <div className="mx-auto w-full max-w-sm">
           <div className="mb-8 flex items-center gap-3 lg:hidden">
             <IronIQMark className="size-7" />
             <p className="font-display text-xl font-bold uppercase tracking-[0.2em]">
@@ -266,31 +267,30 @@ function AuthPage() {
               {mode === "signin" ? "Create one" : "Sign in"}
             </button>
           </p>
-          <p className="mt-4 text-center text-xs text-muted-foreground">
-            By continuing, you agree to our{" "}
-            <a
-              href="/terms"
-              className="underline underline-offset-2 hover:text-foreground"
-            >
-              Terms of Service
-            </a>
-            ,{" "}
-            <a
-              href="/privacy"
-              className="underline underline-offset-2 hover:text-foreground"
-            >
-              Privacy Policy
-            </a>
-            , and{" "}
-            <a
-              href="/cookies"
-              className="underline underline-offset-2 hover:text-foreground"
-            >
-              Cookie Policy
-            </a>
-            .
-          </p>
         </div>
+
+        <footer className="mt-8 border-t border-border pt-6 text-center text-sm text-muted-foreground">
+          <a
+            href="/terms"
+            className="underline underline-offset-2 hover:text-foreground"
+          >
+            Terms of Service
+          </a>
+          <span className="mx-3 text-border">·</span>
+          <a
+            href="/privacy"
+            className="underline underline-offset-2 hover:text-foreground"
+          >
+            Privacy Policy
+          </a>
+          <span className="mx-3 text-border">·</span>
+          <a
+            href="/cookies"
+            className="underline underline-offset-2 hover:text-foreground"
+          >
+            Cookie Policy
+          </a>
+        </footer>
       </div>
     </div>
   );
